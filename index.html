@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nqame Project</title>
+    <title>nqame Project - Fixed Layout</title>
     <!-- Tailwind CSS CDN for easy styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,32 +13,25 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* Custom styles for the wavy bottom rectangle using clip-path */
-        .wavy-bottom {
-            /* This clip-path creates a series of peaks and troughs at the top edge */
-            clip-path: polygon(
-                0% 50%,   /* Start at the middle height on the left edge */
-                8% 30%,   /* First peak (up) */
-                15% 55%,  /* First trough (down) */
-                25% 25%,  /* Second peak */
-                35% 60%,  /* Second trough */
-                45% 30%,  /* Third peak */
-                55% 70%,  /* Third trough */
-                65% 35%,  /* Fourth peak */
-                75% 65%,  /* Fourth trough */
-                85% 40%,  /* Fifth peak */
-                92% 70%,  /* Fifth trough */
-                100% 50%, /* End at the middle height on the right edge */
-                100% 100%, /* Bottom right corner */
-                0% 100%   /* Bottom left corner */
-            );
-        }
+        /* The wavy-bottom class is removed as the rectangle is now plain */
 
-        /* Base styling for individual bulbs */
+        /* Base styling for outer circle bulbs */
         .outline-bulb {
             position: absolute; /* Position bulbs absolutely within their parent circle */
-            width: 0.6rem; /* Bulb size */
-            height: 0.6rem; /* Bulb size */
+            width: 7px; /* Reduced from 8px to 7px */
+            height: 7px; /* Reduced from 8px to 7px */
+            border-radius: 9999px; /* Make it perfectly circular */
+            background-color: #4a5568; /* Initial dark gray color */
+            transition: background-color 0.3s ease-in-out; /* Smooth transition for color changes */
+            /* Center the bulb itself at the calculated position */
+            transform: translate(-50%, -50%);
+        }
+
+        /* Styling for inner halo bulbs (smaller) */
+        .inner-halo-bulb {
+            position: absolute; /* Position bulbs absolutely within their parent container */
+            width: 5px; /* Reduced from 6px to 5px */
+            height: 5px; /* Reduced from 6px to 5px */
             border-radius: 9999px; /* Make it perfectly circular */
             background-color: #4a5568; /* Initial dark gray color */
             transition: background-color 0.3s ease-in-out; /* Smooth transition for color changes */
@@ -53,64 +46,55 @@
     <!-- Main design container -->
     <!-- This div acts as the canvas for the entire design.
          It's set to 'relative' so its children can be absolutely positioned within it.
-         'aspect-[9/16]' maintains the height-to-width ratio similar to your image,
-         ensuring the design scales proportionally across devices.
-         'max-w-*' classes control its maximum size on larger screens. -->
-    <div class="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl aspect-[9/16] bg-black rounded-lg">
-        <!-- Central Rectangle -->
-        <!-- Positioned absolutely, centered horizontally with translate-x-1/2.
-             'top-[10%]' places it slightly down from the top.
-             'w-[35%]' and 'h-[70%]' are percentages of the parent container's width/height.
-             'rounded-[5rem]' creates a very rounded, pill-like shape.
-             'z-20' ensures it appears on top of the circles. -->
-        <div class="absolute inset-x-1/2 -translate-x-1/2 top-[10%] w-[35%] h-[70%] bg-yellow-500 rounded-[5rem] flex items-center justify-center overflow-hidden shadow-xl z-20">
-            <!-- Inner dotted border for the "halo" effect around the Buddha image slot -->
-            <!-- 'inset-4' creates a 4-unit padding from its parent.
-                 'border-2 border-white border-dotted' provides the dotted border. -->
-            <div class="absolute inset-4 border-2 border-white border-dotted rounded-[5rem]"></div>
-            <!-- Placeholder for Buddha image. You can replace this div with an <img> tag later. -->
-            <div class="text-black text-xs sm:text-base md:text-lg font-bold text-center">Buddha<br/>Image Slot</div>
+         Fixed width and height for a non-responsive layout. -->
+    <div class="relative w-[300px] h-[533px] bg-black rounded-lg shadow-2xl">
+        <!-- Central Rectangle (Buddha Image Slot) -->
+        <!-- Background changed to black. Roundness adjusted. No inner white border now. -->
+        <div class="absolute left-[50%] -translate-x-1/2 top-[105px] w-[105px] h-[373px] bg-black rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-xl z-20 border-2 border-yellow-500">
+            <!-- Inner container for the Buddha image slot bulbs. No inset to control positioning via JS offset. -->
+            <div id="inner-halo-container" class="absolute inset-0"></div>
+            <!-- Placeholder for Buddha image. Text color changed to white for visibility on black. -->
+            <div class="text-white text-xs sm:text-base md:text-lg font-bold text-center z-30">Buddha<br/>Image Slot</div>
         </div>
 
         <!-- Circles -->
-        <!-- Each circle is positioned absolutely using percentages relative to the main design container.
-             'w-[45%]' sets the width, and 'aspect-square' makes the height equal to the width, creating a perfect circle.
-             'rounded-full' ensures the circular shape.
-             'bg-transparent' ensures the circles themselves don't have a background.
-             'z-10' ensures they appear below the central rectangle but above other default content.
-             'overflow-hidden' removed to allow bulbs to overlap freely. -->
+        <!-- Fixed positioning and size. Circles now have a yellow border. -->
+        <!-- Order of circles adjusted for desired z-index layering (later in HTML means on top for same z-index) -->
 
-        <!-- Top Circle -->
-        <div id="circle-1" class="absolute top-[2%] left-1/2 -translate-x-1/2 w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
+        <!-- Left Bottom Circle -->
+        <div id="circle-4" class="absolute top-[340px] left-[-30px] w-[135px] h-[135px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
-
-        <!-- Left Circles -->
-        <div id="circle-2" class="absolute top-[15%] left-[-10%] w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
+        <!-- Left Middle Circle -->
+        <div id="circle-3" class="absolute top-[210px] left-[-30px] w-[135px] h-[135px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
-        <div id="circle-3" class="absolute top-[39%] left-[-10%] w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
-        <div id="circle-4" class="absolute top-[63%] left-[-10%] w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
+        <!-- Left Top Circle -->
+        <div id="circle-2" class="absolute top-[80px] left-[-30px] w-[135px] h-[135px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
-        <!-- Right Circles -->
-        <div id="circle-5" class="absolute top-[15%] right-[-10%] w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
+        <!-- Right Bottom Circle -->
+        <div id="circle-7" class="absolute top-[340px] right-[-30px] w-[135px] h-[135px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
-        <div id="circle-6" class="absolute top-[39%] right-[-10%] w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
+        <!-- Right Middle Circle -->
+        <div id="circle-6" class="absolute top-[210px] right-[-30px] w-[135px] h-[135px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
-        <div id="circle-7" class="absolute top-[63%] right-[-10%] w-[45%] aspect-square rounded-full bg-transparent shadow-lg z-10">
+        <!-- Right Top Circle -->
+        <div id="circle-5" class="absolute top-[80px] right-[-30px] w-[135px] h-[135px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
-        <!-- Bottom Wavy Rectangle (for title) -->
-        <!-- Positioned at the bottom, takes full width, and has a defined height.
-             The 'wavy-bottom' class applies the custom clip-path. -->
-        <div class="absolute bottom-0 left-0 w-full h-[20%] bg-yellow-500 wavy-bottom flex items-center justify-center p-4 shadow-xl rounded-t-lg">
+        <!-- Top Center Circle (positioned last to overlap side circles) -->
+        <div id="circle-1" class="absolute top-[11px] left-[50%] -translate-x-1/2 w-[145px] h-[145px] rounded-full bg-transparent shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Bulbs will be dynamically added here by JavaScript -->
+        </div>
+
+        <!-- Bottom Title Rectangle (now a plain rectangle) -->
+        <!-- Fixed height and placed behind circles with z-0 -->
+        <div class="absolute bottom-[-10px] left-0 w-full h-[106px] bg-yellow-500 flex items-center justify-center p-4 shadow-xl rounded-lg z-0">
             <!-- Title for your project -->
             <h1 class="text-black text-xl sm:text-2xl md:text-3xl font-bold text-center">
                 nqame Project Title
@@ -119,8 +103,8 @@
     </div>
 
     <script>
-        // Array of colors for the bulbs
-        const bulbColors = [
+        // Array of colors for the outer bulbs
+        const outerBulbColors = [
             '#FFD700', // Gold
             '#FFA500', // Orange
             '#FF4500', // OrangeRed
@@ -133,38 +117,78 @@
             '#FFFFFF'  // White
         ];
 
-        // Function to create and append bulbs along the outline of a given container
-        function createOutlineBulbs(containerElement, numberOfBulbs) {
-            // Get the computed style of the container to determine its actual size
+        // Array of colors for the inner halo bulbs (mostly whites and subtle yellows)
+        const innerBulbColors = [
+            '#FFFFFF', // White
+            '#F0F0F0', // Light Gray
+            '#E0E0E0', // Lighter Gray
+            '#FFFFE0', // Light Yellow
+            '#FFFACD'  // Lemon Chiffon
+        ];
+
+
+        /**
+         * Creates and appends bulbs along the outline of a given container.
+         * @param {HTMLElement} containerElement - The container element to add bulbs to.
+         * @param {number} numberOfBulbs - The total number of bulbs to create.
+         * @param {string} bulbClassName - The CSS class name to apply to each bulb (e.g., 'outline-bulb', 'inner-halo-bulb').
+         * @param {number} offsetFromContainerEdge - Pixels inwards from the container's edge where bulbs are placed.
+         * This offset is from the *border-box* edge of the container.
+         */
+        function createOutlineBulbs(containerElement, numberOfBulbs, bulbClassName, offsetFromContainerEdge) {
             const style = window.getComputedStyle(containerElement);
-            // Parse width and height from computed style (e.g., "100px")
             const containerWidth = parseFloat(style.width);
             const containerHeight = parseFloat(style.height);
 
-            // Calculate the radius of the circle. We assume it's a perfect circle (width === height).
-            const radius = containerWidth / 2;
+            // Determine if the container is circular or rectangular based on its rounded-ness/dimensions
+            const isCircular = containerElement.classList.contains('rounded-full');
 
-            // Calculate the center of the circle relative to its container
-            const centerX = radius;
-            const centerY = radius;
+            // Calculate the effective dimensions for positioning bulbs based on offset
+            const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
+            const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
 
             // Clear any existing bulbs in the container
             containerElement.innerHTML = '';
 
             for (let i = 0; i < numberOfBulbs; i++) {
                 const bulb = document.createElement('div');
-                bulb.classList.add('outline-bulb'); // Apply base bulb styling
+                bulb.classList.add(bulbClassName); // Apply the specified bulb styling class
 
-                // Calculate the angle for this bulb, distributing evenly around the circle
-                const angle = (i / numberOfBulbs) * 2 * Math.PI; // Angle in radians
+                let x, y;
 
-                // Calculate the x and y position for the bulb on the circumference
-                // We offset by 90 degrees (Math.PI / 2) to start the first bulb at the top
-                const x = centerX + radius * Math.cos(angle - Math.PI / 2);
-                const y = centerY + radius * Math.sin(angle - Math.PI / 2);
+                if (isCircular) {
+                    // For circles, distribute evenly around the circumference
+                    const angle = (i / numberOfBulbs) * 2 * Math.PI; // Angle in radians
+                    const effectiveRadius = effectiveWidth / 2; // Assuming circular, width == height
 
-                // Set the position of the bulb relative to the container
-                // The transform(-50%, -50%) in CSS centers the bulb itself at (x, y)
+                    // Calculate the x and y position for the bulb on the circumference of the effective circle
+                    // Offset by 90 degrees (Math.PI / 2) to start the first bulb at the top.
+                    x = (containerWidth / 2) + effectiveRadius * Math.cos(angle - Math.PI / 2);
+                    y = (containerHeight / 2) + effectiveRadius * Math.sin(angle - Math.PI / 2);
+                } else {
+                    // For rectangles, distribute along the perimeter
+                    const perimeter = 2 * (effectiveWidth + effectiveHeight);
+                    const segmentLength = perimeter / numberOfBulbs;
+                    let currentLength = i * segmentLength;
+
+                    // Calculate position along the rectangle's perimeter
+                    if (currentLength < effectiveWidth) { // Top edge
+                        x = offsetFromContainerEdge + currentLength;
+                        y = offsetFromContainerEdge;
+                    } else if (currentLength < effectiveWidth + effectiveHeight) { // Right edge
+                        x = offsetFromContainerEdge + effectiveWidth;
+                        y = offsetFromContainerEdge + (currentLength - effectiveWidth);
+                    } else if (currentLength < 2 * effectiveWidth + effectiveHeight) { // Bottom edge
+                        x = offsetFromContainerEdge + effectiveWidth - (currentLength - (effectiveWidth + effectiveHeight));
+                        y = offsetFromContainerEdge + effectiveHeight;
+                    } else { // Left edge
+                        x = offsetFromContainerEdge;
+                        y = offsetFromContainerEdge + effectiveHeight - (currentLength - (2 * effectiveWidth + effectiveHeight));
+                    }
+                }
+
+                // Set the position of the bulb relative to the container.
+                // The CSS 'transform: translate(-50%, -50%);' centers the bulb itself at (x, y).
                 bulb.style.left = `${(x / containerWidth) * 100}%`;
                 bulb.style.top = `${(y / containerHeight) * 100}%`;
 
@@ -172,73 +196,103 @@
             }
         }
 
-        // Function to animate outline bulbs
+        // Function to animate outline bulbs based on their class
         function animateBulbs() {
-            // Get all circle elements that will contain bulbs
-            const allCircleContainers = document.querySelectorAll('[id^="circle-"]');
-
-            allCircleContainers.forEach(container => {
+            // Animate outer circles' bulbs
+            const allOuterCircleContainers = document.querySelectorAll('[id^="circle-"]');
+            allOuterCircleContainers.forEach(container => {
                 const bulbs = container.querySelectorAll('.outline-bulb');
+                if (bulbs.length === 0) return;
+
                 const patternType = Math.floor(Math.random() * 3); // 0: random, 1: sequential, 2: ripple
 
-                if (bulbs.length === 0) return; // Skip if no bulbs for some reason
-
                 if (patternType === 0) {
-                    // Random pattern
                     bulbs.forEach(bulb => {
-                        const randomColor = bulbColors[Math.floor(Math.random() * bulbColors.length)];
+                        const randomColor = outerBulbColors[Math.floor(Math.random() * outerBulbColors.length)];
                         bulb.style.backgroundColor = randomColor;
                     });
                 } else if (patternType === 1) {
-                    // Sequential pattern
                     let delay = 0;
                     bulbs.forEach((bulb, index) => {
                         setTimeout(() => {
-                            bulb.style.backgroundColor = bulbColors[index % bulbColors.length];
+                            bulb.style.backgroundColor = outerBulbColors[index % outerBulbColors.length];
                         }, delay);
-                        delay += 50; // Increment delay for sequential effect
+                        delay += 50;
                     });
                 } else if (patternType === 2) {
-                    // Ripple pattern (start from a random bulb and spread)
                     const startBulbIndex = Math.floor(Math.random() * bulbs.length);
                     let delay = 0;
                     bulbs.forEach((bulb, index) => {
-                        // Calculate distance in a circular manner
                         const distance = Math.min(
                             Math.abs(index - startBulbIndex),
                             bulbs.length - Math.abs(index - startBulbIndex)
                         );
                         setTimeout(() => {
-                            bulb.style.backgroundColor = bulbColors[distance % bulbColors.length];
-                        }, delay + distance * 70); // Delay based on distance from start
+                            bulb.style.backgroundColor = outerBulbColors[distance % outerBulbColors.length];
+                        }, delay + distance * 70);
                     });
                 }
             });
+
+            // Animate inner halo bulbs (different pattern/colors)
+            const innerHaloContainer = document.getElementById('inner-halo-container');
+            if (innerHaloContainer) {
+                const innerBulbs = innerHaloContainer.querySelectorAll('.inner-halo-bulb');
+                if (innerBulbs.length === 0) return;
+
+                // For inner bulbs, let's always use a sequential or a simple random blink
+                const innerPatternType = Math.floor(Math.random() * 2); // 0: random, 1: sequential
+
+                if (innerPatternType === 0) {
+                    innerBulbs.forEach(bulb => {
+                        const randomColor = innerBulbColors[Math.floor(Math.random() * innerBulbColors.length)];
+                        bulb.style.backgroundColor = randomColor;
+                    });
+                } else if (innerPatternType === 1) {
+                    let delay = 0;
+                    innerBulbs.forEach((bulb, index) => {
+                        setTimeout(() => {
+                            bulb.style.backgroundColor = innerBulbColors[index % innerBulbColors.length];
+                        }, delay);
+                        delay += 30; // Faster sequential effect for inner bulbs
+                    });
+                }
+            }
         }
 
-        // Initialize bulbs for each circle when the DOM is loaded and on window resize
-        function initializeAllCircles() {
+        // Initialize all bulbs when the DOM is loaded
+        function initializeAllBulbs() {
             const circleIds = ['circle-1', 'circle-2', 'circle-3', 'circle-4', 'circle-5', 'circle-6', 'circle-7'];
-            const numberOfBulbsPerCircle = 30; // Number of bulbs around the circumference
+            const numberOfOuterBulbsPerCircle = 30; // Number of bulbs around the circumference for outer circles
+            const outerBulbOffset = 5; // Pixels inwards from the border for outer bulbs (border is 2px)
 
             circleIds.forEach(id => {
                 const circleElement = document.getElementById(id);
                 if (circleElement) {
-                    createOutlineBulbs(circleElement, numberOfBulbsPerCircle);
+                    // Create bulbs for outer circles
+                    createOutlineBulbs(circleElement, numberOfOuterBulbsPerCircle, 'outline-bulb', outerBulbOffset);
                 }
             });
+
+            // Initialize bulbs for the inner halo container
+            const innerHaloContainer = document.getElementById('inner-halo-container');
+            if (innerHaloContainer) {
+                const numberOfInnerBulbs = 20; // Fewer, denser bulbs for inner halo
+                // This offset is from the *edge of the inner-halo-container*, which itself is inset-0 from its parent.
+                const innerBulbOffset = 5; // Increased offset to create more space
+                createOutlineBulbs(innerHaloContainer, numberOfInnerBulbs, 'inner-halo-bulb', innerBulbOffset);
+            }
+
             animateBulbs(); // Initial call to light up bulbs immediately
         }
 
         // Ensure bulbs are created and animated after the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
-            initializeAllCircles();
+            initializeAllBulbs();
             // Start the animation loop
             setInterval(animateBulbs, 1500); // Change pattern every 1.5 seconds
         });
-
-        // Re-initialize bulbs on window resize to adjust positions if layout changes
-        window.addEventListener('resize', initializeAllCircles);
+        // Removed: window.addEventListener('resize', initializeAllBulbs); since responsiveness is removed.
     </script>
 
 </body>
