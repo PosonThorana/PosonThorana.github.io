@@ -31,154 +31,160 @@
     <!-- This div holds all the visual elements, providing a structured layout. -->
     <div id="main-container" class="relative w-full h-full max-w-7xl max-h-[90vh] bg-black p-4 rounded-xl shadow-lg flex items-center justify-center overflow-hidden">
 
-        <!-- Left Video Player Rectangles (Vertical Column) - Now also video players -->
-        <div class="absolute left-0 top-0 h-full w-1/4 flex flex-col justify-evenly items-center p-4 pr-0">
-            <!-- Video Player 0 (was Image Left 1) -->
-            <div id="video-wrapper-0" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mb-2">
-                <video id="video-0" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">1</div>
-                <!-- Bulb pattern container for outlining the rectangle -->
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <!-- Dots placed around the outline of the rectangle. Add many more for density. -->
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                    <!-- More dots needed for full outline coverage -->
-                </div>
-            </div>
-            <!-- Video Player 1 (was Image Left 2) -->
-            <div id="video-wrapper-1" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-1" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">2</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                </div>
-            </div>
-            <!-- Video Player 2 (was Image Left 3) -->
-            <div id="video-wrapper-2" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-2" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">3</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                </div>
-            </div>
-            <!-- Video Player 3 (was Image Left 4) -->
-            <div id="video-wrapper-3" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mt-2">
-                <video id="video-3" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">4</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                </div>
-            </div>
-        </div>
+        <!-- A new flex container to manage the main content areas for responsiveness -->
+        <div class="content-area flex flex-col lg:flex-row w-full h-full">
 
-        <!-- Central Lord Buddha Image and Dotted Circle -->
-        <!-- This is the focal point, containing the large Buddha image with a dotted circular frame. -->
-        <div class="central-buddha-section relative w-3/5 h-4/5 flex items-center justify-center z-10 mx-auto">
-            <!-- This div represents the large dotted circle background around the Buddha image. -->
-            <div class="dotted-circle-background absolute inset-0 rounded-full border-2 border-orange-500 bg-black flex items-center justify-center shadow-inner-xl">
-                <!-- Bulb pattern container for the central ellipse.
-                     Bulbs will be dynamically generated by JavaScript here to cover the area. -->
-                <div class="bulb-pattern-container ellipse-bulbs absolute inset-0 rounded-full" id="central-ellipse-bulbs">
-                    <!-- JavaScript will populate this div with many 'dot-lg' elements -->
+            <!-- Left Video Player Rectangles (Vertical Column) - Now also video players -->
+            <!-- Position handled by parent flexbox for responsiveness -->
+            <div class="flex flex-col justify-evenly items-center p-4 pr-0 w-full lg:w-1/4">
+                <!-- Video Player 0 (was Image Left 1) -->
+                <div id="video-wrapper-0" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mb-2">
+                    <video id="video-0" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">1</div>
+                    <!-- Bulb pattern container for outlining the rectangle -->
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <!-- Dots placed around the outline of the rectangle. Add many more for density. -->
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                        <!-- More dots needed for full outline coverage -->
+                    </div>
+                </div>
+                <!-- Video Player 1 (was Image Left 2) -->
+                <div id="video-wrapper-1" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
+                    <video id="video-1" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">2</div>
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
+                </div>
+                <!-- Video Player 2 (was Image Left 3) -->
+                <div id="video-wrapper-2" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
+                    <video id="video-2" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">3</div>
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
+                </div>
+                <!-- Video Player 3 (was Image Left 4) -->
+                <div id="video-wrapper-3" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mt-2">
+                    <video id="video-3" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">4</div>
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
                 </div>
             </div>
-            <!-- Main Lord Buddha image (replace with your PNG file) -->
-            <img src="https://placehold.co/500x350/93C5FD/000000?text=Lord+Buddha+Image" onerror="this.onerror=null;this.src='https://placehold.co/500x350/93C5FD/000000?text=Image+Load+Error';" alt="Lord Buddha" class="max-w-[80%] max-h-[80%] object-contain z-20 rounded-xl shadow-2xl">
-        </div>
 
-        <!-- Right-side Video Player Rectangles (Vertical Column) -->
-        <!-- This section contains the interactive video players. -->
-        <div class="absolute right-0 top-0 h-full w-1/4 flex flex-col justify-evenly items-center p-4 pl-0">
-            <!-- Video Player 4 -->
-            <div id="video-wrapper-4" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mb-2">
-                <video id="video-4" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <!-- Overlay to show video number and act as click target when not playing -->
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">5</div>
-                <!-- Bulb pattern container for outlining the rectangle -->
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+            <!-- Central Lord Buddha Image and Dotted Circle -->
+            <!-- This is the focal point, containing the large Buddha image with a dotted circular frame. -->
+            <div class="central-buddha-section relative w-full lg:w-3/5 h-4/5 lg:h-full flex items-center justify-center z-10 mx-auto py-4">
+                <!-- This div represents the large dotted circle background around the Buddha image. -->
+                <div class="dotted-circle-background absolute inset-0 rounded-full border-2 border-orange-500 bg-black flex items-center justify-center shadow-inner-xl">
+                    <!-- Bulb pattern container for the central ellipse.
+                         Bulbs will be dynamically generated by JavaScript here to cover the area. -->
+                    <div class="bulb-pattern-container ellipse-bulbs absolute inset-0 rounded-full" id="central-ellipse-bulbs">
+                        <!-- JavaScript will populate this div with many 'dot-lg' elements -->
+                    </div>
+                </div>
+                <!-- Main Lord Buddha image (replace with your PNG file) -->
+                <img src="https://placehold.co/500x350/93C5FD/000000?text=Lord+Buddha+Image" onerror="this.onerror=null;this.src='https://placehold.co/500x350/93C5FD/000000?text=Image+Load+Error';" alt="Lord Buddha" class="max-w-[80%] max-h-[80%] object-contain z-20 rounded-xl shadow-2xl">
+            </div>
+
+            <!-- Right-side Video Player Rectangles (Vertical Column) -->
+            <!-- Position handled by parent flexbox for responsiveness -->
+            <div class="flex flex-col justify-evenly items-center p-4 pl-0 w-full lg:w-1/4">
+                <!-- Video Player 4 -->
+                <div id="video-wrapper-4" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mb-2">
+                    <video id="video-4" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <!-- Overlay to show video number and act as click target when not playing -->
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">5</div>
+                    <!-- Bulb pattern container for outlining the rectangle -->
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
+                </div>
+                <!-- Video Player 5 -->
+                <div id="video-wrapper-5" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
+                    <video id="video-5" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">6</div>
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
+                </div>
+                <!-- Video Player 6 -->
+                <div id="video-wrapper-6" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
+                    <video id="video-6" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">7</div>
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
+                </div>
+                <!-- Video Player 7 -->
+                <div id="video-wrapper-7" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mt-2">
+                    <video id="video-7" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
+                    <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">8</div>
+                    <div class="bulb-pattern-container outline-bulbs absolute inset-0">
+                        <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
+                        <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
+                        <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
+                        <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
+                        <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
+                    </div>
                 </div>
             </div>
-            <!-- Video Player 5 -->
-            <div id="video-wrapper-5" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-5" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">6</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                </div>
-            </div>
-            <!-- Video Player 6 -->
-            <div id="video-wrapper-6" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-6" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">7</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                </div>
-            </div>
-            <!-- Video Player 7 -->
-            <div id="video-wrapper-7" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mt-2">
-                <video id="video-7" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">8</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0">
-                    <div class="dot absolute top-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute top-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 left-1/4 -translate-x-1/2"></div>
-                    <div class="dot absolute bottom-0 right-1/4 translate-x-1/2"></div>
-                    <div class="dot absolute left-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute left-0 bottom-1/4 translate-y-1/2"></div>
-                    <div class="dot absolute right-0 top-1/4 -translate-y-1/2"></div>
-                    <div class="dot absolute right-0 bottom-1/4 translate-y-1/2"></div>
-                </div>
-            </div>
-        </div>
+
+        </div> <!-- End of .content-area -->
 
         <!-- Bottom Title/Banner Section -->
         <!-- Adjusted width to be 50% and centered using left-1/2 and -translate-x-1/2 -->
