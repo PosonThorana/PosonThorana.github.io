@@ -1,109 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Seven Weeks of Lord Buddha (Mobile)</title>
-    <!-- Tailwind CSS for basic utilities and responsive design -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font: Inter (or any other desired font) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Custom CSS for specific styling and animations -->
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buddha Video Circle - YourName</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
 
-    <!-- Inline script for Tailwind configuration to ensure 'inter' font is used -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        };
-    </script>
+    .wrapper {
+      width: 974px;
+      height: 1545px;
+      position: relative;
+      background-color: #111;
+    }
+
+    .circle {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      border: 2px solid gold;
+      position: absolute;
+      overflow: hidden;
+      background-color: #000;
+      transition: all 0.5s ease;
+    }
+
+    .circle video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .circle.focused {
+      transform: scale(2);
+      z-index: 10;
+    }
+
+    .bulb {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      position: absolute;
+      background-color: white;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .buddha-image {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      z-index: 5;
+    }
+
+    .title-bar {
+      width: 100%;
+      height: 150px;
+      background-color: #ffc400;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      text-align: center;
+      line-height: 150px;
+      font-size: 28px;
+      font-weight: bold;
+      color: black;
+    }
+  </style>
 </head>
-<!-- Body with black background, white text, Inter font, and full height/width for centering content -->
-<body class="bg-black text-white font-inter overflow-auto h-screen w-screen flex flex-col items-center justify-start py-4">
-
-    <!-- Main Container for the entire experience -->
-    <!-- This div holds all the visual elements, prioritizing vertical stacking for mobile. -->
-    <!-- Removed max-w-7xl, max-h-[90vh] as we are now mobile-first -->
-    <div id="main-container" class="relative w-full h-auto bg-black p-2 rounded-xl shadow-lg flex flex-col items-center justify-start overflow-hidden">
-
-        <!-- Central Lord Buddha Image and Dotted Background -->
-        <!-- This is the focal point: standing Buddha with a full bulb background. -->
-        <div class="buddha-section relative w-full aspect-square max-w-[400px] flex items-center justify-center z-10 mx-auto mb-4">
-            <!-- Container for the full bulb background behind Buddha -->
-            <div id="buddha-bulb-background" class="bulb-pattern-container absolute inset-0 rounded-full bg-black border-2 border-orange-500 shadow-inner-xl flex items-center justify-center">
-                <!-- JavaScript will populate this div with many 'dot-lg' elements to cover the area -->
-            </div>
-            <!-- Main Standing Lord Buddha image (replace with your PNG file) -->
-            <!-- Note: Using a square placeholder now, you'll provide the actual standing PNG later -->
-            <img src="https://placehold.co/300x400/93C5FD/000000?text=Standing+Buddha" onerror="this.onerror=null;this.src='https://placehold.co/300x400/93C5FD/000000?text=Image+Load+Error';" alt="Standing Lord Buddha" class="relative z-20 max-h-[90%] max-w-[90%] object-contain rounded-xl shadow-2xl">
-        </div>
-
-        <!-- Video Player Rectangles/Circles Section -->
-        <!-- These will stack vertically, and can be designed as rectangles or circles via CSS -->
-        <div class="video-players-section flex flex-wrap justify-center items-center gap-4 p-2 w-full max-w-md mx-auto mb-4">
-            <!-- Video Player 0 -->
-            <div id="video-wrapper-0" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-0" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">1</div>
-                <!-- Bulb pattern container for outlining the rectangle -->
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 1 -->
-            <div id="video-wrapper-1" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-1" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">2</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 2 -->
-            <div id="video-wrapper-2" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-2" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">3</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 3 -->
-            <div id="video-wrapper-3" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-3" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">4</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 4 -->
-            <div id="video-wrapper-4" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-4" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">5</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-             <!-- Video Player 5 -->
-            <div id="video-wrapper-5" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-5" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">6</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-             <!-- Video Player 6 -->
-            <div id="video-wrapper-6" class="video-player-wrapper relative w-[45%] aspect-square border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform">
-                <video id="video-6" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">7</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Note: Total 7 video players now -->
-        </div>
-
-        <!-- Bottom Title/Banner Section -->
-        <!-- Fixed at the bottom for mobile, width adjusted to fit -->
-        <div class="footer-section w-full h-16 bg-yellow-500 border-t-4 border-orange-700 flex items-center justify-center rounded-b-xl z-20 mt-4">
-            <h1 class="text-black text-2xl font-bold text-center p-2">The Seven Weeks of Lord Buddha</h1>
-        </div>
+<body>
+  <div class="wrapper" id="designArea">
+    <!-- Circles -->
+    <div class="circle" style="top: 50px; left: 377px;" onclick="focusCircle(this)">
+      <video src="video1.mp4" muted></video>
+    </div>
+    <div class="circle" style="top: 300px; left: 70px;" onclick="focusCircle(this)">
+      <video src="video2.mp4" muted></video>
+    </div>
+    <div class="circle" style="top: 300px; left: 684px;" onclick="focusCircle(this)">
+      <video src="video3.mp4" muted></video>
+    </div>
+    <div class="circle" style="top: 550px; left: 70px;" onclick="focusCircle(this)">
+      <video src="video4.mp4" muted></video>
+    </div>
+    <div class="circle" style="top: 550px; left: 684px;" onclick="focusCircle(this)">
+      <video src="video5.mp4" muted></video>
+    </div>
+    <div class="circle" style="top: 800px; left: 70px;" onclick="focusCircle(this)">
+      <video src="video6.mp4" muted></video>
+    </div>
+    <div class="circle" style="top: 800px; left: 684px;" onclick="focusCircle(this)">
+      <video src="video7.mp4" muted></video>
     </div>
 
-    <!-- Background Story Audio Player -->
-    <audio id="background-story-audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
+    <!-- Buddha Image -->
+    <img src="Untitled-1.jpg" alt="Buddha" class="buddha-image">
 
-    <!-- JavaScript file for interactivity and logic -->
-    <script src="script.js"></script>
+    <!-- Title Bar -->
+    <div class="title-bar">Random Sinhala Title Here</div>
+  </div>
+
+  <script>
+    function addBulbsToCircle(circle) {
+      const bulbCount = 24;
+      const radius = 110;
+      for (let i = 0; i < bulbCount; i++) {
+        const angle = (2 * Math.PI * i) / bulbCount;
+        const x = radius + radius * Math.cos(angle) - 4;
+        const y = radius + radius * Math.sin(angle) - 4;
+        const bulb = document.createElement("div");
+        bulb.classList.add("bulb");
+        bulb.style.left = `${x}px`;
+        bulb.style.top = `${y}px`;
+        bulb.style.backgroundColor = `hsl(${i * (360 / bulbCount)}, 100%, 50%)`;
+        circle.appendChild(bulb);
+      }
+    }
+
+    document.querySelectorAll('.circle').forEach(addBulbsToCircle);
+
+    let focusedCircle = null;
+
+    function focusCircle(circle) {
+      if (focusedCircle) {
+        focusedCircle.classList.remove('focused');
+        focusedCircle.querySelector('video').pause();
+      }
+
+      if (focusedCircle !== circle) {
+        focusedCircle = circle;
+        circle.classList.add('focused');
+        circle.querySelector('video').play();
+      } else {
+        focusedCircle = null;
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.circle')) {
+        if (focusedCircle) {
+          focusedCircle.classList.remove('focused');
+          focusedCircle.querySelector('video').pause();
+          focusedCircle = null;
+        }
+      }
+    });
+  </script>
 </body>
 </html>
