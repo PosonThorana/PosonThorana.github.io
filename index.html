@@ -3,101 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Seven Weeks of Lord Buddha</title>
-    <!-- Tailwind CSS for basic utilities and responsive design -->
+    <title>nqame Project</title>
+    <!-- Tailwind CSS CDN for easy styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font: Inter (or any other desired font) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Custom CSS for specific styling and animations -->
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Custom font for a modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
 
-    <!-- Inline script for Tailwind configuration to ensure 'inter' font is used -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        };
-    </script>
+        /* Custom styles for the wavy bottom rectangle using clip-path */
+        .wavy-bottom {
+            /* This clip-path creates a series of peaks and troughs at the top edge */
+            clip-path: polygon(
+                0% 50%,   /* Start at the middle height on the left edge */
+                8% 30%,   /* First peak (up) */
+                15% 55%,  /* First trough (down) */
+                25% 25%,  /* Second peak */
+                35% 60%,  /* Second trough */
+                45% 30%,  /* Third peak */
+                55% 70%,  /* Third trough */
+                65% 35%,  /* Fourth peak */
+                75% 65%,  /* Fourth trough */
+                85% 40%,  /* Fifth peak */
+                92% 70%,  /* Fifth trough */
+                100% 50%, /* End at the middle height on the right edge */
+                100% 100%, /* Bottom right corner */
+                0% 100%   /* Bottom left corner */
+            );
+        }
+    </style>
 </head>
-<!-- Body with black background, white text, Inter font, and full height/width for centering content -->
-<body class="bg-black text-white font-inter overflow-hidden h-screen w-screen flex items-center justify-center p-4">
+<!-- The body uses flexbox to center the main design container -->
+<body class="bg-black flex items-center justify-center min-h-screen p-4 overflow-hidden">
 
-    <!-- Main Container for the entire experience -->
-    <div id="main-container" class="relative w-full h-full max-w-7xl max-h-[90vh] bg-black p-4 rounded-xl shadow-lg flex items-center justify-center overflow-hidden">
-
-        <!-- Left Video Player Rectangles (Vertical Column) -->
-        <div class="absolute left-0 top-0 h-full w-1/4 flex flex-col justify-evenly items-center p-4 pr-0">
-            <!-- Video Player 0 -->
-            <div id="video-wrapper-0" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mb-2">
-                <video id="video-0" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">1</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 1 -->
-            <div id="video-wrapper-1" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-1" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">2</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 2 -->
-            <div id="video-wrapper-2" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-2" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">3</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 3 -->
-            <div id="video-wrapper-3" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mt-2">
-                <video id="video-3" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">4</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
+    <!-- Main design container -->
+    <!-- This div acts as the canvas for the entire design.
+         It's set to 'relative' so its children can be absolutely positioned within it.
+         'aspect-[9/16]' maintains the height-to-width ratio similar to your image,
+         ensuring the design scales proportionally across devices.
+         'max-w-*' classes control its maximum size on larger screens. -->
+    <div class="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl aspect-[9/16] bg-black rounded-lg">
+        <!-- Central Rectangle -->
+        <!-- Positioned absolutely, centered horizontally with translate-x-1/2.
+             'top-[10%]' places it slightly down from the top.
+             'w-[35%]' and 'h-[70%]' are percentages of the parent container's width/height.
+             'rounded-[5rem]' creates a very rounded, pill-like shape. -->
+        <div class="absolute inset-x-1/2 -translate-x-1/2 top-[10%] w-[35%] h-[70%] bg-yellow-500 rounded-[5rem] flex items-center justify-center overflow-hidden shadow-xl">
+            <!-- Inner dotted border for the "halo" effect around the Buddha image slot -->
+            <!-- 'inset-4' creates a 4-unit padding from its parent.
+                 'border-2 border-white border-dotted' provides the dotted border. -->
+            <div class="absolute inset-4 border-2 border-white border-dotted rounded-[5rem]"></div>
+            <!-- Placeholder for Buddha image. You can replace this div with an <img> tag later. -->
+            <div class="text-white text-xs opacity-50 text-center">Buddha<br/>Image Slot</div>
         </div>
 
-        <!-- Central Lord Buddha Image and Dotted Background -->
-        <div class="buddha-section relative w-3/5 h-4/5 flex items-center justify-center z-10 mx-auto">
-            <div id="buddha-bulb-background" class="bulb-pattern-container absolute inset-0 rounded-full bg-black border-2 border-orange-500 shadow-inner-xl flex items-center justify-center">
-                <!-- JavaScript will populate this div with many 'dot-lg' elements to cover the area -->
-            </div>
-            <img src="https://placehold.co/500x350/93C5FD/000000?text=Lord+Buddha+Image" onerror="this.onerror=null;this.src='https://placehold.co/500x350/93C5FD/000000?text=Image+Load+Error';" alt="Lord Buddha" class="relative z-20 max-w-[80%] max-h-[80%] object-contain rounded-xl shadow-2xl">
-        </div>
+        <!-- Circles -->
+        <!-- Each circle is positioned absolutely using percentages relative to the main design container.
+             'w-[25%]' sets the width, and 'aspect-square' makes the height equal to the width, creating a perfect circle.
+             'rounded-full' ensures the circular shape.
+             'border-2 border-yellow-500' gives them a yellow border. -->
 
-        <!-- Right-side Video Player Rectangles (Vertical Column) -->
-        <div class="absolute right-0 top-0 h-full w-1/4 flex flex-col justify-evenly items-center p-4 pl-0">
-            <!-- Video Player 4 -->
-            <div id="video-wrapper-4" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform mb-2">
-                <video id="video-4" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">5</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 5 -->
-            <div id="video-wrapper-5" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-5" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">6</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-            <!-- Video Player 6 -->
-            <div id="video-wrapper-6" class="video-player-wrapper relative w-full aspect-video border-2 border-orange-500 rounded-lg overflow-hidden cursor-pointer shadow-md bg-gray-900 transition-all duration-500 ease-in-out transform my-2">
-                <video id="video-6" src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" preload="auto" muted class="w-full h-full object-cover"></video>
-                <div class="video-overlay absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-3xl font-bold text-white transition-opacity duration-300 rounded-lg">7</div>
-                <div class="bulb-pattern-container outline-bulbs absolute inset-0"></div>
-            </div>
-        </div>
+        <!-- Top Circle -->
+        <div class="absolute top-[0%] left-1/2 -translate-x-1/2 w-[25%] aspect-square rounded-full border-2 border-yellow-500 flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 1</div>
 
-        <!-- Bottom Title/Banner Section -->
-        <div class="footer-section absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-20 bg-yellow-500 border-t-4 border-orange-700 flex items-center justify-center rounded-b-xl z-20">
-            <h1 class="text-black text-3xl md:text-4xl font-bold text-center p-2">The Seven Weeks of Lord Buddha</h1>
+        <!-- Left Circles (with dotted border) -->
+        <div class="absolute top-[25%] left-[0%] w-[25%] aspect-square rounded-full border-2 border-yellow-500 border-dotted flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 2</div>
+        <div class="absolute top-[45%] left-[0%] w-[25%] aspect-square rounded-full border-2 border-yellow-500 border-dotted flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 3</div>
+        <div class="absolute top-[65%] left-[0%] w-[25%] aspect-square rounded-full border-2 border-yellow-500 border-dotted flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 4</div>
+
+        <!-- Right Circles (solid border) -->
+        <div class="absolute top-[25%] right-[0%] w-[25%] aspect-square rounded-full border-2 border-yellow-500 flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 5</div>
+        <div class="absolute top-[45%] right-[0%] w-[25%] aspect-square rounded-full border-2 border-yellow-500 flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 6</div>
+        <div class="absolute top-[65%] right-[0%] w-[25%] aspect-square rounded-full border-2 border-yellow-500 flex items-center justify-center text-white text-xs opacity-50 shadow-md">Circle 7</div>
+
+        <!-- Bottom Wavy Rectangle (for title) -->
+        <!-- Positioned at the bottom, takes full width, and has a defined height.
+             The 'wavy-bottom' class applies the custom clip-path. -->
+        <div class="absolute bottom-0 left-0 w-full h-[20%] bg-yellow-500 wavy-bottom flex items-center justify-center p-4 shadow-xl rounded-t-lg">
+            <!-- Title for your project -->
+            <h1 class="text-black text-xl sm:text-2xl md:text-3xl font-bold text-center">
+                nqame Project Title
+            </h1>
         </div>
     </div>
 
-    <!-- Background Story Audio Player -->
-    <audio id="background-story-audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" preload="auto"></audio>
-
-    <!-- JavaScript file for interactivity and logic -->
-    <script src="script.js"></script>
 </body>
 </html>
