@@ -1,0 +1,202 @@
+/* Custom CSS for The Seven Weeks of Lord Buddha Website */
+
+/* General Body Styling */
+body {
+    font-family: 'Inter', sans-serif; /* Use Inter font */
+    background-color: #000; /* Black background as per design */
+    color: #fff; /* White text by default */
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Hide scrollbars, manage layout within JS/HTML */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+/* Main Container */
+#main-container {
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    min-width: 800px; /* Minimum width to ensure content is visible */
+    min-height: 600px; /* Minimum height */
+    /* Other Tailwind classes are applied directly in HTML for responsiveness */
+}
+
+/* Dotted Pattern Segments (Left Column) */
+.dot-pattern-segment {
+    /* These segments mimic the border of the image in the original design. */
+    border-color: #f97316; /* Tailwind orange-500 */
+    background-color: #1a1a1a; /* Darker background for segments */
+    position: relative; /* For absolute positioning of dots */
+}
+
+/* Central Dotted Circle Background */
+.dotted-circle-background {
+    border-color: #f97316; /* Tailwind orange-500 */
+    /* For actual dots, you'd use a background image or SVG here.
+       This is a placeholder for the large dotted circle shape. */
+    background-color: #262626; /* Dark grey for the inner circle */
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); /* Subtle glow */
+}
+
+/* Styles for individual animated dots (bulbs) */
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #fff; /* Default white */
+    box-shadow: 0 0 4px #fff;
+    animation: pulse-color 1.5s infinite alternate; /* Main animation */
+}
+
+.dot-lg {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 0 6px #fff;
+    animation: pulse-color 1.5s infinite alternate;
+}
+
+/* Animation for dot colors and pulse */
+@keyframes pulse-color {
+    0% {
+        background-color: #fff;
+        box-shadow: 0 0 4px #fff;
+        transform: scale(1);
+    }
+    25% {
+        background-color: #fde047; /* Yellow */
+        box-shadow: 0 0 6px #fde047;
+        transform: scale(1.1);
+    }
+    50% {
+        background-color: #ef4444; /* Red */
+        box-shadow: 0 0 8px #ef4444;
+        transform: scale(1.2);
+    }
+    75% {
+        background-color: #38b2ac; /* Teal */
+        box-shadow: 0 0 6px #38b2ac;
+        transform: scale(1.1);
+    }
+    100% {
+        background-color: #fff;
+        box-shadow: 0 0 4px #fff;
+        transform: scale(1);
+    }
+}
+
+/* Animation delay utility classes (for staggering dot animations) */
+.animation-delay-100 { animation-delay: 0.1s; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-600 { animation-delay: 0.6s; }
+.animation-delay-700 { animation-delay: 0.7s; }
+/* Add more as needed for more dots */
+
+/* Video Player Wrappers */
+.video-player-wrapper {
+    border-color: #f97316; /* Tailwind orange-500 */
+    /* Other Tailwind classes are applied directly in HTML */
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); /* Initial subtle shadow */
+}
+
+.video-player-wrapper video {
+    pointer-events: none; /* Prevent native video controls from interfering with clicks */
+}
+
+.video-overlay {
+    opacity: 1; /* Visible by default */
+}
+
+/* State when a video is being played automatically or by user click */
+.video-player-wrapper.playing .video-overlay {
+    opacity: 0; /* Hide overlay when playing */
+}
+
+/* Focus state for video (zoomed in) */
+.video-player-wrapper.focused {
+    position: fixed; /* Fix to viewport */
+    top: 50%;
+    left: 50%;
+    width: 80vw; /* Adjust size when focused */
+    height: 60vh;
+    transform: translate(-50%, -50%) scale(1); /* Center and prevent initial scale distortion if applied */
+    z-index: 1000; /* Bring to front */
+    border-color: #ef4444; /* Red border when focused */
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); /* Stronger glow when focused */
+}
+
+/* Ensure that when focused, the video plays and its overlay is hidden */
+.video-player-wrapper.focused video {
+    pointer-events: auto; /* Allow native video controls when focused */
+}
+.video-player-wrapper.focused .video-overlay {
+    display: none; /* Fully hide overlay when focused */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    #main-container {
+        flex-direction: column; /* Stack elements vertically on smaller screens */
+        height: auto;
+        min-height: auto;
+        padding-bottom: 90px; /* Space for the footer */
+    }
+
+    .left-0 { /* Override left-0 for vertical stacking */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        height: auto;
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .right-0 { /* Override right-0 for vertical stacking */
+        right: 50%;
+        transform: translateX(50%);
+        width: 90%;
+        height: auto;
+        position: relative;
+        margin-top: 20px;
+    }
+
+    .video-players-section,
+    .left-pattern-section {
+        width: 90%;
+        flex-direction: row; /* Make them horizontal if desired */
+        flex-wrap: wrap;
+        justify-content: center; /* Use justify-content, not justify-center directly */
+    }
+
+    .video-player-wrapper,
+    .dot-pattern-segment {
+        width: 45%; /* Adjust width for smaller screens */
+        margin: 10px;
+    }
+
+    .footer-section {
+        position: fixed; /* Keep footer at bottom */
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 70px; /* Adjust height */
+    }
+
+    .central-buddha-section {
+        width: 90%;
+        height: auto;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .video-player-wrapper.focused {
+        width: 95vw;
+        height: 70vh;
+    }
+}
