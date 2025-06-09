@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const backgroundAudio = document.getElementById('background-story-audio');
     const videoElements = document.querySelectorAll('.video-player-wrapper video');
     const videoWrappers = document.querySelectorAll('.video-player-wrapper');
+    const buddhaBulbBackground = document.getElementById('buddha-bulb-background');
+    const outlineBulbContainers = document.querySelectorAll('.bulb-pattern-container.outline-bulbs');
 
     // State variables for managing the automated sequence
     let currentStoryStep = 0; // Tracks the current step in the story sequence
@@ -10,19 +12,101 @@ document.addEventListener('DOMContentLoaded', () => {
     let isAutoSequenceActive = false; // Flag to indicate if the automatic sequence is running
     let manualPlaybackVideoIndex = -1; // Stores the index of the video played manually by the user
 
-    // Define the sequence of events (audio, video, duration)
+    // Define the sequence of events (audio, video, duration, bulbPattern)
     // IMPORTANT: Replace 'https://www.soundhelix.com/examples/mp3/...' and 'https://www.learningcontainer.com/...'
     // with your actual audio and video file URLs.
-    // The 'duration' for 'playVideo' steps should ideally match the length of the video
-    // or the desired focus time for that video before moving to the next step.
+    // Ensure you have 7 videos for this version (indices 0-6).
     const storySequence = [
         { type: 'audio', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: 8000, text: 'Welcome to The Seven Weeks of Lord Buddha. Let us begin our journey.' }, // Intro audio
+        { type: 'bulbPattern', pattern: 0, duration: 2000, text: 'Observing the first pattern of lights.'}, // Trigger first bulb pattern
         { type: 'video', index: 0, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: 5000, text: 'This is the first week, a time of profound enlightenment.' },
         { type: 'video', index: 1, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: 7000, text: 'The second week brought deeper contemplation and peace.' },
+        { type: 'bulbPattern', pattern: 1, duration: 2000, text: 'Transitioning to the second dazzling pattern.'}, // Trigger second bulb pattern
         { type: 'video', index: 2, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: 6000, text: 'During the third week, the path became clearer.' },
         { type: 'video', index: 3, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: 8000, text: 'The fourth week saw great challenges and triumphs.' },
+        { type: 'bulbPattern', pattern: 2, duration: 2000, text: 'Now the third beautiful and calming pattern.'}, // Trigger third bulb pattern
+        { type: 'video', index: 4, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', duration: 5000, text: 'The fifth week unfolded new perspectives.' },
+        { type: 'video', index: 5, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', duration: 7000, text: 'The sixth week was a period of introspection.' },
+        { type: 'video', index: 6, src: 'https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4', audioSrc: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: 6000, text: 'Finally, the seventh week brought ultimate liberation.' },
         { type: 'audio', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3', duration: 10000, text: 'And so concludes our story of the Seven Weeks. Thank you for joining us.' } // Outro audio
     ];
+
+    // --- Dynamic Bulb Generation for Ellipse ---
+    /**
+     * Generates and appends dot elements to a container to cover an elliptical area.
+     * @param {HTMLElement} container - The DOM element to append dots to.
+     * @param {number} numDots - The number of dots to generate.
+     * @param {number} dotSize - The size (width/height) of each dot.
+     * @param {string} dotClass - The CSS class for the dots (e.g., 'dot-lg').
+     */
+    function generateEllipseBulbs(container, numDots, dotSize, dotClass) {
+        container.innerHTML = ''; // Clear existing dots
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        const centerX = containerWidth / 2;
+        const centerY = containerHeight / 2;
+        const radiusX = containerWidth / 2 - (dotSize / 2); // Adjust radius to keep dots within bounds
+        const radiusY = containerHeight / 2 - (dotSize / 2);
+
+        for (let i = 0; i < numDots; i++) {
+            const dot = document.createElement('div');
+            dot.classList.add(dotClass);
+            // Distribute dots randomly within the ellipse
+            const angle = Math.random() * 2 * Math.PI;
+            const r = Math.sqrt(Math.random()); // Random radius from center to edge
+            const x = centerX + radiusX * r * Math.cos(angle);
+            const y = centerY + radiusY * r * Math.sin(angle);
+
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
+            dot.style.width = `${dotSize}px`;
+            dot.style.height = `${dotSize}px`;
+            // Apply a random animation delay for a more natural look
+            dot.style.animationDelay = `${Math.random() * 1.5}s`;
+            container.appendChild(dot);
+        }
+    }
+
+    /**
+     * Generates and appends dot elements to a container to outline a rectangle.
+     * @param {HTMLElement} container - The DOM element to append dots to.
+     * @param {number} numDotsPerSide - The number of dots per side (approx).
+     * @param {number} dotSize - The size (width/height) of each dot.
+     */
+    function generateOutlineBulbs(container, numDotsPerSide, dotSize) {
+        container.innerHTML = ''; // Clear existing dots
+        const rect = container.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+
+        const addDotsOnSide = (start, end, fixedCoord, isXFixed, sideLength) => {
+            for (let i = 0; i <= numDotsPerSide; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                dot.style.width = `${dotSize}px`;
+                dot.style.height = `${dotSize}px`;
+                dot.style.animationDelay = `${Math.random() * 0.8}s`; // Shorter random delay
+                if (isXFixed) {
+                    dot.style.left = `${fixedCoord}px`;
+                    dot.style.top = `${start + (end - start) * (i / numDotsPerSide)}px`;
+                } else {
+                    dot.style.top = `${fixedCoord}px`;
+                    dot.style.left = `${start + (end - start) * (i / numDotsPerSide)}px`;
+                }
+                container.appendChild(dot);
+            }
+        };
+
+        // Top edge
+        addDotsOnSide(0, width - dotSize, 0, false, width);
+        // Bottom edge
+        addDotsOnSide(0, width - dotSize, height - dotSize, false, width);
+        // Left edge (avoid corners to prevent overlap)
+        addDotsOnSide(dotSize, height - dotSize, 0, true, height);
+        // Right edge (avoid corners)
+        addDotsOnSide(dotSize, height - dotSize, width - dotSize, true, height);
+    }
+
 
     /**
      * Plays a given audio file.
@@ -33,10 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
         backgroundAudio.src = audioSrc;
         backgroundAudio.play().catch(error => {
             console.error("Error playing background audio:", error);
-            // If autoplay is blocked by the browser, try to play on user interaction later
             if (error.name === "NotAllowedError") {
                 console.warn("Autoplay was prevented. User interaction might be needed to start audio.");
-                // You might display a "Click to start" button here for the user to initiate playback
             }
         });
         backgroundAudio.onended = () => {
@@ -75,18 +157,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(`Error playing video ${index}:`, error);
         });
 
-        // Set up listener for when the video ends.
-        // This 'onended' event will handle both auto-sequence progression and
-        // resuming the auto-sequence after a manual user click.
         video.onended = () => {
-            unfocusVideo(index); // Unfocus the current video
-            // If the video that just ended was part of the automatic sequence (or was a manual playback
-            // that should lead to resuming the auto sequence), proceed to the next step.
+            unfocusVideo(index);
             if (isAutoSequenceActive || manualPlaybackVideoIndex === index) {
                 if (manualPlaybackVideoIndex === index) {
-                    manualPlaybackVideoIndex = -1; // Reset manual playback flag
+                    manualPlaybackVideoIndex = -1;
                 }
-                startNextStoryStep(); // Resume auto sequence or continue to next step
+                startNextStoryStep();
             }
         };
     }
@@ -106,8 +183,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Applies a specific bulb pattern by adding/removing CSS classes.
+     * This function iterates through all bulb containers and applies the pattern class.
+     * @param {number} patternNumber - The index of the pattern to apply (0, 1, or 2).
+     */
+    function applyBulbPattern(patternNumber) {
+        // Apply pattern to ellipse bulbs
+        buddhaBulbBackground.classList.remove('pattern-0', 'pattern-1', 'pattern-2');
+        buddhaBulbBackground.classList.add(`pattern-${patternNumber}`);
+
+        // Apply pattern to outline bulbs (for video rectangles)
+        outlineBulbContainers.forEach(container => {
+            container.classList.remove('pattern-0', 'pattern-1', 'pattern-2');
+            container.classList.add(`pattern-${patternNumber}`);
+        });
+
+        console.log(`Bulb pattern changed to: pattern-${patternNumber}`);
+    }
+
+    /**
      * Advances to the next step in the story sequence.
-     * Manages audio playback, video focus, and timers for the automatic flow.
+     * Manages audio playback, video focus, bulb pattern changes, and timers for the automatic flow.
      */
     function startNextStoryStep() {
         clearTimeout(playbackTimeout); // Clear any existing timeout before starting a new step
@@ -115,63 +211,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentStoryStep < storySequence.length) {
             isAutoSequenceActive = true; // Ensure the auto sequence flag is true
             const step = storySequence[currentStoryStep];
-            console.log(`Starting step ${currentStoryStep}: ${step.text}`);
+            console.log(`Starting step ${currentStoryStep}: Type: ${step.type}, Text: ${step.text}`);
 
             if (step.type === 'audio') {
                 playBackgroundAudio(step.src, () => {
-                    // Audio finished, move to next step in the sequence
                     currentStoryStep++;
                     startNextStoryStep();
                 });
             } else if (step.type === 'video') {
-                // Play video-specific narration, then focus and play video
                 playBackgroundAudio(step.audioSrc, () => {
-                    focusVideo(step.index); // Focus the video
-                    // Set a timeout to unfocus the video and proceed to the next step
-                    // after its defined duration in the sequence.
+                    focusVideo(step.index);
                     playbackTimeout = setTimeout(() => {
-                        // This block will execute if the video completes its auto-sequence duration
-                        // before a user manually clicks another video.
                         unfocusVideo(step.index);
                         currentStoryStep++;
                         startNextStoryStep();
                     }, step.duration);
                 });
+            } else if (step.type === 'bulbPattern') {
+                applyBulbPattern(step.pattern);
+                playbackTimeout = setTimeout(() => {
+                    currentStoryStep++;
+                    startNextStoryStep();
+                }, step.duration);
             }
         } else {
-            // Sequence completed
-            isAutoSequenceActive = false; // The auto sequence has finished its cycle
+            isAutoSequenceActive = false;
             console.log("Story sequence completed. Waiting 30 seconds to restart.");
-            // Set a timeout to restart the entire sequence after 30 seconds
             playbackTimeout = setTimeout(() => {
-                currentStoryStep = 0; // Reset the sequence to the beginning
-                startNextStoryStep(); // Restart the entire sequence
-            }, 30000); // Wait 30 seconds (30000 milliseconds)
+                currentStoryStep = 0;
+                startNextStoryStep();
+            }, 30000);
         }
     }
 
     // --- Event Listeners for User Interaction ---
-    // Attach click listeners to each video wrapper for manual playback control
     videoWrappers.forEach((wrapper, index) => {
         wrapper.addEventListener('click', () => {
             console.log(`User clicked video ${index}`);
-            // When a user clicks, interrupt any ongoing automatic sequence
             isAutoSequenceActive = false;
-            clearTimeout(playbackTimeout); // Clear any pending auto-playback timeout
-            manualPlaybackVideoIndex = index; // Mark this video as manually played
-
-            // Focus and play the clicked video.
-            // The video's 'onended' event listener (set in focusVideo function)
-            // will handle unfocusing and resuming the automatic sequence (if desired)
-            // or simply stopping after manual playback.
+            clearTimeout(playbackTimeout);
+            manualPlaybackVideoIndex = index;
             focusVideo(index);
         });
     });
 
-    // Initial call to start the experience when the page loads
-    // Adding a small delay to ensure all DOM elements are rendered and
-    // the browser has processed initial styling before starting media playback.
-    setTimeout(() => {
+    // Generate bulbs when the DOM is fully loaded and elements are sized
+    window.addEventListener('load', () => {
+        // Generate bulbs for the central ellipse background
+        generateEllipseBulbs(buddhaBulbBackground, 500, 10, 'dot-lg'); // 500 dots, 10px size
+
+        // Generate bulbs for each video rectangle outline
+        outlineBulbContainers.forEach(container => {
+            generateOutlineBulbs(container, 15, 6); // 15 dots per side, 6px size
+        });
+
+        // Start the main story sequence
         startNextStoryStep();
-    }, 500); // 500ms delay before starting the auto sequence
+    });
 });
