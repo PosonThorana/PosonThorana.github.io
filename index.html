@@ -78,8 +78,8 @@
             padding: 10px; /* Padding for the entire window */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            width: 250px; /* Example fixed width for the entire window */
-            height: 350px; /* Example fixed height for the entire window */
+            width: 280px; /* Increased width for the entire window */
+            height: 400px; /* Increased height for the entire window */
             border: 2px solid #fbbf24; /* yellow-500 border for the main window */
         }
 
@@ -89,11 +89,18 @@
             pointer-events: auto; /* Make interactive */
         }
 
+        /* Container for bulbs within the zoom window. Must be relative to #full-screen-zoom-window */
+        #zoom-window-bulbs-container {
+            position: absolute;
+            inset: 0; /* Cover the entire parent */
+            z-index: 1; /* Below the image display area and title bar */
+        }
+
         /* Styles for the image display area inside the zoom window */
         #image-display-area {
-            position: relative; /* For internal bulbs */
-            width: 180px; /* Fixed width for the square image area */
-            height: 180px; /* Fixed height for the square image area */
+            position: relative; /* To contain bulbs if needed, but not for this design */
+            width: 220px; /* Increased width for the square image area */
+            height: 220px; /* Increased height for the square image area */
             background-color: black;
             border: 2px solid #fbbf24; /* Yellow border for the image area */
             display: flex;
@@ -101,6 +108,7 @@
             justify-content: center;
             overflow: hidden; /* Hide any overflow from image */
             border-radius: 0.5rem; /* rounded-lg */
+            z-index: 2; /* Ensure it's above the bulbs */
         }
 
         #zoomed-display-image {
@@ -121,7 +129,8 @@
             font-weight: bold; /* font-bold */
             color: black; /* text-black */
             border-radius: 0.5rem; /* rounded-lg */
-            margin-top: 15px; /* Space between image area and title bar */
+            margin-top: 20px; /* Increased space between image area and title bar */
+            z-index: 2; /* Ensure it's above the bulbs */
         }
     </style>
 </head>
@@ -204,6 +213,9 @@
 
     <!-- NEW: Full Screen Zoom Window -->
     <div id="full-screen-zoom-window">
+        <!-- New container for bulbs along the border of the zoom window -->
+        <div id="zoom-window-bulbs-container" class="absolute inset-0"></div>
+
         <!-- Image display area inside the zoom window -->
         <div id="image-display-area">
             <img id="zoomed-display-image" src="" alt="Zoomed Image">
@@ -222,6 +234,7 @@
 
         // DOM Elements for the new zoom window
         const fullScreenZoomWindow = document.getElementById('full-screen-zoom-window');
+        const zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container'); // New bulb container for zoom window
         const imageDisplayArea = document.getElementById('image-display-area'); // Area within zoom window for image
         const zoomedDisplayImage = document.getElementById('zoomed-display-image'); // Image element inside zoom window
         const zoomedImageTitle = document.getElementById('zoomed-image-title'); // Title element inside zoom window
@@ -323,7 +336,7 @@
             let patternTypeOuter; // Declare at function scope
             let innerPatternTypeForHalo; // Declare at function scope
 
-            // Animate outer circles' bulbs
+            // Animate outer circles' bulbs (main design)
             const allOuterCircleContainers = document.querySelectorAll('[id^="circle-"]');
             allOuterCircleContainers.forEach(container => {
                 const bulbs = container.querySelectorAll('.outline-bulb');
@@ -359,7 +372,7 @@
                 }
             });
 
-            // Animate inner halo bulbs (different pattern/colors) - for the main rectangle's outer bulbs
+            // Animate inner halo bulbs (main rectangle's outer bulbs)
             if (innerHaloContainer) {
                 const innerBulbs = innerHaloContainer.querySelectorAll('.inner-halo-bulb');
                 if (innerBulbs.length === 0) return;
@@ -383,27 +396,39 @@
                 }
             }
 
-            // Animate bulbs for the new zoom window's image display area
-            if (imageDisplayArea) {
-                const zoomWindowBulbs = imageDisplayArea.querySelectorAll('.inner-halo-bulb');
+            // Animate bulbs for the new zoom window's outer border
+            if (fullScreenZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
+                const zoomWindowBulbs = zoomWindowBulbsContainer.querySelectorAll('.outline-bulb');
                 if (zoomWindowBulbs.length === 0) {
                      // Ensure bulbs are created if they don't exist yet
-                    createOutlineBulbs(imageDisplayArea, 20, 'inner-halo-bulb', 2); // Small offset for the inner square
+                    createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
                 }
-                const zoomPatternType = Math.floor(Math.random() * 2); // 0: random, 1: sequential
+                const zoomPatternType = Math.floor(Math.random() * 3); // 0: random, 1: sequential, 2: ripple
 
                 if (zoomPatternType === 0) {
                     zoomWindowBulbs.forEach(bulb => {
-                        const randomColor = innerBulbColors[Math.floor(Math.random() * innerBulbColors.length)];
+                        const randomColor = outerBulbColors[Math.floor(Math.random() * outerBulbColors.length)];
                         bulb.style.backgroundColor = randomColor;
                     });
                 } else if (zoomPatternType === 1) {
                     let delay = 0;
                     zoomWindowBulbs.forEach((bulb, index) => {
                         setTimeout(() => {
-                            bulb.style.backgroundColor = innerBulbColors[index % innerBulbColors.length];
+                            bulb.style.backgroundColor = outerBulbColors[index % outerBulbColors.length];
                         }, delay);
-                        delay += 30;
+                        delay += 40; // Slightly faster sequential for zoom window
+                    });
+                } else if (zoomPatternType === 2) {
+                    const startBulbIndex = Math.floor(Math.random() * zoomWindowBulbs.length);
+                    let delay = 0;
+                    zoomWindowBulbs.forEach((bulb, index) => {
+                        const distance = Math.min(
+                            Math.abs(index - startBulbIndex),
+                            zoomWindowBulbs.length - Math.abs(index - startBulbIndex)
+                        );
+                        setTimeout(() => {
+                            bulb.style.backgroundColor = outerBulbColors[distance % outerBulbColors.length];
+                        }, delay + distance * 50); // Slightly faster ripple for zoom window
                     });
                 }
             }
@@ -423,8 +448,9 @@
             overlay.classList.add('active');
             fullScreenZoomWindow.classList.add('active');
 
-            // Initialize bulbs for the imageDisplayArea in the zoom window
-            createOutlineBulbs(imageDisplayArea, 20, 'inner-halo-bulb', 2);
+            // Initialize bulbs for the zoom window's outer border
+            createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
+            animateBulbs(); // Run animation immediately for the new window
         }
 
         /**
