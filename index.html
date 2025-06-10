@@ -42,10 +42,42 @@
             /* Center the bulb itself at the calculated position */
             transform: translate(-50%, -50%);
         }
+
+        /* Styles for the overlay when an image is zoomed */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+            z-index: 40; /* Below the zoomed image, but above other content */
+            display: none; /* Hidden by default */
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Styles for the zoomed image within the rectangle */
+        .zoomed-image {
+            object-fit: cover; /* Ensures the image fills the rectangle */
+            transform: none !important; /* Override any existing transforms */
+            top: 0 !important; /* Reset top position */
+            height: 100% !important; /* Ensure it fills height */
+            z-index: 55; /* Keep it on top */
+            transition: all 0.3s ease-in-out; /* Smooth transition */
+        }
     </style>
 </head>
 <!-- The body uses flexbox to center the main design container -->
 <body class="bg-black flex items-center justify-center min-h-screen p-4 overflow-hidden">
+
+    <!-- Overlay for click-away functionality -->
+    <div id="overlay" class="overlay"></div>
 
     <!-- Main design container -->
     <!-- This div acts as the canvas for the entire design.
@@ -54,12 +86,12 @@
     <div class="relative w-[300px] h-[533px] bg-black rounded-lg shadow-2xl">
         <!-- Central Rectangle (Buddha Image Slot) -->
         <!-- Background changed to black. Roundness adjusted. Removed overflow-hidden. -->
-        <div class="absolute left-[50%] -translate-x-1/2 top-[95px] w-[105px] h-[373px] bg-black rounded-[2.5rem] flex items-center justify-center shadow-xl z-50 border-2 border-yellow-500">
+        <div id="buddha-image-container" class="absolute left-[50%] -translate-x-1/2 top-[95px] w-[105px] h-[373px] bg-black rounded-[2.5rem] flex items-center justify-center shadow-xl z-50 border-2 border-yellow-500">
             <!-- Inner container for the Buddha image slot bulbs. No inset to control positioning via JS offset. -->
             <div id="inner-halo-container" class="absolute inset-0 z-52"></div>
             <!-- Buddha Image -->
             <!-- Image src updated to direct path, top adjusted, and rotation adjusted -->
-            <img src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1">
+            <img id="buddha-main-image" src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1 transition-all duration-300 ease-in-out">
         </div>
 
         <!-- Circles -->
@@ -67,45 +99,45 @@
         <!-- Order of circles adjusted for desired z-index layering (later in HTML means on top for same z-index) -->
 
         <!-- Left Bottom Circle -->
-        <div id="circle-4" class="absolute top-[330px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-4" class="absolute top-[330px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 4 -->
             <img src="./Gemini_Generated_Image_pz9b4cpz9b4cpz9b.png" alt="Circle Image 4" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Left Middle Circle -->
-        <div id="circle-3" class="absolute top-[200px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-3" class="absolute top-[200px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 3 -->
             <img src="./ChatGPT Image Jun 10, 2025, 08_53_43 AM.png" alt="Circle Image 3" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Left Top Circle -->
-        <div id="circle-2" class="absolute top-[70px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-2" class="absolute top-[70px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 2 -->
             <img src="./ChatGPT Image Jun 10, 2025, 09_01_28 AM.png" alt="Circle Image 2" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
         <!-- Right Bottom Circle -->
-        <div id="circle-7" class="absolute top-[330px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-7" class="absolute top-[330px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 7 -->
             <img src="./generate very same i.png" alt="Circle Image 7" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Right Middle Circle -->
-        <div id="circle-6" class="absolute top-[200px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-6" class="absolute top-[200px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 6 -->
             <img src="./ChatGPT Image Jun 10, 2025, 09_53_58 AM.png" alt="Circle Image 6" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Right Top Circle -->
-        <div id="circle-5" class="absolute top-[70px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-5" class="absolute top-[70px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 5 -->
             <img src="./ChatGPT Image Jun 10, 2025, 09_41_25 AM.png" alt="Circle Image 5" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
         <!-- Top Center Circle (positioned last to overlap side circles) -->
-        <div id="circle-1" class="absolute top-[1px] left-[50%] -translate-x-1/2 w-[145px] h-[145px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-1" class="absolute top-[1px] left-[50%] -translate-x-1/2 w-[145px] h-[145px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
             <!-- Image placeholder for circle 1 -->
             <img src="./ChatGPT Image Jun 10, 2025, 09_08_58 AM.png" alt="Circle Image 1" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
@@ -121,6 +153,16 @@
     </div>
 
     <script>
+        // DOM Elements
+        const buddhaImageContainer = document.getElementById('buddha-image-container');
+        const buddhaMainImage = document.getElementById('buddha-main-image');
+        const innerHaloContainer = document.getElementById('inner-halo-container');
+        const overlay = document.getElementById('overlay');
+
+        // Original Buddha image source and classes for resetting
+        const originalBuddhaImageSrc = './budhdha.png';
+        const originalBuddhaImageClasses = 'absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1 transition-all duration-300 ease-in-out';
+
         // Array of colors for the outer bulbs
         const outerBulbColors = [
             '#FFD700', // Gold
@@ -211,10 +253,8 @@
 
         // Function to animate outline bulbs based on their class
         function animateBulbs() {
-            // Declare patternTypeOuter and innerPatternTypeForHalo at the function scope
-            // This ensures they are always defined, resolving potential ReferenceErrors
-            let patternTypeOuter = 0;
-            let innerPatternTypeForHalo = 0;
+            let patternTypeOuter; // Declare at function scope
+            let innerPatternTypeForHalo; // Declare at function scope
 
             // Animate outer circles' bulbs
             const allOuterCircleContainers = document.querySelectorAll('[id^="circle-"]');
@@ -253,7 +293,6 @@
             });
 
             // Animate inner halo bulbs (different pattern/colors)
-            const innerHaloContainer = document.getElementById('inner-halo-container');
             if (innerHaloContainer) {
                 const innerBulbs = innerHaloContainer.querySelectorAll('.inner-halo-bulb');
                 if (innerBulbs.length === 0) return;
@@ -278,6 +317,36 @@
             }
         }
 
+        /**
+         * Zooms an image into the central Buddha image slot.
+         * @param {string} imageUrl - The URL of the image to zoom.
+         */
+        function zoomImage(imageUrl) {
+            // Set the image source
+            buddhaMainImage.src = imageUrl;
+            // Apply zoomed styles
+            buddhaMainImage.className = 'absolute w-full h-full object-cover rounded-[2.5rem] z-55 transition-all duration-300 ease-in-out';
+            
+            // Activate the overlay
+            overlay.classList.add('active');
+            // Hide inner halo bulbs temporarily for clarity
+            innerHaloContainer.style.display = 'none';
+        }
+
+        /**
+         * Resets the central image slot back to the original Buddha image.
+         */
+        function resetZoom() {
+            // Revert image source and styles
+            buddhaMainImage.src = originalBuddhaImageSrc;
+            buddhaMainImage.className = originalBuddhaImageClasses;
+
+            // Deactivate the overlay
+            overlay.classList.remove('active');
+            // Show inner halo bulbs again
+            innerHaloContainer.style.display = 'block';
+        }
+
         // Initialize all bulbs when the DOM is loaded
         function initializeAllBulbs() {
             const circleIds = ['circle-1', 'circle-2', 'circle-3', 'circle-4', 'circle-5', 'circle-6', 'circle-7'];
@@ -293,7 +362,6 @@
             });
 
             // Initialize bulbs for the inner halo container
-            const innerHaloContainer = document.getElementById('inner-halo-container');
             if (innerHaloContainer) {
                 const numberOfInnerBulbs = 20; // Fewer, denser bulbs for inner halo
                 // This offset is from the *edge of the inner-halo-container*, which itself is inset-0 from its parent.
@@ -304,13 +372,32 @@
             animateBulbs(); // Initial call to light up bulbs immediately
         }
 
-        // Ensure bulbs are created and animated after the DOM is fully loaded
+        // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             initializeAllBulbs();
             // Start the animation loop
             setInterval(animateBulbs, 1500); // Change pattern every 1.5 seconds
+
+            // Add click listeners to all circle images
+            const circleImages = document.querySelectorAll('[id^="circle-"] img');
+            circleImages.forEach(img => {
+                img.addEventListener('click', (event) => {
+                    // Stop event propagation to prevent the body click from triggering immediately
+                    event.stopPropagation(); 
+                    zoomImage(img.src);
+                });
+            });
+
+            // Add click listener to the overlay to reset zoom
+            overlay.addEventListener('click', () => {
+                resetZoom();
+            });
+
+            // Add click listener to the buddha image container itself to prevent reset when clicking on the zoomed image
+            buddhaImageContainer.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent clicks on the image from triggering body click
+            });
         });
-        // Removed: window.addEventListener('resize', initializeAllBulbs); since responsiveness is removed.
     </script>
 
 </body>
