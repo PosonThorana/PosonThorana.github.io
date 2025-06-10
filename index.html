@@ -146,6 +146,28 @@
             color: black; /* text-black */
             margin-top: 5px; /* Small margin from title */
         }
+
+        /* Styles for the finger icon */
+        #finger-icon {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            color: yellow; /* Bright color to stand out */
+            z-index: 20; /* Above circles, below overlay/zoom window */
+            opacity: 0;
+            pointer-events: none; /* Not interactive itself */
+            transition: opacity 0.5s ease-in-out;
+            animation: bounce-tap 1.5s infinite; /* Basic tapping animation */
+        }
+
+        @keyframes bounce-tap {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
     </style>
 </head>
 <!-- The body uses flexbox to center the main design container -->
@@ -223,6 +245,13 @@
                 සත් සතිය
             </h1>
         </div>
+
+        <!-- Finger tapping icon -->
+        <div id="finger-icon" class="absolute top-[130px] left-[50%] -translate-x-1/2">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13.25 1.5C12.75 1.5 12.33 1.63 11.97 1.88C11.61 2.13 11.33 2.45 11.14 2.84C10.95 3.23 10.86 3.65 10.86 4.1C10.86 4.54 10.95 4.96 11.14 5.35C11.33 5.74 11.61 6.06 11.97 6.31C12.33 6.56 12.75 6.69 13.25 6.69H16.25C16.75 6.69 17.17 6.56 17.53 6.31C17.89 6.06 18.17 5.74 18.36 5.35C18.55 4.96 18.64 4.54 18.64 4.1C18.64 3.65 18.55 3.23 18.36 2.84C18.17 2.45 17.89 2.13 17.53 1.88C17.17 1.63 16.75 1.5 16.25 1.5H13.25ZM10.5 7.75C10.5 7.55 10.45 7.35 10.37 7.17C10.29 6.99 10.18 6.83 10.04 6.7C9.9 6.57 9.74 6.47 9.55 6.4C9.36 6.33 9.17 6.29 8.97 6.29H7.75C7.25 6.29 6.83 6.42 6.47 6.67C6.11 6.92 5.83 7.24 5.64 7.63C5.45 8.02 5.36 8.44 5.36 8.89C5.36 9.34 5.45 9.76 5.64 10.15C5.83 10.54 6.11 10.86 6.47 11.11C6.83 11.36 7.25 11.49 7.75 11.49H11.5L12.5 16.5C12.5 16.6 12.51 16.7 12.53 16.8C12.55 16.9 12.58 16.99 12.63 17.07L13.78 19.25C13.88 19.45 13.98 19.63 14.07 19.8C14.16 19.97 14.24 20.12 14.28 20.25H9.75V17.5L8.25 16.25C8.05 16.05 7.82 15.88 7.57 15.75C7.32 15.62 7.05 15.54 6.75 15.5V13.75C6.75 13.55 6.7 13.35 6.62 13.17C6.54 12.99 6.43 12.83 6.29 12.7C6.15 12.57 5.99 12.47 5.8 12.4C5.61 12.33 5.42 12.29 5.22 12.29H4.25C3.75 12.29 3.33 12.42 2.97 12.67C2.61 12.92 2.33 13.24 2.14 13.63C1.95 14.02 1.86 14.44 1.86 14.89C1.86 15.34 1.95 15.76 2.14 16.15C2.33 16.54 2.61 16.86 2.97 17.11C3.33 17.36 3.75 17.49 4.25 17.49H6.25V22.5L12.5 20.5L18.75 22.5V17.5H19.75C20.25 17.5 20.67 17.37 21.03 17.12C21.39 16.87 21.67 16.55 21.86 16.16C22.05 15.77 22.14 15.35 22.14 14.9C22.14 14.45 22.05 14.03 21.86 13.64C21.67 13.25 21.39 12.93 21.03 12.68C20.67 12.43 20.25 12.3 19.75 12.3H18.75V8.25C18.75 8.1 18.72 7.95 18.66 7.8C18.6 7.65 18.52 7.52 18.42 7.42C18.32 7.32 18.2 7.24 18.05 7.18C17.9 7.12 17.75 7.09 17.6 7.09H14.75C14.55 7.09 14.35 7.14 14.17 7.22C13.99 7.3 13.83 7.41 13.7 7.55C13.57 7.69 13.47 7.85 13.4 8.04C13.33 8.23 13.29 8.42 13.29 8.62V10.25C13.29 10.45 13.34 10.65 13.42 10.83C13.5 11.01 13.61 11.17 13.75 11.3C13.89 11.43 14.05 11.53 14.24 11.6C14.43 11.67 14.62 11.71 14.82 11.71H15.75V14.75L16.25 16.5H17.5L16.5 11.75C16.5 11.55 16.45 11.35 16.37 11.17C16.29 10.99 16.18 10.83 16.04 10.7C15.9 10.57 15.74 10.47 15.55 10.4C15.36 10.33 15.17 10.29 14.97 10.29H14.05C13.78 10.29 13.53 10.19 13.32 9.98C13.11 9.77 13.01 9.52 13.01 9.25V7.75H10.5Z" />
+            </svg>
+        </div>
     </div>
 
     <!-- NEW: Full Screen Zoom Window -->
@@ -246,6 +275,7 @@
         const buddhaImageContainer = document.getElementById('buddha-image-container'); // Original Buddha image container
         const innerHaloContainer = document.getElementById('inner-halo-container'); // Bulbs for Buddha image container
         const overlay = document.getElementById('overlay');
+        const fingerIcon = document.getElementById('finger-icon');
 
         // DOM Elements for the new zoom window
         const fullScreenZoomWindow = document.getElementById('full-screen-zoom-window');
@@ -284,15 +314,17 @@
 
         // Mapping for image alt text to Sinhala titles and subtitles
         const imageTitles = {
-            "Circle Image 1": { title: "පළමු සතිය", subtitle: "ඇසතු බෝ රුක මුල" },
-            "Circle Image 2": { title: "දෙවන සතිය", subtitle: "අනිමිසලෝචන පූජාව" },
-            "Circle Image 3": { title: "තෙවන සතිය", subtitle: "රුවන් සක්මන" },
-            "Circle Image 4": { title: "සිව්වන සතිය", subtitle: "රුවන් ගෙයි වැඩ සිටීම" },
+            "Circle Image 1": { title: "සිව්වන සතිය", subtitle: "රුවන් ගෙයි වැඩ සිටීම" },
+            "Circle Image 2": { title: "තෙවන සතිය", subtitle: "රුවන් සක්මන" },
+            "Circle Image 3": { title: "දෙවන සතිය", subtitle: "අනිමිසලෝචන පූජාව" },
+            "Circle Image 4": { title: "පළමු සතිය", subtitle: "ඇසතු බෝ රුක මුල" },
             "Circle Image 5": { title: "පස්වන සතිය", subtitle: "අජපාල නුගරුක මුල" },
             "Circle Image 6": { title: "සයවන සතිය", subtitle: "මුචලින්ද නාග දරණය" },
             "Circle Image 7": { title: "සත්වන සතිය", subtitle: "රජනායක කිරි රුක මුල" }
         };
 
+        let userInteracted = false; // Flag to track if the user has clicked a circle
+        let fingerIconInterval; // Variable to hold the interval for the finger icon animation
 
         /**
          * Creates and appends bulbs along the outline of a given container.
@@ -426,8 +458,8 @@
             // Animate bulbs for the new zoom window's outer border
             if (fullScreenZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
                 const zoomWindowBulbs = zoomWindowBulbsContainer.querySelectorAll('.outline-bulb');
+                // Ensure bulbs are created if they don't exist yet for the zoom window
                 if (zoomWindowBulbs.length === 0) {
-                     // Ensure bulbs are created if they don't exist yet
                     createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
                 }
                 const zoomPatternType = Math.floor(Math.random() * 3); // 0: random, 1: sequential, 2: ripple
@@ -462,11 +494,43 @@
         }
 
         /**
+         * Shows the finger icon.
+         */
+        function showFingerIcon() {
+            if (!userInteracted) {
+                fingerIcon.style.opacity = '1';
+                fingerIcon.style.pointerEvents = 'auto'; // Make it clickable (though it's just a visual cue)
+                setTimeout(() => {
+                    hideFingerIcon();
+                }, 3000); // Show for 3 seconds
+            }
+        }
+
+        /**
+         * Hides the finger icon and schedules its next appearance if no interaction.
+         */
+        function hideFingerIcon() {
+            fingerIcon.style.opacity = '0';
+            fingerIcon.style.pointerEvents = 'none';
+            if (!userInteracted) {
+                // Schedule next appearance after 10 seconds of being hidden
+                fingerIconInterval = setTimeout(() => {
+                    showFingerIcon();
+                }, 10000); 
+            }
+        }
+
+        /**
          * Zooms an image into the new full-screen zoom window.
          * @param {string} imageUrl - The URL of the image to zoom.
          * @param {string} imageAlt - The alt text of the image to use as title.
          */
         function zoomImage(imageUrl, imageAlt) {
+            userInteracted = true; // User has interacted, stop showing finger icon
+            clearTimeout(fingerIconInterval); // Clear any pending timeouts
+            fingerIcon.style.opacity = '0'; // Hide immediately
+            fingerIcon.style.pointerEvents = 'none';
+
             zoomedDisplayImage.src = imageUrl;
             zoomedDisplayImage.alt = imageAlt;
             
@@ -548,6 +612,11 @@
             fullScreenZoomWindow.addEventListener('click', (event) => {
                 event.stopPropagation();
             });
+
+            // Start the finger icon animation cycle after initial 30 seconds
+            setTimeout(() => {
+                showFingerIcon();
+            }, 30000); // 30 seconds initial delay
         });
     </script>
 
