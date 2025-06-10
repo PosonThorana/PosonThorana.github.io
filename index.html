@@ -55,7 +55,7 @@
             <div id="inner-halo-container" class="absolute inset-0"></div>
             <!-- Buddha Image -->
             <!-- Replace the src with your desired Buddha image URL -->
-            <img src="https://via.placeholder.com/105x373.png?text=Buddha+Image" alt="Buddha Image" class="w-full h-full object-cover rounded-[2.5rem] z-30">
+            <img src="https://github.com/PosonThorana/PosonThorana.github.io/blob/9b0b31af448089064359503a2246122d77c4164f/budhdha.png" alt="Buddha Image" class="w-full h-full object-cover rounded-[2.5rem] z-30">
         </div>
 
         <!-- Circles -->
@@ -63,33 +63,47 @@
         <!-- Order of circles adjusted for desired z-index layering (later in HTML means on top for same z-index) -->
 
         <!-- Left Bottom Circle -->
-        <div id="circle-4" class="absolute top-[330px] left-[-30px] w-[135px] h-[135px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-4" class="absolute top-[330px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 4 -->
+            <img src="https://placehold.co/135x135/000000/FFFFFF?text=Image+4" alt="Circle Image 4" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Left Middle Circle -->
-        <div id="circle-3" class="absolute top-[200px] left-[-30px] w-[135px] h-[135px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-3" class="absolute top-[200px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 3 -->
+            <img src="https://placehold.co/135x135/000000/FFFFFF?text=Image+3" alt="Circle Image 3" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Left Top Circle -->
-        <div id="circle-2" class="absolute top-[70px] left-[-30px] w-[135px] h-[135px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-2" class="absolute top-[70px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 2 -->
+            <img src="https://placehold.co/135x135/000000/FFFFFF?text=Image+2" alt="Circle Image 2" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
         <!-- Right Bottom Circle -->
-        <div id="circle-7" class="absolute top-[330px] right-[-30px] w-[135px] h-[135px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-7" class="absolute top-[330px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 7 -->
+            <img src="https://placehold.co/135x135/000000/FFFFFF?text=Image+7" alt="Circle Image 7" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Right Middle Circle -->
-        <div id="circle-6" class="absolute top-[200px] right-[-30px] w-[135px] h-[135px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-6" class="absolute top-[200px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 6 -->
+            <img src="https://placehold.co/135x135/000000/FFFFFF?text=Image+6" alt="Circle Image 6" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
         <!-- Right Top Circle -->
-        <div id="circle-5" class="absolute top-[70px] right-[-30px] w-[135px] h-[135px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-5" class="absolute top-[70px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 5 -->
+            <img src="https://placehold.co/135x135/000000/FFFFFF?text=Image+5" alt="Circle Image 5" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
         <!-- Top Center Circle (positioned last to overlap side circles) -->
-        <div id="circle-1" class="absolute top-[1px] left-[50%] -translate-x-1/2 w-[145px] h-[145px] rounded-full bg-black shadow-lg z-10 border-2 border-yellow-500">
+        <div id="circle-1" class="absolute top-[1px] left-[50%] -translate-x-1/2 w-[145px] h-[145px] rounded-full shadow-lg z-10 border-2 border-yellow-500">
+            <!-- Image placeholder for circle 1 -->
+            <img src="https://placehold.co/145x145/000000/FFFFFF?text=Image+1" alt="Circle Image 1" class="w-full h-full object-cover rounded-full">
             <!-- Bulbs will be dynamically added here by JavaScript -->
         </div>
 
@@ -147,8 +161,12 @@
             const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
             const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
 
-            // Clear any existing bulbs in the container
-            containerElement.innerHTML = '';
+            // Clear any existing bulbs in the container, but preserve images if they exist
+            // We'll re-append bulbs after ensuring images are in place.
+            // Temporarily remove bulbs and re-add them after creating image.
+            const existingBulbs = containerElement.querySelectorAll(`.${bulbClassName}`);
+            existingBulbs.forEach(bulb => bulb.remove());
+
 
             for (let i = 0; i < numberOfBulbs; i++) {
                 const bulb = document.createElement('div');
