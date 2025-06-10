@@ -164,8 +164,8 @@
             // Clear any existing bulbs
             containerElement.innerHTML = '';
 
-            // Get the actual border-radius value in pixels for rectangular elements
-            const borderRadiusPx = parseFloat(style.borderTopLeftRadius); // Assuming all corners are the same
+            // Get the actual border-radius value in pixels for rectangular elements (not used in this reverted logic)
+            // const borderRadiusPx = parseFloat(style.borderTopLeftRadius);
 
             for (let i = 0; i < numberOfBulbs; i++) {
                 const bulb = document.createElement('div');
@@ -181,11 +181,12 @@
                     y = (containerHeight / 2) + effectiveRadius * Math.sin(angle - Math.PI / 2);
                 } else {
                     // Logic for non-circular (rectangular with rounded corners) elements like Buddha image slot
+                    // This is the reverted logic, placing bulbs along the perimeter without corner exclusion.
                     const perimeter = 2 * (effectiveWidth + effectiveHeight);
                     const segmentLength = perimeter / numberOfBulbs;
                     let currentLength = i * segmentLength;
 
-                    // Calculate initial position assuming a sharp rectangle outline
+                    // Calculate position along the rectangle's perimeter
                     if (currentLength < effectiveWidth) { // Top edge
                         x = offsetFromContainerEdge + currentLength;
                         y = offsetFromContainerEdge;
@@ -199,21 +200,7 @@
                         x = offsetFromContainerEdge;
                         y = offsetFromContainerEdge + effectiveHeight - (currentLength - (2 * effectiveWidth + effectiveHeight));
                     }
-
-                    // *** Corner exclusion logic for rectangular shapes ***
-                    // Define a threshold for corner detection, based on the actual border-radius
-                    const cornerThreshold = borderRadiusPx; // Use the full border-radius for exclusion
-
-                    // Check if the calculated bulb position falls within any of the four corner regions
-                    const isTopLeftCorner = (x < offsetFromContainerEdge + cornerThreshold && y < offsetFromContainerEdge + cornerThreshold);
-                    const isTopRightCorner = (x > (offsetFromContainerEdge + effectiveWidth) - cornerThreshold && y < offsetFromContainerEdge + cornerThreshold);
-                    const isBottomLeftCorner = (x < offsetFromContainerEdge + cornerThreshold && y > (offsetFromContainerEdge + effectiveHeight) - cornerThreshold);
-                    const isBottomRightCorner = (x > (offsetFromContainerEdge + effectiveWidth) - cornerThreshold && y > (offsetFromContainerEdge + effectiveHeight) - cornerThreshold);
-
-                    // If the bulb is in a corner region, skip adding it to the DOM
-                    if (isTopLeftCorner || isTopRightCorner || isBottomLeftCorner || isBottomRightCorner) {
-                        continue; // Skip this iteration, effectively removing the bulb
-                    }
+                    // No corner exclusion here
                 }
                 // Only append bulb if it wasn't a corner bulb
                 bulb.style.left = `${(x / containerWidth) * 100}%`;
