@@ -161,8 +161,9 @@
             const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
             const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
 
-            // Clear any existing bulbs
-            containerElement.innerHTML = '';
+            // Corrected: Only clear existing bulbs of the specified class, preserving other content like images.
+            const existingBulbs = containerElement.querySelectorAll(`.${bulbClassName}`);
+            existingBulbs.forEach(bulb => bulb.remove());
 
             for (let i = 0; i < numberOfBulbs; i++) {
                 const bulb = document.createElement('div');
@@ -177,7 +178,7 @@
                     x = (containerWidth / 2) + effectiveRadius * Math.cos(angle - Math.PI / 2);
                     y = (containerHeight / 2) + effectiveRadius * Math.sin(angle - Math.PI / 2);
                 } else {
-                    // Reverted logic for non-circular (rectangular with rounded corners)
+                    // Logic for non-circular (rectangular with rounded corners)
                     const perimeter = 2 * (effectiveWidth + effectiveHeight);
                     const segmentLength = perimeter / numberOfBulbs;
                     let currentLength = i * segmentLength;
