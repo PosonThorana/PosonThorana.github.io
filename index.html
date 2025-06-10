@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>More actions
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -54,6 +54,8 @@
             <!-- Inner container for the Buddha image slot bulbs. No inset to control positioning via JS offset. -->
             <div id="inner-halo-container" class="absolute inset-0 z-52"></div>
             <!-- Buddha Image -->
+            <!-- Image src updated to direct path, top adjusted, and rotation increased slightly -->
+            <img src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-2">
             <!-- Image src updated to direct path, top adjusted, and rotation adjusted to anti-clockwise -->
             <img src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform -rotate-[0.5deg]">
         </div>
@@ -161,23 +163,29 @@
             const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
             const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
 
-            // Clear any existing bulbs
-            containerElement.innerHTML = '';
+            // Clear any existing bulbs in the container, but preserve images if they exist
+            // We'll re-append bulbs after ensuring images are in place.
+            const existingBulbs = containerElement.querySelectorAll(`.${bulbClassName}`);
+            existingBulbs.forEach(bulb => bulb.remove());
+
 
             for (let i = 0; i < numberOfBulbs; i++) {
                 const bulb = document.createElement('div');
-                bulb.classList.add(bulbClassName);
+                bulb.classList.add(bulbClassName); // Apply the specified bulb styling class
 
                 let x, y;
 
                 if (isCircular) {
-                    // Existing circular logic for outer circles
-                    const angle = (i / numberOfBulbs) * 2 * Math.PI;
-                    const effectiveRadius = effectiveWidth / 2;
+                    // For circles, distribute evenly around the circumference
+                    const angle = (i / numberOfBulbs) * 2 * Math.PI; // Angle in radians
+                    const effectiveRadius = effectiveWidth / 2; // Assuming circular, width == height
+
+                    // Calculate the x and y position for the bulb on the circumference of the effective circle
+                    // Offset by 90 degrees (Math.PI / 2) to start the first bulb at the top.
                     x = (containerWidth / 2) + effectiveRadius * Math.cos(angle - Math.PI / 2);
                     y = (containerHeight / 2) + effectiveRadius * Math.sin(angle - Math.PI / 2);
                 } else {
-                    // Reverted logic for non-circular (rectangular with rounded corners)
+                    // For rectangles, distribute along the perimeter
                     const perimeter = 2 * (effectiveWidth + effectiveHeight);
                     const segmentLength = perimeter / numberOfBulbs;
                     let currentLength = i * segmentLength;
@@ -197,9 +205,12 @@
                         y = offsetFromContainerEdge + effectiveHeight - (currentLength - (2 * effectiveWidth + effectiveHeight));
                     }
                 }
-                
+
+                // Set the position of the bulb relative to the container.
+                // The CSS 'transform: translate(-50%, -50%);' centers the bulb itself at (x, y).
                 bulb.style.left = `${(x / containerWidth) * 100}%`;
                 bulb.style.top = `${(y / containerHeight) * 100}%`;
+
                 containerElement.appendChild(bulb);
             }
         }
@@ -298,7 +309,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initializeAllBulbs();
             // Start the animation loop
-            setInterval(animateBulbs, 1500); // Change pattern every 1.5 seconds
+            setInterval(animateBulbs, 1500); // Change pattern every 1.5 secondsMore actions
         });
         // Removed: window.addEventListener('resize', initializeAllBulbs); since responsiveness is removed.
     </script>
