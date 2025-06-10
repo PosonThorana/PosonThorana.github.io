@@ -432,10 +432,10 @@
                     'autoplay': 1,      // Autoplay the video (will be muted due to browser policies)
                     'controls': 0,      // Hide video controls
                     'showinfo': 0,      // Hide video title and uploader info
-                    'rel': 0,           // Do not show related videos
+                    'rel': 0,           // Do not show related videos (deprecated, but still included)
                     'modestbranding': 1,// Hide YouTube logo
                     'loop': 1,          // Loop the video
-                    'playlist': 'V_A6M0Trc2E', // Required for looping a single video
+                    'playlist': 'V_A6M0Trc2E', // Required for looping a single video reliably
                     'mute': 1           // Start muted to allow autoplay (browser policy)
                 },
                 events: {
@@ -456,31 +456,36 @@
         }
 
         function onPlayerStateChange(event) {
-            // Handle specific player states if needed
+            // If the video ends, explicitly seek to the beginning and play again.
+            // This ensures consistent looping of the single video and prevents related videos from playing.
+            if (event.data === YT.PlayerState.ENDED) {
+                player.seekTo(0); // Go to the beginning of the video
+                player.playVideo(); // Play it again
+            }
         }
 
-        // DOM Elements for the main design
-        const buddhaImageContainer = document.getElementById('buddha-image-container'); // Original Buddha image container
-        const innerHaloContainer = document.getElementById('inner-halo-container'); // Bulbs for Buddha image container
-        const overlay = document.getElementById('overlay');
-        const fingerIcon = document.getElementById('finger-icon');
-        const musicControlBtn = document.getElementById('music-control-btn');
-        const speakerIconOn = document.getElementById('speaker-icon-on');
-        const speakerIconOff = document.getElementById('speaker-icon-off');
-        const audioHint = document.getElementById('audio-hint');
+        // DOM Elements for the main design (Moved inside DOMContentLoaded)
+        let buddhaImageContainer; 
+        let innerHaloContainer;
+        let overlay;
+        let fingerIcon;
+        let musicControlBtn;
+        let speakerIconOn;
+        let speakerIconOff;
+        let audioHint;
 
-        // DOM Elements for the new zoom window
-        const imageZoomWindow = document.getElementById('full-screen-zoom-window'); // Renamed for clarity
-        const zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container'); // New bulb container for zoom window
-        const imageDisplayArea = document.getElementById('image-display-area'); // Area within zoom window for image
-        const zoomedDisplayImage = document.getElementById('zoomed-display-image'); // Image element inside zoom window
-        const zoomedImageTitle = document.getElementById('zoomed-image-title'); // Title element inside zoom window
-        const zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle'); // Subtitle element inside zoom window
+        // DOM Elements for the new zoom window (Moved inside DOMContentLoaded)
+        let imageZoomWindow;
+        let zoomWindowBulbsContainer;
+        let imageDisplayArea;
+        let zoomedDisplayImage;
+        let zoomedImageTitle;
+        let zoomedImageSubtitle;
 
-        // DOM Elements for new buttons and copyright popup
-        const copyrightBtn = document.getElementById('copyright-btn');
-        const shareBtn = document.getElementById('share-btn');
-        const copyrightPopup = document.getElementById('copyright-popup');
+        // DOM Elements for new buttons and copyright popup (Moved inside DOMContentLoaded)
+        let copyrightBtn;
+        let shareBtn;
+        let copyrightPopup;
 
         // Original Buddha image source and classes (for resetting)
         const originalBuddhaImageSrc = './budhdha.png';
@@ -695,11 +700,13 @@
          */
         function showFingerIcon() {
             if (!userInteractedWithCircles) {
-                fingerIcon.style.opacity = '1';
-                fingerIcon.style.pointerEvents = 'auto'; // Make it clickable (though it's just a visual cue)
-                setTimeout(() => {
-                    hideFingerIcon();
-                }, 3000); // Show for 3 seconds
+                if (fingerIcon) {
+                    fingerIcon.style.opacity = '1';
+                    fingerIcon.style.pointerEvents = 'auto'; // Make it clickable (though it's just a visual cue)
+                    setTimeout(() => {
+                        hideFingerIcon();
+                    }, 3000); // Show for 3 seconds
+                }
             }
         }
 
@@ -707,8 +714,10 @@
          * Hides the finger icon and schedules its next appearance if no interaction.
          */
         function hideFingerIcon() {
-            fingerIcon.style.opacity = '0';
-            fingerIcon.style.pointerEvents = 'none';
+            if (fingerIcon) {
+                fingerIcon.style.opacity = '0';
+                fingerIcon.style.pointerEvents = 'none';
+            }
             if (!userInteractedWithCircles) {
                 // Schedule next appearance after 10 seconds of being hidden
                 fingerIconInterval = setTimeout(() => {
@@ -722,7 +731,9 @@
          */
         function showAudioHint() {
             if (shouldShowAudioHint) {
-                audioHint.classList.add('active');
+                if (audioHint) {
+                    audioHint.classList.add('active');
+                }
             }
         }
 
@@ -730,7 +741,9 @@
          * Hides the audio hint (hand and text).
          */
         function hideAudioHint() {
-            audioHint.classList.remove('active');
+            if (audioHint) {
+                audioHint.classList.remove('active');
+            }
             shouldShowAudioHint = false; // Once hidden, don't show again
         }
 
@@ -742,8 +755,10 @@
         function zoomImage(imageUrl, imageAlt) {
             userInteractedWithCircles = true; // User has interacted, stop showing finger icon
             clearTimeout(fingerIconInterval); // Clear any pending timeouts
-            fingerIcon.style.opacity = '0'; // Hide immediately
-            fingerIcon.style.pointerEvents = 'none';
+            if (fingerIcon) {
+                fingerIcon.style.opacity = '0'; // Hide immediately
+                fingerIcon.style.pointerEvents = 'none';
+            }
 
             hideAudioHint(); // Also hide audio hint if user interacts with circles
 
@@ -820,11 +835,11 @@
          */
         function updateMusicControlIcon(isMuted) {
             if (isMuted) {
-                speakerIconOn.style.display = 'block';
-                speakerIconOff.style.display = 'none';
+                if(speakerIconOn) speakerIconOn.style.display = 'block';
+                if(speakerIconOff) speakerIconOff.style.display = 'none';
             } else {
-                speakerIconOn.style.display = 'none';
-                speakerIconOff.style.display = 'block';
+                if(speakerIconOn) speakerIconOn.style.display = 'none';
+                if(speakerIconOff) speakerIconOff.style.display = 'block';
             }
         }
 
@@ -888,6 +903,27 @@
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize DOM elements here to ensure they are available
+            buddhaImageContainer = document.getElementById('buddha-image-container');
+            innerHaloContainer = document.getElementById('inner-halo-container');
+            overlay = document.getElementById('overlay');
+            fingerIcon = document.getElementById('finger-icon');
+            musicControlBtn = document.getElementById('music-control-btn');
+            speakerIconOn = document.getElementById('speaker-icon-on');
+            speakerIconOff = document.getElementById('speaker-icon-off');
+            audioHint = document.getElementById('audio-hint');
+
+            imageZoomWindow = document.getElementById('full-screen-zoom-window');
+            zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container');
+            imageDisplayArea = document.getElementById('image-display-area');
+            zoomedDisplayImage = document.getElementById('zoomed-display-image');
+            zoomedImageTitle = document.getElementById('zoomed-image-title');
+            zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle');
+
+            copyrightBtn = document.getElementById('copyright-btn');
+            shareBtn = document.getElementById('share-btn');
+            copyrightPopup = document.getElementById('copyright-popup');
+
             initializeAllMainDesignBulbs(); // Initialize bulbs for the main design
 
             // Start the animation loop for all bulbs
@@ -911,21 +947,25 @@
             });
 
             // Prevent clicks inside the zoom window from closing it
-            imageZoomWindow.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
+            if (imageZoomWindow) {
+                imageZoomWindow.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+            }
 
             // Prevent clicks inside the copyright popup from closing it
-            copyrightPopup.addEventListener('click', (event) => {
-                event.stopPropagation();
-            });
+            if (copyrightPopup) {
+                copyrightPopup.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                });
+            }
 
             // Add event listeners for new buttons
-            copyrightBtn.addEventListener('click', showCopyrightPopup);
-            shareBtn.addEventListener('click', shareContent);
+            if (copyrightBtn) copyrightBtn.addEventListener('click', showCopyrightPopup);
+            if (shareBtn) shareBtn.addEventListener('click', shareContent);
 
             // Add event listener for music control button
-            musicControlBtn.addEventListener('click', toggleMusic);
+            if (musicControlBtn) musicControlBtn.addEventListener('click', toggleMusic);
 
             // Start the finger icon animation cycle after initial 30 seconds
             setTimeout(() => {
