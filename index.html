@@ -60,8 +60,8 @@
             pointer-events: auto; /* Captures clicks when active */
         }
 
-        /* Styles for the full screen zoom window */
-        #full-screen-zoom-window {
+        /* Styles for generic popup window */
+        .popup-window {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -79,11 +79,12 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
             width: 280px; /* Increased width for the entire window */
-            height: 400px; /* Increased height for the entire window */
+            height: auto; /* Allow height to adjust to content */
+            max-height: 90%; /* Prevent overflow on smaller screens */
             border: 2px solid #fbbf24; /* yellow-500 border for the main window */
         }
 
-        #full-screen-zoom-window.active {
+        .popup-window.active {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1); /* Zoom to original size */
             pointer-events: auto; /* Make interactive */
@@ -167,6 +168,40 @@
             50% {
                 transform: translateY(-10px);
             }
+        }
+
+        /* Styles for bottom buttons */
+        #bottom-buttons-container {
+            position: absolute;
+            bottom: -80px; /* Position below the main yellow title bar */
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            z-index: 10; /* Ensure buttons are clickable */
+        }
+
+        #bottom-buttons-container button {
+            background-color: white;
+            color: black;
+            padding: 8px 16px;
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            transition: background-color 0.15s ease-in-out;
+            cursor: pointer;
+            display: flex; /* For icon and text alignment */
+            align-items: center;
+            font-weight: bold;
+        }
+
+        #bottom-buttons-container button:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+
+        /* Styles for Copyright popup specific content */
+        #copyright-popup-content {
+            font-family: 'Noto Sans Sinhala', sans-serif; /* Ensure Sinhala font for popup text */
         }
     </style>
 </head>
@@ -254,8 +289,19 @@
         </div>
     </div>
 
+    <!-- Bottom Buttons Container -->
+    <div id="bottom-buttons-container">
+        <button id="copyright-btn">
+            Copyrights
+        </button>
+        <button id="share-btn">
+            <svg class="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M15 8a3 3 0 10-2.977-2.977l-4.242 2.438A3 3 0 106 13a3 3 0 10-2.977-2.977l4.242-2.438A3 3 0 1015 8zm0 2a1 1 0 110-2 1 1 0 010 2zm-6 3a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+            Share
+        </button>
+    </div>
+
     <!-- NEW: Full Screen Zoom Window -->
-    <div id="full-screen-zoom-window">
+    <div id="full-screen-zoom-window" class="popup-window">
         <!-- New container for bulbs along the border of the zoom window -->
         <div id="zoom-window-bulbs-container" class="absolute inset-0"></div>
 
@@ -270,6 +316,15 @@
         </div>
     </div>
 
+    <!-- NEW: Copyright Popup Window -->
+    <div id="copyright-popup" class="popup-window">
+        <div id="copyright-popup-content" class="flex flex-col items-center justify-center p-4 text-white text-center">
+            <p class="mb-4 text-lg font-bold">මෙම යෙදුමේ හඬ අන්තර්ගතය YouTube හි මුල් නිර්මාතෘවරුන්ට හිමි වේ.</p>
+            <a href="https://www.youtube.com/watch?v=V_A6M0Trc2E" target="_blank" class="text-blue-400 underline mb-4 text-sm">https://www.youtube.com/watch?v=V_A6M0Trc2E</a>
+            <p class="text-base">සංකල්පය සහ නිර්මාණය:<br>ගයන්ත ප්‍රනාන්දු (gayanthamethmina11@outlook.com)</p>
+        </div>
+    </div>
+
     <script>
         // DOM Elements for the main design
         const buddhaImageContainer = document.getElementById('buddha-image-container'); // Original Buddha image container
@@ -278,12 +333,17 @@
         const fingerIcon = document.getElementById('finger-icon');
 
         // DOM Elements for the new zoom window
-        const fullScreenZoomWindow = document.getElementById('full-screen-zoom-window');
+        const imageZoomWindow = document.getElementById('full-screen-zoom-window'); // Renamed for clarity
         const zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container'); // New bulb container for zoom window
         const imageDisplayArea = document.getElementById('image-display-area'); // Area within zoom window for image
         const zoomedDisplayImage = document.getElementById('zoomed-display-image'); // Image element inside zoom window
         const zoomedImageTitle = document.getElementById('zoomed-image-title'); // Title element inside zoom window
         const zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle'); // Subtitle element inside zoom window
+
+        // DOM Elements for new buttons and copyright popup
+        const copyrightBtn = document.getElementById('copyright-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const copyrightPopup = document.getElementById('copyright-popup');
 
         // Original Buddha image source and classes (for resetting)
         const originalBuddhaImageSrc = './budhdha.png';
@@ -314,10 +374,10 @@
 
         // Mapping for image alt text to Sinhala titles and subtitles
         const imageTitles = {
-            "Circle Image 1": { title: "සිව්වන සතිය", subtitle: "රුවන් ගෙයි වැඩ සිටීම" },
-            "Circle Image 2": { title: "තෙවන සතිය", subtitle: "රුවන් සක්මන" },
-            "Circle Image 3": { title: "දෙවන සතිය", subtitle: "අනිමිසලෝචන පූජාව" },
-            "Circle Image 4": { title: "පළමු සතිය", subtitle: "ඇසතු බෝ රුක මුල" },
+            "Circle Image 1": { title: "පළමු සතිය", subtitle: "ඇසතු බෝ රුක මුල" },
+            "Circle Image 2": { title: "දෙවන සතිය", subtitle: "අනිමිසලෝචන පූජාව" },
+            "Circle Image 3": { title: "තෙවන සතිය", subtitle: "රුවන් සක්මන" },
+            "Circle Image 4": { title: "සිව්වන සතිය", subtitle: "රුවන් ගෙයි වැඩ සිටීම" },
             "Circle Image 5": { title: "පස්වන සතිය", subtitle: "අජපාල නුගරුක මුල" },
             "Circle Image 6": { title: "සයවන සතිය", subtitle: "මුචලින්ද නාග දරණය" },
             "Circle Image 7": { title: "සත්වන සතිය", subtitle: "රජනායක කිරි රුක මුල" }
@@ -456,7 +516,7 @@
             }
 
             // Animate bulbs for the new zoom window's outer border
-            if (fullScreenZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
+            if (imageZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
                 const zoomWindowBulbs = zoomWindowBulbsContainer.querySelectorAll('.outline-bulb');
                 // Ensure bulbs are created if they don't exist yet for the zoom window
                 if (zoomWindowBulbs.length === 0) {
@@ -543,10 +603,12 @@
                 zoomedImageSubtitle.textContent = "";
             }
 
+            // Hide other popups if active
+            hideAllPopups();
 
             // Activate overlay and show zoom window with animation
             overlay.classList.add('active');
-            fullScreenZoomWindow.classList.add('active');
+            imageZoomWindow.classList.add('active');
 
             // Initialize bulbs for the zoom window's outer border
             createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
@@ -554,13 +616,60 @@
         }
 
         /**
-         * Resets the full-screen zoom window and overlay.
+         * Shows the copyright popup window.
          */
-        function resetZoom() {
-            // Deactivate overlay and hide zoom window with animation
-            overlay.classList.remove('active');
-            fullScreenZoomWindow.classList.remove('active');
+        function showCopyrightPopup() {
+            // Hide other popups if active
+            hideAllPopups();
+
+            overlay.classList.add('active');
+            copyrightPopup.classList.add('active');
         }
+
+        /**
+         * Hides all active popup windows and the overlay.
+         */
+        function hideAllPopups() {
+            overlay.classList.remove('active');
+            imageZoomWindow.classList.remove('active');
+            copyrightPopup.classList.remove('active');
+        }
+
+        /**
+         * Handles sharing content via Web Share API or fallbacks.
+         */
+        function shareContent() {
+            const shareText = "පොසොන් තොරණ නැරඹීමට ඔබටත් ආරාධනා! "; // Sinhala invitation text
+            const shareUrl = "https://posonthorana.github.io/"; // Poson Thorana link
+
+            if (navigator.share) {
+                // Use Web Share API if available
+                navigator.share({
+                    title: 'Poson Thorana',
+                    text: shareText,
+                    url: shareUrl,
+                })
+                .then(() => console.log('Successful share'))
+                .catch((error) => console.log('Error sharing', error));
+            } else {
+                // Fallback for browsers that do not support Web Share API
+                // Open a new window with WhatsApp and Facebook share links
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + shareUrl)}`;
+                const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+
+                const shareWindow = window.open('', '_blank', 'width=600,height=400,resizable=yes,scrollbars=yes');
+                shareWindow.document.write(`
+                    <body style="font-family: 'Noto Sans Sinhala', sans-serif; background-color: #333; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; text-align: center;">
+                        <h2 style="font-weight: 900; font-size: 1.8rem; margin-bottom: 20px;">මෙම තොරණ බෙදාගන්න</h2>
+                        <a href="${whatsappUrl}" target="_blank" style="display: inline-block; background-color: #25D366; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-size: 1.1rem; margin-bottom: 15px;">WhatsApp මඟින් බෙදාගන්න</a>
+                        <a href="${facebookUrl}" target="_blank" style="display: inline-block; background-color: #1877F2; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-size: 1.1rem;">Facebook මඟින් බෙදාගන්න</a>
+                        <p style="margin-top: 25px; font-size: 0.9rem; color: #ccc;">නව කවුළුව වසන්න</p>
+                    </body>
+                `);
+                shareWindow.document.close();
+            }
+        }
+
 
         // Initialize all bulbs for the main design when the DOM is loaded
         function initializeAllMainDesignBulbs() {
@@ -605,13 +714,23 @@
 
             // Add click listener to the overlay to reset zoom
             overlay.addEventListener('click', () => {
-                resetZoom();
+                hideAllPopups();
             });
 
             // Prevent clicks inside the zoom window from closing it
-            fullScreenZoomWindow.addEventListener('click', (event) => {
+            imageZoomWindow.addEventListener('click', (event) => {
                 event.stopPropagation();
             });
+
+            // Prevent clicks inside the copyright popup from closing it
+            copyrightPopup.addEventListener('click', (event) => {
+                event.stopPropagation();
+            });
+
+            // Add event listeners for new buttons
+            copyrightBtn.addEventListener('click', showCopyrightPopup);
+            shareBtn.addEventListener('click', shareContent);
+
 
             // Start the finger icon animation cycle after initial 30 seconds
             setTimeout(() => {
