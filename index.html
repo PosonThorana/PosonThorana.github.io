@@ -242,18 +242,19 @@
         /* Styles for audio hint */
         #audio-hint {
             position: absolute;
-            top: 50px; /* Position above the music control button */
-            right: -20px; /* Adjust as needed to point correctly */
+            top: 10px; /* Position above the music control button, within black background */
+            right: 60px; /* Adjusted to make space for text */
             z-index: 51; /* Above music button, below overlay/popups */
             opacity: 0;
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-end; /* Align text to the right for pointing */
             color: yellow; /* Hint color */
             font-size: 0.75rem; /* text-xs */
             font-weight: bold;
             transition: opacity 0.5s ease-in-out;
+            text-align: right;
         }
 
         #audio-hint.active {
@@ -272,8 +273,45 @@
         #audio-hint svg {
             width: 30px; /* Size of the hand icon */
             height: 30px;
-            transform: rotate(20deg); /* Angle the hand to point downwards/leftwards */
+            transform: rotate(20deg) scaleX(-1); /* Angle the hand to point towards button, flip horizontally */
             margin-bottom: 5px;
+            margin-right: -15px; /* Adjust SVG closer to button */
+        }
+
+        /* Styles for circle hint */
+        #circle-hint {
+            position: absolute;
+            top: 100px; /* Position above circle-1 */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20; /* Same as finger-icon */
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white; /* White text on black background */
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: opacity 0.5s ease-in-out;
+            text-align: center;
+        }
+
+        #circle-hint.active {
+            opacity: 1;
+            animation: bounce-and-point 1.8s infinite; /* New animation for pointing down */
+        }
+
+        @keyframes bounce-and-point {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            50% { transform: translateX(-50%) translateY(10px); opacity: 0.8; }
+        }
+
+        #circle-hint svg {
+            width: 40px; /* Size of the hand icon */
+            height: 40px;
+            transform: rotate(90deg); /* Rotate to point downwards */
+            margin-top: 5px; /* Space between text and hand */
         }
     </style>
 </head>
@@ -303,11 +341,19 @@
         
         <!-- Audio Hint for Music Button -->
         <div id="audio-hint">
+            <span>හඬ ඇසීමට මෙහි ක්ලික් කරන්න</span>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                 <path d="M15.75 11.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12a.75.75 0 01.75-.75zM18 11.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12a.75.75 0 01.75-.75zM20.25 11.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12a.75.75 0 01.75-.75zM12 2.25c-5.16 0-9.444 3.98-9.941 9h19.882c-.5-5.02-4.781-9-9.941-9zm-9.941 11.25c.5 5.02 4.781 9 9.941 9 5.16 0 9.444-3.98 9.941-9H2.059z" />
                 <path fill-rule="evenodd" d="M10.25 6.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0V7.5a.75.75 0 01.75-.75zM10.25 9.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75zM10.25 12.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75zM10.25 15.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75z" clip-rule="evenodd" />
             </svg>
-            <span>Click here to hear the audio</span>
+        </div>
+
+        <!-- Audio Hint for Circle Click -->
+        <div id="circle-hint">
+            <span>රූපය බැලීමට රවුම ක්ලික් කරන්න</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                <path d="M13.25 1.5C12.75 1.5 12.33 1.63 11.97 1.88C11.61 2.13 11.33 2.45 11.14 2.84C10.95 3.23 10.86 3.65 10.86 4.1C10.86 4.54 10.95 4.96 11.14 5.35C11.33 5.74 11.61 6.06 11.97 6.31C12.33 6.56 12.75 6.69 13.25 6.69H16.25C16.75 6.69 17.17 6.56 17.53 6.31C17.89 6.06 18.17 5.74 18.36 5.35C18.55 4.96 18.64 4.54 18.64 4.1C18.64 3.65 18.55 3.23 18.36 2.84C18.17 2.45 17.89 2.13 17.53 1.88C17.17 1.63 16.75 1.5 16.25 1.5H13.25ZM10.5 7.75C10.5 7.55 10.45 7.35 10.37 7.17C10.29 6.99 10.18 6.83 10.04 6.7C9.9 6.57 9.74 6.47 9.55 6.4C9.36 6.33 9.17 6.29 8.97 6.29H7.75C7.25 6.29 6.83 6.42 6.47 6.67C6.11 6.92 5.83 7.24 5.64 7.63C5.45 8.02 5.36 8.44 5.36 8.89C5.36 9.34 5.45 9.76 5.64 10.15C5.83 10.54 6.11 10.86 6.47 11.11C6.83 11.36 7.25 11.49 7.75 11.49H11.5L12.5 16.5C12.5 16.6 12.51 16.7 12.53 16.8C12.55 16.9 12.58 16.99 12.63 17.07L13.78 19.25C13.88 19.45 13.98 19.63 14.07 19.8C14.16 19.97 14.24 20.12 14.28 20.25H9.75V17.5L8.25 16.25C8.05 16.05 7.82 15.88 7.57 15.75C7.32 15.62 7.05 15.54 6.75 15.5V13.75C6.75 13.55 6.7 13.35 6.62 13.17C6.54 12.99 6.43 12.83 6.29 12.7C6.15 12.57 5.99 12.47 5.8 12.4C5.61 12.33 5.42 12.29 5.22 12.29H4.25C3.75 12.29 3.33 12.42 2.97 12.67C2.61 12.92 2.33 13.24 2.14 13.63C1.95 14.02 1.86 14.44 1.86 14.89C1.86 15.34 1.95 15.76 2.14 16.15C2.33 16.54 2.61 16.86 2.97 17.11C3.33 17.36 3.75 17.49 4.25 17.49H6.25V22.5L12.5 20.5L18.75 22.5V17.5H19.75C20.25 17.5 20.67 17.37 21.03 17.12C21.39 16.87 21.67 16.55 21.86 16.16C22.05 15.77 22.14 15.35 22.14 14.9C22.14 14.45 22.05 14.03 21.86 13.64C21.67 13.25 21.39 12.93 21.03 12.68C20.67 12.43 20.25 12.3 19.75 12.3H18.75V8.25C18.75 8.1 18.72 7.95 18.66 7.8C18.6 7.65 18.52 7.52 18.42 7.42C18.32 7.32 18.2 7.24 18.05 7.18C17.9 7.12 17.75 7.09 17.6 7.09H14.75C14.55 7.09 14.35 7.14 14.17 7.22C13.99 7.3 13.83 7.41 13.7 7.55C13.57 7.69 13.47 7.85 13.4 8.04C13.33 8.23 13.29 8.42 13.29 8.62V10.25C13.29 10.45 13.34 10.65 13.42 10.83C13.5 11.01 13.61 11.17 13.75 11.3C13.89 11.43 14.05 11.53 14.24 11.6C14.43 11.67 14.62 11.71 14.82 11.71H15.75V14.75L16.25 16.5H17.5L16.5 11.75C16.5 11.55 16.45 11.35 16.37 11.17C16.29 10.99 16.18 10.83 16.04 10.7C15.9 10.57 15.74 10.47 15.55 10.4C15.36 10.33 15.17 10.29 14.97 10.29H14.05C13.78 10.29 13.53 10.19 13.32 9.98C13.11 9.77 13.01 9.52 13.01 9.25V7.75H10.5Z" />
+            </svg>
         </div>
 
         <!-- Central Rectangle (Buddha Image Slot) - Original Layout -->
@@ -423,6 +469,7 @@
         let player;
         let isMusicPlaying = false; // To track if music is explicitly playing (unmuted)
         let shouldShowAudioHint = true; // Flag to control audio hint visibility
+        let shouldShowCircleHint = true; // Flag to control circle hint visibility
 
         // This function will be called when the YouTube IFrame Player API is ready.
         function onYouTubeIframeAPIReady() {
@@ -464,7 +511,7 @@
             }
         }
 
-        // DOM Elements for the main design (Moved inside DOMContentLoaded)
+        // DOM Elements (Initialized inside DOMContentLoaded)
         let buddhaImageContainer; 
         let innerHaloContainer;
         let overlay;
@@ -473,8 +520,8 @@
         let speakerIconOn;
         let speakerIconOff;
         let audioHint;
+        let circleHint; // New DOM element for circle hint
 
-        // DOM Elements for the new zoom window (Moved inside DOMContentLoaded)
         let imageZoomWindow;
         let zoomWindowBulbsContainer;
         let imageDisplayArea;
@@ -482,7 +529,6 @@
         let zoomedImageTitle;
         let zoomedImageSubtitle;
 
-        // DOM Elements for new buttons and copyright popup (Moved inside DOMContentLoaded)
         let copyrightBtn;
         let shareBtn;
         let copyrightPopup;
@@ -658,7 +704,7 @@
             }
 
             // Animate bulbs for the new zoom window's outer border
-            if (imageZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
+            if (imageZoomWindow && imageZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
                 const zoomWindowBulbs = zoomWindowBulbsContainer.querySelectorAll('.outline-bulb');
                 // Ensure bulbs are created if they don't exist yet for the zoom window
                 if (zoomWindowBulbs.length === 0) {
@@ -748,6 +794,28 @@
         }
 
         /**
+         * Shows the circle hint (hand and text).
+         */
+        function showCircleHint() {
+            if (shouldShowCircleHint) {
+                if (circleHint) {
+                    circleHint.classList.add('active');
+                }
+            }
+        }
+
+        /**
+         * Hides the circle hint (hand and text).
+         */
+        function hideCircleHint() {
+            if (circleHint) {
+                circleHint.classList.remove('active');
+            }
+            shouldShowCircleHint = false; // Once hidden, don't show again
+        }
+
+
+        /**
          * Zooms an image into the new full-screen zoom window.
          * @param {string} imageUrl - The URL of the image to zoom.
          * @param {string} imageAlt - The alt text of the image to use as title.
@@ -761,28 +829,33 @@
             }
 
             hideAudioHint(); // Also hide audio hint if user interacts with circles
+            hideCircleHint(); // Also hide circle hint if user interacts with circles
 
-            zoomedDisplayImage.src = imageUrl;
-            zoomedDisplayImage.alt = imageAlt;
+            if (zoomedDisplayImage) { // Added null check
+                zoomedDisplayImage.src = imageUrl;
+                zoomedDisplayImage.alt = imageAlt;
+            }
             
             const titles = imageTitles[imageAlt];
             if (titles) {
-                zoomedImageTitle.textContent = titles.title;
-                zoomedImageSubtitle.textContent = titles.subtitle;
+                if (zoomedImageTitle) zoomedImageTitle.textContent = titles.title; // Added null check
+                if (zoomedImageSubtitle) zoomedImageSubtitle.textContent = titles.subtitle; // Added null check
             } else {
-                zoomedImageTitle.textContent = "Image Title"; // Fallback
-                zoomedImageSubtitle.textContent = "";
+                if (zoomedImageTitle) zoomedImageTitle.textContent = "Image Title"; // Fallback
+                if (zoomedImageSubtitle) zoomedImageSubtitle.textContent = "";
             }
 
             // Hide other popups if active
             hideAllPopups();
 
             // Activate overlay and show zoom window with animation
-            overlay.classList.add('active');
-            imageZoomWindow.classList.add('active');
+            if (overlay) overlay.classList.add('active'); // Added null check
+            if (imageZoomWindow) imageZoomWindow.classList.add('active'); // Added null check
 
             // Initialize bulbs for the zoom window's outer border
-            createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
+            if (zoomWindowBulbsContainer) { // Added null check
+                createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
+            }
             animateBulbs(); // Run animation immediately for the new window
         }
 
@@ -793,17 +866,17 @@
             // Hide other popups if active
             hideAllPopups();
 
-            overlay.classList.add('active');
-            copyrightPopup.classList.add('active');
+            if (overlay) overlay.classList.add('active'); // Added null check
+            if (copyrightPopup) copyrightPopup.classList.add('active'); // Added null check
         }
 
         /**
          * Hides all active popup windows and the overlay.
          */
         function hideAllPopups() {
-            overlay.classList.remove('active');
-            imageZoomWindow.classList.remove('active');
-            copyrightPopup.classList.remove('active');
+            if (overlay) overlay.classList.remove('active'); // Added null check
+            if (imageZoomWindow) imageZoomWindow.classList.remove('active'); // Added null check
+            if (copyrightPopup) copyrightPopup.classList.remove('active'); // Added null check
         }
 
         /**
@@ -812,6 +885,8 @@
         function toggleMusic() {
             if (player) {
                 hideAudioHint(); // Hide hint once user interacts with music
+                hideCircleHint(); // Also hide circle hint if user interacts with music
+
                 if (player.isMuted()) {
                     player.unMute();
                     updateMusicControlIcon(true);
@@ -912,10 +987,10 @@
             speakerIconOn = document.getElementById('speaker-icon-on');
             speakerIconOff = document.getElementById('speaker-icon-off');
             audioHint = document.getElementById('audio-hint');
+            circleHint = document.getElementById('circle-hint'); // Get the new circle hint element
 
             imageZoomWindow = document.getElementById('full-screen-zoom-window');
             zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container');
-            imageDisplayArea = document.getElementById('image-display-area');
             zoomedDisplayImage = document.getElementById('zoomed-display-image');
             zoomedImageTitle = document.getElementById('zoomed-image-title');
             zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle');
@@ -942,9 +1017,11 @@
             });
 
             // Add click listener to the overlay to reset zoom
-            overlay.addEventListener('click', () => {
-                hideAllPopups();
-            });
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    hideAllPopups();
+                });
+            }
 
             // Prevent clicks inside the zoom window from closing it
             if (imageZoomWindow) {
@@ -967,9 +1044,10 @@
             // Add event listener for music control button
             if (musicControlBtn) musicControlBtn.addEventListener('click', toggleMusic);
 
-            // Start the finger icon animation cycle after initial 30 seconds
+            // Start the finger icon (for circles) and circle hint animation cycle after initial 30 seconds
             setTimeout(() => {
                 showFingerIcon();
+                showCircleHint(); // Show circle hint along with the finger icon
             }, 30000); // 30 seconds initial delay
         });
     </script>
