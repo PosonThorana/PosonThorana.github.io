@@ -203,6 +203,41 @@
         #copyright-popup-content {
             font-family: 'Noto Sans Sinhala', sans-serif; /* Ensure Sinhala font for popup text */
         }
+
+        /* Music control button */
+        #music-control-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            color: black;
+            border-radius: 9999px; /* Fully rounded */
+            padding: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 50; /* Ensure it's above other elements but below overlay/popups */
+        }
+        #music-control-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Hidden YouTube player container */
+        #youtube-player-container {
+            position: absolute;
+            top: -9999px; /* Move far off-screen */
+            left: -9999px;
+            width: 1px; /* Minimal size */
+            height: 1px;
+            overflow: hidden; /* Hide content */
+            opacity: 0; /* Make invisible */
+            pointer-events: none; /* Not interactive */
+        }
     </style>
 </head>
 <!-- The body uses flexbox to center the main design container -->
@@ -211,11 +246,24 @@
     <!-- Overlay for click-away functionality -->
     <div id="overlay" class="overlay"></div>
 
+    <!-- Hidden YouTube Player Container -->
+    <div id="youtube-player-container"></div>
+
     <!-- Main design container -->
     <!-- This div acts as the canvas for the entire design.
          It's set to 'relative' so its children can be absolutely positioned within it.
          Fixed width and height for a non-responsive layout. -->
     <div class="relative w-[300px] h-[533px] bg-black rounded-lg shadow-2xl">
+        <!-- Music Control Button -->
+        <button id="music-control-btn">
+            <svg id="speaker-icon-on" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                <path d="M13.5 4.062c0-1.31-1.28-2.42-2.5-1.92a1.5 1.5 0 00-1.5 1.5v16.125c0 1.31 1.28 2.42 2.5 1.92a1.5 1.5 0 001.5-1.5V4.062zM18 14.5a.5.5 0 01-.5.5c-1.39 0-2.58-.2-3.7-.6V9.6c1.12-.4 2.31-.6 3.7-.6a.5.5 0 01.5.5v4z"></path>
+            </svg>
+            <svg id="speaker-icon-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                <path d="M13.5 4.062c0-1.31-1.28-2.42-2.5-1.92a1.5 1.5 0 00-1.5 1.5v16.125c0 1.31 1.28 2.42 2.5 1.92a1.5 1.5 0 001.5-1.5V4.062zM16.88 7.391a.75.75 0 011.06 0L20.25 8.75l1.309 1.309a.75.75 0 01-1.06 1.06L19.19 9.81l-1.309-1.309a.75.75 0 010-1.06zm-4.75 1.838a.75.75 0 011.06 0L17.25 12l.939.94a.75.75 0 01-1.06 1.06L16.19 13.06l-.939-.94-.94.94a.75.75 0 01-1.06-1.06l.94-.94-.94-.939a.75.75 0 010-1.06z"></path>
+            </svg>
+        </button>
+        
         <!-- Central Rectangle (Buddha Image Slot) - Original Layout -->
         <div id="buddha-image-container" class="absolute left-[50%] -translate-x-1/2 top-[95px] w-[105px] h-[373px] bg-black rounded-[2.5rem] flex items-center justify-center shadow-xl z-50 border-2 border-yellow-500">
             <!-- Inner container for the Buddha image slot bulbs. No inset to control positioning via JS offset. -->
@@ -326,11 +374,55 @@
     </div>
 
     <script>
+        // Load the IFrame Player API code asynchronously.
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // Global variable for the YouTube player
+        let player;
+        let isMusicPlaying = false; // To track if music is explicitly playing (unmuted)
+
+        // This function will be called when the YouTube IFrame Player API is ready.
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player-container', {
+                videoId: 'V_A6M0Trc2E', // The ID of the YouTube video
+                playerVars: {
+                    'autoplay': 1,      // Autoplay the video (will be muted due to browser policies)
+                    'controls': 0,      // Hide video controls
+                    'showinfo': 0,      // Hide video title and uploader info
+                    'rel': 0,           // Do not show related videos
+                    'modestbranding': 1,// Hide YouTube logo
+                    'loop': 1,          // Loop the video
+                    'playlist': 'V_A6M0Trc2E', // Required for looping a single video
+                    'mute': 1           // Start muted to allow autoplay (browser policy)
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // Player is ready, attempt to play (still muted)
+            event.target.playVideo();
+            updateMusicControlIcon(false); // Music starts muted (speaker-off icon)
+        }
+
+        function onPlayerStateChange(event) {
+            // Handle specific player states if needed (e.g., if video ends and needs to restart, though loop should handle it)
+        }
+
         // DOM Elements for the main design
         const buddhaImageContainer = document.getElementById('buddha-image-container'); // Original Buddha image container
         const innerHaloContainer = document.getElementById('inner-halo-container'); // Bulbs for Buddha image container
         const overlay = document.getElementById('overlay');
         const fingerIcon = document.getElementById('finger-icon');
+        const musicControlBtn = document.getElementById('music-control-btn');
+        const speakerIconOn = document.getElementById('speaker-icon-on');
+        const speakerIconOff = document.getElementById('speaker-icon-off');
 
         // DOM Elements for the new zoom window
         const imageZoomWindow = document.getElementById('full-screen-zoom-window'); // Renamed for clarity
@@ -636,6 +728,42 @@
         }
 
         /**
+         * Toggles music play/pause and mute/unmute.
+         */
+        function toggleMusic() {
+            if (player) {
+                if (player.isMuted()) {
+                    player.unMute();
+                    updateMusicControlIcon(true);
+                    isMusicPlaying = true;
+                } else if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    player.mute();
+                    updateMusicControlIcon(false);
+                    isMusicPlaying = false;
+                } else {
+                    player.playVideo();
+                    player.unMute(); // Unmute if paused and then played
+                    updateMusicControlIcon(true);
+                    isMusicPlaying = true;
+                }
+            }
+        }
+
+        /**
+         * Updates the speaker icon based on mute status.
+         * @param {boolean} isMuted - True if music is muted, false otherwise.
+         */
+        function updateMusicControlIcon(isMuted) {
+            if (isMuted) {
+                speakerIconOn.style.display = 'block';
+                speakerIconOff.style.display = 'none';
+            } else {
+                speakerIconOn.style.display = 'none';
+                speakerIconOff.style.display = 'block';
+            }
+        }
+
+        /**
          * Handles sharing content via Web Share API or fallbacks.
          */
         function shareContent() {
@@ -731,6 +859,8 @@
             copyrightBtn.addEventListener('click', showCopyrightPopup);
             shareBtn.addEventListener('click', shareContent);
 
+            // Add event listener for music control button
+            musicControlBtn.addEventListener('click', toggleMusic);
 
             // Start the finger icon animation cycle after initial 30 seconds
             setTimeout(() => {
