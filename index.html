@@ -161,34 +161,31 @@
             const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
             const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
 
-            // Clear any existing bulbs in the container, but preserve images if they exist
-            // We'll re-append bulbs after ensuring images are in place.
-            const existingBulbs = containerElement.querySelectorAll(`.${bulbClassName}`);
-            existingBulbs.forEach(bulb => bulb.remove());
+            // Clear any existing bulbs
+            containerElement.innerHTML = '';
 
+            // Get the actual border-radius value in pixels for rectangular elements
+            const borderRadiusPx = parseFloat(style.borderTopLeftRadius); // Assuming all corners are the same
 
             for (let i = 0; i < numberOfBulbs; i++) {
                 const bulb = document.createElement('div');
-                bulb.classList.add(bulbClassName); // Apply the specified bulb styling class
+                bulb.classList.add(bulbClassName);
 
                 let x, y;
 
                 if (isCircular) {
-                    // For circles, distribute evenly around the circumference
-                    const angle = (i / numberOfBulbs) * 2 * Math.PI; // Angle in radians
-                    const effectiveRadius = effectiveWidth / 2; // Assuming circular, width == height
-
-                    // Calculate the x and y position for the bulb on the circumference of the effective circle
-                    // Offset by 90 degrees (Math.PI / 2) to start the first bulb at the top.
+                    // Existing circular logic for outer circles
+                    const angle = (i / numberOfBulbs) * 2 * Math.PI;
+                    const effectiveRadius = effectiveWidth / 2;
                     x = (containerWidth / 2) + effectiveRadius * Math.cos(angle - Math.PI / 2);
                     y = (containerHeight / 2) + effectiveRadius * Math.sin(angle - Math.PI / 2);
                 } else {
-                    // For rectangles, distribute along the perimeter
+                    // Logic for non-circular (rectangular with rounded corners) elements like Buddha image slot
                     const perimeter = 2 * (effectiveWidth + effectiveHeight);
                     const segmentLength = perimeter / numberOfBulbs;
                     let currentLength = i * segmentLength;
 
-                    // Calculate position along the rectangle's perimeter
+                    // Calculate initial position assuming a sharp rectangle outline
                     if (currentLength < effectiveWidth) { // Top edge
                         x = offsetFromContainerEdge + currentLength;
                         y = offsetFromContainerEdge;
@@ -202,13 +199,25 @@
                         x = offsetFromContainerEdge;
                         y = offsetFromContainerEdge + effectiveHeight - (currentLength - (2 * effectiveWidth + effectiveHeight));
                     }
-                }
 
-                // Set the position of the bulb relative to the container.
-                // The CSS 'transform: translate(-50%, -50%);' centers the bulb itself at (x, y).
+                    // *** Corner exclusion logic for rectangular shapes ***
+                    // Define a threshold for corner detection, based on the actual border-radius
+                    const cornerThreshold = borderRadiusPx; // Use the full border-radius for exclusion
+
+                    // Check if the calculated bulb position falls within any of the four corner regions
+                    const isTopLeftCorner = (x < offsetFromContainerEdge + cornerThreshold && y < offsetFromContainerEdge + cornerThreshold);
+                    const isTopRightCorner = (x > (offsetFromContainerEdge + effectiveWidth) - cornerThreshold && y < offsetFromContainerEdge + cornerThreshold);
+                    const isBottomLeftCorner = (x < offsetFromContainerEdge + cornerThreshold && y > (offsetFromContainerEdge + effectiveHeight) - cornerThreshold);
+                    const isBottomRightCorner = (x > (offsetFromContainerEdge + effectiveWidth) - cornerThreshold && y > (offsetFromContainerEdge + effectiveHeight) - cornerThreshold);
+
+                    // If the bulb is in a corner region, skip adding it to the DOM
+                    if (isTopLeftCorner || isTopRightCorner || isBottomLeftCorner || isBottomRightCorner) {
+                        continue; // Skip this iteration, effectively removing the bulb
+                    }
+                }
+                // Only append bulb if it wasn't a corner bulb
                 bulb.style.left = `${(x / containerWidth) * 100}%`;
                 bulb.style.top = `${(y / containerHeight) * 100}%`;
-
                 containerElement.appendChild(bulb);
             }
         }
