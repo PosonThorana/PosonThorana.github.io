@@ -17,8 +17,6 @@
             font-family: 'Noto Sans Sinhala Black', 'Inter', sans-serif;
         }
 
-        /* The wavy-bottom class is removed as the rectangle is now plain */
-
         /* Base styling for outer circle bulbs */
         .outline-bulb {
             position: absolute; /* Position bulbs absolutely within their parent circle */
@@ -43,7 +41,7 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Styles for the overlay when an image is zoomed */
+        /* Styles for the overlay (dark background when zoom window is active) */
         .overlay {
             position: fixed;
             top: 0;
@@ -51,25 +49,79 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
-            z-index: 40; /* Below the zoomed image, but above other content */
-            display: none; /* Hidden by default */
-            transition: opacity 0.3s ease-in-out;
+            z-index: 90; /* Below the zoomed window, but above main content */
             opacity: 0;
+            pointer-events: none; /* Allows clicks to pass through when not active */
+            transition: opacity 0.3s ease-in-out;
         }
 
         .overlay.active {
-            display: block;
             opacity: 1;
+            pointer-events: auto; /* Captures clicks when active */
         }
 
-        /* Styles for the zoomed image within the rectangle */
-        .zoomed-image {
-            object-fit: cover; /* Ensures the image fills the rectangle */
-            transform: none !important; /* Override any existing transforms */
-            top: 0 !important; /* Reset top position */
-            height: 100% !important; /* Ensure it fills height */
-            z-index: 55; /* Keep it on top */
-            transition: all 0.3s ease-in-out; /* Smooth transition */
+        /* Styles for the full screen zoom window */
+        #full-screen-zoom-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8); /* Start slightly smaller and centered */
+            opacity: 0;
+            pointer-events: none; /* Initially not interactive */
+            z-index: 100; /* On top of everything */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: black;
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 10px; /* Padding for the entire window */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            width: 250px; /* Example fixed width for the entire window */
+            height: 350px; /* Example fixed height for the entire window */
+            border: 2px solid #fbbf24; /* yellow-500 border for the main window */
+        }
+
+        #full-screen-zoom-window.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1); /* Zoom to original size */
+            pointer-events: auto; /* Make interactive */
+        }
+
+        /* Styles for the image display area inside the zoom window */
+        #image-display-area {
+            position: relative; /* For internal bulbs */
+            width: 180px; /* Fixed width for the square image area */
+            height: 180px; /* Fixed height for the square image area */
+            background-color: black;
+            border: 2px solid #fbbf24; /* Yellow border for the image area */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Hide any overflow from image */
+            border-radius: 0.5rem; /* rounded-lg */
+        }
+
+        #zoomed-display-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensure image fits while maintaining aspect ratio */
+        }
+
+        /* Styles for the title bar inside the zoom window */
+        #zoomed-image-title-bar {
+            width: 100%; /* Match width of image display area */
+            height: 50px; /* Fixed height for title bar */
+            background-color: #fbbf24; /* yellow-500 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: bold; /* font-bold */
+            color: black; /* text-black */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-top: 15px; /* Space between image area and title bar */
         }
     </style>
 </head>
@@ -84,14 +136,12 @@
          It's set to 'relative' so its children can be absolutely positioned within it.
          Fixed width and height for a non-responsive layout. -->
     <div class="relative w-[300px] h-[533px] bg-black rounded-lg shadow-2xl">
-        <!-- Central Rectangle (Buddha Image Slot) -->
-        <!-- Background changed to black. Roundness adjusted. Removed overflow-hidden. -->
+        <!-- Central Rectangle (Buddha Image Slot) - Original Layout -->
         <div id="buddha-image-container" class="absolute left-[50%] -translate-x-1/2 top-[95px] w-[105px] h-[373px] bg-black rounded-[2.5rem] flex items-center justify-center shadow-xl z-50 border-2 border-yellow-500">
             <!-- Inner container for the Buddha image slot bulbs. No inset to control positioning via JS offset. -->
             <div id="inner-halo-container" class="absolute inset-0 z-52"></div>
-            <!-- Buddha Image -->
-            <!-- Image src updated to direct path, top adjusted, and rotation adjusted -->
-            <img id="buddha-main-image" src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1 transition-all duration-300 ease-in-out">
+            <!-- Original Buddha Image -->
+            <img src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1">
         </div>
 
         <!-- Circles -->
@@ -152,16 +202,33 @@
         </div>
     </div>
 
+    <!-- NEW: Full Screen Zoom Window -->
+    <div id="full-screen-zoom-window">
+        <!-- Image display area inside the zoom window -->
+        <div id="image-display-area">
+            <img id="zoomed-display-image" src="" alt="Zoomed Image">
+        </div>
+        <!-- Title bar for the zoomed image -->
+        <div id="zoomed-image-title-bar">
+            <h2 id="zoomed-image-title" class="text-2xl font-bold text-center">Image Title</h2>
+        </div>
+    </div>
+
     <script>
-        // DOM Elements
-        const buddhaImageContainer = document.getElementById('buddha-image-container');
-        const buddhaMainImage = document.getElementById('buddha-main-image');
-        const innerHaloContainer = document.getElementById('inner-halo-container');
+        // DOM Elements for the main design
+        const buddhaImageContainer = document.getElementById('buddha-image-container'); // Original Buddha image container
+        const innerHaloContainer = document.getElementById('inner-halo-container'); // Bulbs for Buddha image container
         const overlay = document.getElementById('overlay');
 
-        // Original Buddha image source and classes for resetting
+        // DOM Elements for the new zoom window
+        const fullScreenZoomWindow = document.getElementById('full-screen-zoom-window');
+        const imageDisplayArea = document.getElementById('image-display-area'); // Area within zoom window for image
+        const zoomedDisplayImage = document.getElementById('zoomed-display-image'); // Image element inside zoom window
+        const zoomedImageTitle = document.getElementById('zoomed-image-title'); // Title element inside zoom window
+
+        // Original Buddha image source and classes (for resetting)
         const originalBuddhaImageSrc = './budhdha.png';
-        const originalBuddhaImageClasses = 'absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1 transition-all duration-300 ease-in-out';
+        const originalBuddhaImageClasses = 'absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1';
 
         // Array of colors for the outer bulbs
         const outerBulbColors = [
@@ -207,7 +274,7 @@
             const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
             const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
 
-            // Corrected: Only clear existing bulbs of the specified class, preserving other content like images.
+            // Only clear existing bulbs of the specified class, preserving other content like images.
             const existingBulbs = containerElement.querySelectorAll(`.${bulbClassName}`);
             existingBulbs.forEach(bulb => bulb.remove());
 
@@ -292,7 +359,7 @@
                 }
             });
 
-            // Animate inner halo bulbs (different pattern/colors)
+            // Animate inner halo bulbs (different pattern/colors) - for the main rectangle's outer bulbs
             if (innerHaloContainer) {
                 const innerBulbs = innerHaloContainer.querySelectorAll('.inner-halo-bulb');
                 if (innerBulbs.length === 0) return;
@@ -315,40 +382,62 @@
                     });
                 }
             }
+
+            // Animate bulbs for the new zoom window's image display area
+            if (imageDisplayArea) {
+                const zoomWindowBulbs = imageDisplayArea.querySelectorAll('.inner-halo-bulb');
+                if (zoomWindowBulbs.length === 0) {
+                     // Ensure bulbs are created if they don't exist yet
+                    createOutlineBulbs(imageDisplayArea, 20, 'inner-halo-bulb', 2); // Small offset for the inner square
+                }
+                const zoomPatternType = Math.floor(Math.random() * 2); // 0: random, 1: sequential
+
+                if (zoomPatternType === 0) {
+                    zoomWindowBulbs.forEach(bulb => {
+                        const randomColor = innerBulbColors[Math.floor(Math.random() * innerBulbColors.length)];
+                        bulb.style.backgroundColor = randomColor;
+                    });
+                } else if (zoomPatternType === 1) {
+                    let delay = 0;
+                    zoomWindowBulbs.forEach((bulb, index) => {
+                        setTimeout(() => {
+                            bulb.style.backgroundColor = innerBulbColors[index % innerBulbColors.length];
+                        }, delay);
+                        delay += 30;
+                    });
+                }
+            }
         }
 
         /**
-         * Zooms an image into the central Buddha image slot.
+         * Zooms an image into the new full-screen zoom window.
          * @param {string} imageUrl - The URL of the image to zoom.
+         * @param {string} imageAlt - The alt text of the image to use as title.
          */
-        function zoomImage(imageUrl) {
-            // Set the image source
-            buddhaMainImage.src = imageUrl;
-            // Apply zoomed styles
-            buddhaMainImage.className = 'absolute w-full h-full object-cover rounded-[2.5rem] z-55 transition-all duration-300 ease-in-out';
-            
-            // Activate the overlay
+        function zoomImage(imageUrl, imageAlt) {
+            zoomedDisplayImage.src = imageUrl;
+            zoomedDisplayImage.alt = imageAlt;
+            zoomedImageTitle.textContent = imageAlt.replace('Circle Image ', 'Image '); // Set a more readable title
+
+            // Activate overlay and show zoom window with animation
             overlay.classList.add('active');
-            // Hide inner halo bulbs temporarily for clarity
-            innerHaloContainer.style.display = 'none';
+            fullScreenZoomWindow.classList.add('active');
+
+            // Initialize bulbs for the imageDisplayArea in the zoom window
+            createOutlineBulbs(imageDisplayArea, 20, 'inner-halo-bulb', 2);
         }
 
         /**
-         * Resets the central image slot back to the original Buddha image.
+         * Resets the full-screen zoom window and overlay.
          */
         function resetZoom() {
-            // Revert image source and styles
-            buddhaMainImage.src = originalBuddhaImageSrc;
-            buddhaMainImage.className = originalBuddhaImageClasses;
-
-            // Deactivate the overlay
+            // Deactivate overlay and hide zoom window with animation
             overlay.classList.remove('active');
-            // Show inner halo bulbs again
-            innerHaloContainer.style.display = 'block';
+            fullScreenZoomWindow.classList.remove('active');
         }
 
-        // Initialize all bulbs when the DOM is loaded
-        function initializeAllBulbs() {
+        // Initialize all bulbs for the main design when the DOM is loaded
+        function initializeAllMainDesignBulbs() {
             const circleIds = ['circle-1', 'circle-2', 'circle-3', 'circle-4', 'circle-5', 'circle-6', 'circle-7'];
             const numberOfOuterBulbsPerCircle = 30; // Number of bulbs around the circumference for outer circles
             const outerBulbOffset = 5; // Pixels inwards from the border for outer bulbs (border is 2px)
@@ -361,31 +450,31 @@
                 }
             });
 
-            // Initialize bulbs for the inner halo container
+            // Initialize bulbs for the inner halo container (main rectangle's outer bulbs)
             if (innerHaloContainer) {
                 const numberOfInnerBulbs = 20; // Fewer, denser bulbs for inner halo
-                // This offset is from the *edge of the inner-halo-container*, which itself is inset-0 from its parent.
                 const innerBulbOffset = 5; // Increased offset to create more space
                 createOutlineBulbs(innerHaloContainer, numberOfInnerBulbs, 'inner-halo-bulb', innerBulbOffset);
             }
-
-            animateBulbs(); // Initial call to light up bulbs immediately
         }
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
-            initializeAllBulbs();
-            // Start the animation loop
+            initializeAllMainDesignBulbs(); // Initialize bulbs for the main design
+
+            // Start the animation loop for all bulbs
             setInterval(animateBulbs, 1500); // Change pattern every 1.5 seconds
 
             // Add click listeners to all circle images
-            const circleImages = document.querySelectorAll('[id^="circle-"] img');
-            circleImages.forEach(img => {
-                img.addEventListener('click', (event) => {
-                    // Stop event propagation to prevent the body click from triggering immediately
-                    event.stopPropagation(); 
-                    zoomImage(img.src);
-                });
+            const circleDivs = document.querySelectorAll('[id^="circle-"]'); // Select the div, not just the img
+            circleDivs.forEach(circleDiv => {
+                const img = circleDiv.querySelector('img'); // Get the img inside the div
+                if (img) {
+                    img.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Prevent background click immediately
+                        zoomImage(img.src, img.alt); // Pass image src and alt
+                    });
+                }
             });
 
             // Add click listener to the overlay to reset zoom
@@ -393,9 +482,9 @@
                 resetZoom();
             });
 
-            // Add click listener to the buddha image container itself to prevent reset when clicking on the zoomed image
-            buddhaImageContainer.addEventListener('click', (event) => {
-                event.stopPropagation(); // Prevent clicks on the image from triggering body click
+            // Prevent clicks inside the zoom window from closing it
+            fullScreenZoomWindow.addEventListener('click', (event) => {
+                event.stopPropagation();
             });
         });
     </script>
