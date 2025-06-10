@@ -9,12 +9,12 @@
     <style>
         /* Custom font for a modern look */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        /* Import Noto Sans Sinhala Black from Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala+Black&display=swap');
+        /* Import Noto Sans Sinhala Black and Regular from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap');
 
         body {
-            /* Prioritize Noto Sans Sinhala Black, fallback to Inter and sans-serif */
-            font-family: 'Noto Sans Sinhala Black', 'Inter', sans-serif;
+            /* Prioritize Noto Sans Sinhala for all weights, fallback to Inter and sans-serif */
+            font-family: 'Noto Sans Sinhala', 'Inter', sans-serif;
         }
 
         /* Base styling for outer circle bulbs */
@@ -120,17 +120,31 @@
         /* Styles for the title bar inside the zoom window */
         #zoomed-image-title-bar {
             width: 100%; /* Match width of image display area */
-            height: 50px; /* Fixed height for title bar */
+            height: 80px; /* Increased height to accommodate title and subtitle */
             background-color: #fbbf24; /* yellow-500 */
             display: flex;
+            flex-direction: column; /* Stack title and subtitle vertically */
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem; /* text-2xl */
-            font-weight: bold; /* font-bold */
-            color: black; /* text-black */
+            padding: 5px; /* Add some padding */
             border-radius: 0.5rem; /* rounded-lg */
             margin-top: 20px; /* Increased space between image area and title bar */
             z-index: 2; /* Ensure it's above the bulbs */
+            text-align: center; /* Center the text */
+        }
+
+        #zoomed-image-title {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 900; /* Black weight for Noto Sans Sinhala */
+            color: black; /* text-black */
+            line-height: 1.2; /* Adjust line height for stacking */
+        }
+
+        #zoomed-image-subtitle {
+            font-size: 0.9rem; /* Smaller font size for subtitle */
+            font-weight: 400; /* Regular weight for Noto Sans Sinhala */
+            color: black; /* text-black */
+            margin-top: 5px; /* Small margin from title */
         }
     </style>
 </head>
@@ -223,6 +237,7 @@
         <!-- Title bar for the zoomed image -->
         <div id="zoomed-image-title-bar">
             <h2 id="zoomed-image-title" class="text-2xl font-bold text-center">Image Title</h2>
+            <p id="zoomed-image-subtitle" class="text-sm font-normal text-center">Image Subtitle</p>
         </div>
     </div>
 
@@ -238,6 +253,7 @@
         const imageDisplayArea = document.getElementById('image-display-area'); // Area within zoom window for image
         const zoomedDisplayImage = document.getElementById('zoomed-display-image'); // Image element inside zoom window
         const zoomedImageTitle = document.getElementById('zoomed-image-title'); // Title element inside zoom window
+        const zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle'); // Subtitle element inside zoom window
 
         // Original Buddha image source and classes (for resetting)
         const originalBuddhaImageSrc = './budhdha.png';
@@ -265,6 +281,17 @@
             '#FFFFE0', // Light Yellow
             '#FFFACD'  // Lemon Chiffon
         ];
+
+        // Mapping for image alt text to Sinhala titles and subtitles
+        const imageTitles = {
+            "Circle Image 1": { title: "පළමු සතිය", subtitle: "ඇසතු බෝ රුක මුල" },
+            "Circle Image 2": { title: "දෙවන සතිය", subtitle: "අනිමිසලෝචන පූජාව" },
+            "Circle Image 3": { title: "තෙවන සතිය", subtitle: "රුවන් සක්මන" },
+            "Circle Image 4": { title: "සිව්වන සතිය", subtitle: "රුවන් ගෙයි වැඩ සිටීම" },
+            "Circle Image 5": { title: "පස්වන සතිය", subtitle: "අජපාල නුගරුක මුල" },
+            "Circle Image 6": { title: "සයවන සතිය", subtitle: "මුචලින්ද නාග දරණය" },
+            "Circle Image 7": { title: "සත්වන සතිය", subtitle: "රජනායක කිරි රුක මුල" }
+        };
 
 
         /**
@@ -442,7 +469,16 @@
         function zoomImage(imageUrl, imageAlt) {
             zoomedDisplayImage.src = imageUrl;
             zoomedDisplayImage.alt = imageAlt;
-            zoomedImageTitle.textContent = imageAlt.replace('Circle Image ', 'Image '); // Set a more readable title
+            
+            const titles = imageTitles[imageAlt];
+            if (titles) {
+                zoomedImageTitle.textContent = titles.title;
+                zoomedImageSubtitle.textContent = titles.subtitle;
+            } else {
+                zoomedImageTitle.textContent = "Image Title"; // Fallback
+                zoomedImageSubtitle.textContent = "";
+            }
+
 
             // Activate overlay and show zoom window with animation
             overlay.classList.add('active');
