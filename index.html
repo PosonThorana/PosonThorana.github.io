@@ -9,8 +9,12 @@
     <style>
         /* Custom font for a modern look */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        /* Import Noto Sans Sinhala Black from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala+Black&display=swap');
+
         body {
-            font-family: 'Inter', sans-serif;
+            /* Prioritize Noto Sans Sinhala Black, fallback to Inter and sans-serif */
+            font-family: 'Noto Sans Sinhala Black', 'Inter', sans-serif;
         }
 
         /* The wavy-bottom class is removed as the rectangle is now plain */
@@ -109,8 +113,8 @@
 
         <!-- Bottom Title Rectangle (now a plain rectangle) -->
         <!-- Fixed height and placed behind circles with z-0 -->
-        <div class="absolute bottom-[-10px] left-0 w-full h-[106px] bg-yellow-500 flex items-center justify-center p-4 shadow-xl rounded-lg z-0">
-            <h1 class="text-black text-2xl sm:text-3xl md:text-4xl font-bold text-center">
+        <div class="absolute bottom-[-10px] left-0 w-full h-[106px] bg-yellow-500 flex items-center justify-center p-4 shadow-xl rounded-lg z-0 pt-4">
+            <h1 class="text-black text-3xl sm:text-4xl md:text-5xl font-bold text-center">
                 සත් සතිය
             </h1>
         </div>
@@ -207,20 +211,25 @@
 
         // Function to animate outline bulbs based on their class
         function animateBulbs() {
+            // Declare patternTypeOuter and innerPatternTypeForHalo at the function scope
+            // This ensures they are always defined, resolving potential ReferenceErrors
+            let patternTypeOuter = 0;
+            let innerPatternTypeForHalo = 0;
+
             // Animate outer circles' bulbs
             const allOuterCircleContainers = document.querySelectorAll('[id^="circle-"]');
             allOuterCircleContainers.forEach(container => {
                 const bulbs = container.querySelectorAll('.outline-bulb');
                 if (bulbs.length === 0) return;
 
-                const patternType = Math.floor(Math.random() * 3); // 0: random, 1: sequential, 2: ripple
+                patternTypeOuter = Math.floor(Math.random() * 3); // Re-assign for each container
 
-                if (patternType === 0) {
+                if (patternTypeOuter === 0) {
                     bulbs.forEach(bulb => {
                         const randomColor = outerBulbColors[Math.floor(Math.random() * outerBulbColors.length)];
                         bulb.style.backgroundColor = randomColor;
                     });
-                } else if (patternType === 1) {
+                } else if (patternTypeOuter === 1) {
                     let delay = 0;
                     bulbs.forEach((bulb, index) => {
                         setTimeout(() => {
@@ -228,7 +237,7 @@
                         }, delay);
                         delay += 50;
                     });
-                } else if (patternType === 2) {
+                } else if (patternTypeOuter === 2) {
                     const startBulbIndex = Math.floor(Math.random() * bulbs.length);
                     let delay = 0;
                     bulbs.forEach((bulb, index) => {
@@ -250,14 +259,14 @@
                 if (innerBulbs.length === 0) return;
 
                 // For inner bulbs, let's always use a sequential or a simple random blink
-                const innerPatternType = Math.floor(Math.random() * 2); // 0: random, 1: sequential
+                innerPatternTypeForHalo = Math.floor(Math.random() * 2); // Re-assign here
 
-                if (innerPatternType === 0) {
+                if (innerPatternTypeForHalo === 0) {
                     innerBulbs.forEach(bulb => {
                         const randomColor = innerBulbColors[Math.floor(Math.random() * innerBulbColors.length)];
                         bulb.style.backgroundColor = randomColor;
                     });
-                } else if (innerPatternType === 1) {
+                } else if (innerPatternTypeForHalo === 1) {
                     let delay = 0;
                     innerBulbs.forEach((bulb, index) => {
                         setTimeout(() => {
