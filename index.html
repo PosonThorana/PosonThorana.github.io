@@ -242,7 +242,7 @@
         /* Styles for audio hint */
         #audio-hint {
             position: absolute;
-            top: 10px; /* Position above the music control button, within black background */
+            top: 10px; /* Position relative to parent, within black background */
             right: 60px; /* Adjusted to make space for text */
             z-index: 51; /* Above music button, below overlay/popups */
             opacity: 0;
@@ -250,9 +250,9 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end; /* Align text to the right for pointing */
-            color: yellow; /* Hint color */
-            font-size: 0.75rem; /* text-xs */
-            font-weight: bold;
+            color: white; /* Changed to white */
+            font-size: 0.9rem; /* Increased font size */
+            font-weight: 900; /* Made bold/black */
             transition: opacity 0.5s ease-in-out;
             text-align: right;
         }
@@ -276,12 +276,13 @@
             transform: rotate(20deg) scaleX(-1); /* Angle the hand to point towards button, flip horizontally */
             margin-bottom: 5px;
             margin-right: -15px; /* Adjust SVG closer to button */
+            color: yellow; /* Hand icon remains yellow */
         }
 
         /* Styles for circle hint */
         #circle-hint {
             position: absolute;
-            top: 100px; /* Position above circle-1 */
+            top: 30px; /* Moved higher up */
             left: 50%;
             transform: translateX(-50%);
             z-index: 20; /* Same as finger-icon */
@@ -291,8 +292,8 @@
             flex-direction: column;
             align-items: center;
             color: white; /* White text on black background */
-            font-size: 0.85rem;
-            font-weight: bold;
+            font-size: 1.1rem; /* Increased font size */
+            font-weight: 900; /* Made bold/black */
             transition: opacity 0.5s ease-in-out;
             text-align: center;
         }
@@ -312,6 +313,7 @@
             height: 40px;
             transform: rotate(90deg); /* Rotate to point downwards */
             margin-top: 5px; /* Space between text and hand */
+            color: yellow; /* Hand icon remains yellow */
         }
     </style>
 </head>
@@ -1044,11 +1046,15 @@
             // Add event listener for music control button
             if (musicControlBtn) musicControlBtn.addEventListener('click', toggleMusic);
 
-            // Start the finger icon (for circles) and circle hint animation cycle after initial 30 seconds
+            // Show audio hint after a short delay (2 seconds after DOMContentLoaded)
             setTimeout(() => {
-                showFingerIcon();
-                showCircleHint(); // Show circle hint along with the finger icon
-            }, 30000); // 30 seconds initial delay
+                showAudioHint();
+                showCircleHint(); // Show circle hint along with audio hint
+            }, 2000);
+
+            // The finger icon animation for circles will now be redundant since we have circle-hint
+            // If you still want the finger icon, its logic can be re-enabled here.
+            // For now, it will not be shown as `showFingerIcon()` is not called on `DOMContentLoaded`.
         });
     </script>
 
