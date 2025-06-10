@@ -315,6 +315,21 @@
             margin-top: 5px; /* Space between text and hand */
             color: yellow; /* Hand icon remains yellow */
         }
+
+        /* New style for the bottom copyright text */
+        #bottom-copyright-text {
+            position: absolute;
+            bottom: 60px; /* Position above the very bottom buttons */
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: normal;
+            cursor: pointer;
+            z-index: 15; /* Ensure it's above bottom buttons but below popups */
+            text-align: center;
+            padding: 5px; /* Add some padding for better click area */
+        }
     </style>
 </head>
 <!-- The body uses flexbox to center the main design container -->
@@ -422,13 +437,16 @@
                 සත් සතිය
             </h1>
         </div>
+
+        <!-- New: Copyright text just below the title box -->
+        <div id="bottom-copyright-text">
+            Copyright
+        </div>
     </div>
 
     <!-- Bottom Buttons Container -->
     <div id="bottom-buttons-container">
-        <button id="copyright-btn">
-            Copyrights
-        </button>
+        <!-- The Copyrights button was removed from here -->
         <button id="share-btn">
             <svg class="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M15 8a3 3 0 10-2.977-2.977l-4.242 2.438A3 3 0 106 13a3 3 0 10-2.977-2.977l4.242-2.438A3 3 0 1015 8zm0 2a1 1 0 110-2 1 1 0 010 2zm-6 3a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
             Share
@@ -523,6 +541,7 @@
         let speakerIconOff;
         let audioHint;
         let circleHint; // New DOM element for circle hint
+        let bottomCopyrightText; // New DOM element for bottom copyright text
 
         let imageZoomWindow;
         let zoomWindowBulbsContainer;
@@ -531,7 +550,7 @@
         let zoomedImageTitle;
         let zoomedImageSubtitle;
 
-        let copyrightBtn;
+        let copyrightBtn; // This will now be null as the button is removed
         let shareBtn;
         let copyrightPopup;
 
@@ -730,10 +749,10 @@
                 } else if (zoomPatternType === 2) {
                     const startBulbIndex = Math.floor(Math.random() * zoomWindowBulbs.length);
                     let delay = 0;
-                    zoomWindowBulbs.forEach((bulb, index) => {
+                    bulbs.forEach((bulb, index) => {
                         const distance = Math.min(
                             Math.abs(index - startBulbIndex),
-                            zoomWindowBulbs.length - Math.abs(index - startBulbIndex)
+                            bulbs.length - Math.abs(index - startBulbIndex)
                         );
                         setTimeout(() => {
                             bulb.style.backgroundColor = outerBulbColors[distance % outerBulbColors.length];
@@ -990,6 +1009,7 @@
             speakerIconOff = document.getElementById('speaker-icon-off');
             audioHint = document.getElementById('audio-hint');
             circleHint = document.getElementById('circle-hint'); // Get the new circle hint element
+            bottomCopyrightText = document.getElementById('bottom-copyright-text'); // Initialize new copyright text element
 
             imageZoomWindow = document.getElementById('full-screen-zoom-window');
             zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container');
@@ -997,7 +1017,7 @@
             zoomedImageTitle = document.getElementById('zoomed-image-title');
             zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle');
 
-            copyrightBtn = document.getElementById('copyright-btn');
+            // copyrightBtn is no longer present in HTML, so no need to initialize it.
             shareBtn = document.getElementById('share-btn');
             copyrightPopup = document.getElementById('copyright-popup');
 
@@ -1040,13 +1060,18 @@
             }
 
             // Add event listeners for new buttons
-            if (copyrightBtn) copyrightBtn.addEventListener('click', showCopyrightPopup);
+            // copyrightBtn is removed, so its event listener is also removed.
             if (shareBtn) shareBtn.addEventListener('click', shareContent);
+
+            // Add event listener for the new bottom copyright text
+            if (bottomCopyrightText) {
+                bottomCopyrightText.addEventListener('click', showCopyrightPopup);
+            }
 
             // Add event listener for music control button
             if (musicControlBtn) musicControlBtn.addEventListener('click', toggleMusic);
 
-            // Show audio hint after a short delay (2 seconds after DOMContentLoaded)
+            // Show audio hint and circle hint after a short delay (2 seconds after DOMContentLoaded)
             setTimeout(() => {
                 showAudioHint();
                 showCircleHint(); // Show circle hint along with audio hint
