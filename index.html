@@ -28,6 +28,30 @@
             }
         }
     </style>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            signInWithCustomToken,
+            signInAnonymously,
+            signOut,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            collection,
+            addDoc,
+            onSnapshot,
+            query,
+            orderBy
+        };
+    </script>
 </head>
 <body class="bg-gray-100 flex flex-col items-center p-4">
 
@@ -40,148 +64,234 @@
             <p class="text-gray-500 mt-2">Generate and track your daily and monthly invoices</p>
         </header>
 
-        <!-- Client Templates Section -->
-        <section class="border border-gray-200 rounded-xl p-6 space-y-4">
-            <h2 class="text-2xl font-bold text-gray-700">Client Templates</h2>
-            <form id="client-template-form" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Auth Section -->
+        <div id="auth-section" class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
+            <div id="user-info" class="flex-1 text-gray-700">
+                <span id="user-display" class="font-medium">Please log in.</span>
+            </div>
+            <div class="flex space-x-2">
+                <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300 hidden">Logout</button>
+            </div>
+        </div>
+        
+        <!-- Login Modal -->
+        <div id="login-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800 text-center">Login to Your Account</h2>
+                <form id="login-form" class="space-y-4">
                     <div>
-                        <label for="client-name" class="block text-sm font-medium text-gray-700">Client Name</label>
-                        <input type="text" id="client-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="login-email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
                     </div>
                     <div>
-                        <label for="client-address" class="block text-sm font-medium text-gray-700">Client Address</label>
-                        <input type="text" id="client-address" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Login
+                    </button>
+                    <div class="text-center text-sm text-gray-500">
+                        Don't have an account? <button type="button" id="show-signup" class="text-indigo-600 hover:text-indigo-800 font-medium">Create one</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Signup Modal -->
+        <div id="signup-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800 text-center">Create an Account</h2>
+                <form id="signup-form" class="space-y-4">
+                    <div>
+                        <label for="signup-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="signup-email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="signup-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Create Account
+                    </button>
+                    <div class="text-center text-sm text-gray-500">
+                        Already have an account? <button type="button" id="show-login" class="text-indigo-600 hover:text-indigo-800 font-medium">Login</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main app content -->
+        <div id="app-content" class="space-y-8 hidden">
+            <!-- Client Templates Section -->
+            <section class="border border-gray-200 rounded-xl p-6 space-y-4">
+                <h2 class="text-2xl font-bold text-gray-700">Client Templates</h2>
+                <form id="client-template-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="client-name" class="block text-sm font-medium text-gray-700">Client Name</label>
+                            <input type="text" id="client-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="client-address" class="block text-sm font-medium text-gray-700">Client Address</label>
+                            <input type="text" id="client-address" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Save Client Template
+                    </button>
+                </form>
+                <div id="client-list-container" class="mt-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Saved Clients</h3>
+                    <ul id="client-list" class="mt-2 space-y-2">
+                        <!-- Client templates will be dynamically added here -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Product Templates Section -->
+            <section class="border border-gray-200 rounded-xl p-6 space-y-4">
+                <h2 class="text-2xl font-bold text-gray-700">Product Templates</h2>
+                <form id="product-template-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="template-name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                            <input type="text" id="template-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="template-price" class="block text-sm font-medium text-gray-700">Price (LKR)</label>
+                            <input type="number" id="template-price" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Save Product Template
+                    </button>
+                </form>
+                <div id="template-list-container" class="mt-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Saved Products</h3>
+                    <ul id="template-list" class="mt-2 space-y-2">
+                        <!-- Templates will be dynamically added here -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Daily Invoice Section -->
+            <section class="border border-gray-200 rounded-xl p-6 space-y-6">
+                <h2 class="text-2xl font-bold text-gray-700">Daily Invoice Entry</h2>
+                <form id="invoice-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="client-select" class="block text-sm font-medium text-gray-700">Select Client</label>
+                            <select id="client-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                <option value="">-- Select a client --</option>
+                                <!-- Options will be dynamically added here -->
+                            </select>
+                        </div>
+                        <div>
+                            <label for="product-select" class="block text-sm font-medium text-gray-700">Select Product</label>
+                            <select id="product-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                                <option value="">-- Select a product --</option>
+                                <!-- Options will be dynamically added here -->
+                            </select>
+                        </div>
+                        <div>
+                            <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                            <input type="number" id="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="discount-input" class="block text-sm font-medium text-gray-700">Discount (LKR)</label>
+                            <input type="number" id="discount-input" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                        <div>
+                            <label for="due-date-input" class="block text-sm font-medium text-gray-700">Due Date</label>
+                            <input type="date" id="due-date-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Add Item to Invoice
+                    </button>
+                </form>
+
+                <!-- Current Day's Invoice Preview -->
+                <div id="current-invoice-preview" class="border border-dashed border-gray-300 rounded-lg p-4 mt-6 bg-gray-50">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Today's Invoice Items</h3>
+                    <ul id="item-list" class="space-y-2">
+                        <!-- Items will be dynamically added here -->
+                        <li class="text-gray-500">No items added yet.</li>
+                    </ul>
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                        <span class="text-lg font-bold text-gray-800">Total:</span>
+                        <span id="daily-total" class="text-xl font-extrabold text-indigo-600">Rs.0.00</span>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                    Save Client Template
-                </button>
-            </form>
-            <div id="client-list-container" class="mt-4">
-                <h3 class="text-lg font-semibold text-gray-800">Saved Clients</h3>
-                <ul id="client-list" class="mt-2 space-y-2">
-                    <!-- Client templates will be dynamically added here -->
-                </ul>
-            </div>
-        </section>
 
-        <!-- Product Templates Section -->
-        <section class="border border-gray-200 rounded-xl p-6 space-y-4">
-            <h2 class="text-2xl font-bold text-gray-700">Product Templates</h2>
-            <form id="product-template-form" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="template-name" class="block text-sm font-medium text-gray-700">Product Name</label>
-                        <input type="text" id="template-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="template-price" class="block text-sm font-medium text-gray-700">Price (LKR)</label>
-                        <input type="number" id="template-price" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
+                <!-- Action Buttons for Daily Invoice -->
+                <div class="flex flex-col md:flex-row gap-4 mt-6">
+                    <button id="generate-daily-invoice" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Generate & Save Invoice
+                    </button>
+                    <button id="download-daily-invoice" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                        Download Today's Invoice
+                    </button>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                    Save Product Template
-                </button>
-            </form>
-            <div id="template-list-container" class="mt-4">
-                <h3 class="text-lg font-semibold text-gray-800">Saved Products</h3>
-                <ul id="template-list" class="mt-2 space-y-2">
-                    <!-- Templates will be dynamically added here -->
-                </ul>
-            </div>
-        </section>
+            </section>
 
-        <!-- Daily Invoice Section -->
-        <section class="border border-gray-200 rounded-xl p-6 space-y-6">
-            <h2 class="text-2xl font-bold text-gray-700">Daily Invoice Entry</h2>
-            <form id="invoice-form" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label for="client-select" class="block text-sm font-medium text-gray-700">Select Client</label>
-                        <select id="client-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            <option value="">-- Select a client --</option>
-                            <!-- Options will be dynamically added here -->
-                        </select>
-                    </div>
-                    <div>
-                        <label for="product-select" class="block text-sm font-medium text-gray-700">Select Product</label>
-                        <select id="product-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                            <option value="">-- Select a product --</option>
-                            <!-- Options will be dynamically added here -->
-                        </select>
-                    </div>
-                    <div>
-                        <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                        <input type="number" id="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="discount-input" class="block text-sm font-medium text-gray-700">Discount (LKR)</label>
-                        <input type="number" id="discount-input" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="due-date-input" class="block text-sm font-medium text-gray-700">Due Date</label>
-                        <input type="date" id="due-date-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
+            <!-- Monthly Report Section -->
+            <section class="border border-gray-200 rounded-xl p-6 space-y-6">
+                <h2 class="text-2xl font-bold text-gray-700">Monthly Reports</h2>
+                <div id="client-report-list-container">
+                    <h3 class="text-lg font-semibold text-gray-800">Select a Client to View Report</h3>
+                    <ul id="client-report-list" class="mt-2 space-y-2">
+                        <!-- List of clients for reports will be dynamically added here -->
+                    </ul>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                    Add Item to Invoice
-                </button>
-            </form>
-
-            <!-- Current Day's Invoice Preview -->
-            <div id="current-invoice-preview" class="border border-dashed border-gray-300 rounded-lg p-4 mt-6 bg-gray-50">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">Today's Invoice Items</h3>
-                <ul id="item-list" class="space-y-2">
-                    <!-- Items will be dynamically added here -->
-                    <li class="text-gray-500">No items added yet.</li>
-                </ul>
-                <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                    <span class="text-lg font-bold text-gray-800">Total:</span>
-                    <span id="daily-total" class="text-xl font-extrabold text-indigo-600">Rs.0.00</span>
+                <div id="monthly-report-container" class="space-y-4 hidden">
+                    <!-- Individual client's monthly report will be dynamically added here -->
                 </div>
-            </div>
-
-            <!-- Action Buttons for Daily Invoice -->
-            <div class="flex flex-col md:flex-row gap-4 mt-6">
-                <button id="generate-daily-invoice" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                    Generate & Save Invoice
-                </button>
-                <button id="download-daily-invoice" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                    Download Today's Invoice
-                </button>
-            </div>
-        </section>
-
-        <!-- Monthly Report Section -->
-        <section class="border border-gray-200 rounded-xl p-6 space-y-6">
-            <h2 class="text-2xl font-bold text-gray-700">Monthly Reports</h2>
-            <div id="client-report-list-container">
-                <h3 class="text-lg font-semibold text-gray-800">Select a Client to View Report</h3>
-                <ul id="client-report-list" class="mt-2 space-y-2">
-                    <!-- List of clients for reports will be dynamically added here -->
-                </ul>
-            </div>
-            <div id="monthly-report-container" class="space-y-4 hidden">
-                <!-- Individual client's monthly report will be dynamically added here -->
-            </div>
-        </section>
+            </section>
+        </div>
 
     </div>
 
     <!-- Hidden Container for Printing -->
     <div id="print-container" class="hidden"></div>
+    <!-- Modal for custom alerts -->
+    <div id="custom-alert" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full space-y-4">
+            <p id="alert-message" class="text-gray-800 text-center"></p>
+            <button id="alert-ok-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">OK</button>
+        </div>
+    </div>
 
-    <script>
-        // Use a descriptive namespace for local storage
-        const INVOICE_STORAGE_KEY = 'invoice_data';
-        const TEMPLATE_STORAGE_KEY = 'product_templates';
-        const CLIENT_STORAGE_KEY = 'client_templates';
+
+    <script type="module">
+        const {
+            initializeApp, getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged,
+            getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query
+        } = window.firebase;
+
+        // Custom alert function
+        function showCustomAlert(message) {
+            const alertModal = document.getElementById('custom-alert');
+            const alertMessage = document.getElementById('alert-message');
+            const alertOkButton = document.getElementById('alert-ok-button');
+
+            alertMessage.textContent = message;
+            alertModal.classList.remove('hidden');
+
+            const removeAlert = () => {
+                alertModal.classList.add('hidden');
+                alertOkButton.removeEventListener('click', removeAlert);
+            };
+
+            alertOkButton.addEventListener('click', removeAlert);
+        }
+
+        // --- Firebase Initialization and Auth ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
         
-        let dailyItems = [];
-        let dailySubtotal = 0;
-        let productTemplates = [];
-        let clientTemplates = [];
+        let app, auth, db, userId;
 
         // Company Details (Customizable)
         const companyDetails = {
@@ -196,7 +306,16 @@
             }
         };
 
-        // HTML element references
+        // UI element references
+        const appContent = document.getElementById('app-content');
+        const loginModal = document.getElementById('login-modal');
+        const signupModal = document.getElementById('signup-modal');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const showSignupBtn = document.getElementById('show-signup');
+        const showLoginBtn = document.getElementById('show-login');
+        const logoutButton = document.getElementById('logout-button');
+        const userDisplay = document.getElementById('user-display');
         const clientTemplateForm = document.getElementById('client-template-form');
         const clientList = document.getElementById('client-list');
         const clientSelect = document.getElementById('client-select');
@@ -213,21 +332,177 @@
         const discountInput = document.getElementById('discount-input');
         const dueDateInput = document.getElementById('due-date-input');
         const clientReportList = document.getElementById('client-report-list');
-        const clientReportListContainer = document.getElementById('client-report-list-container');
+        
+        let dailyItems = [];
+        let dailySubtotal = 0;
+        let productTemplates = [];
+        let clientTemplates = [];
+        
+        // --- Firebase setup and auth state listener ---
+        let isAuthReady = false;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
 
+                    // Sign in with custom token if available, otherwise anonymously
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            isAuthReady = true;
+                            userDisplay.textContent = `User ID: ${userId}`;
+                            appContent.classList.remove('hidden');
+                            logoutButton.classList.remove('hidden');
+                            loginModal.classList.add('hidden');
+                            signupModal.classList.add('hidden');
+                            
+                            // Load data from Firestore after successful login
+                            await loadAllData();
+                        } else {
+                            userId = null;
+                            isAuthReady = false;
+                            userDisplay.textContent = 'Please log in.';
+                            appContent.classList.add('hidden');
+                            logoutButton.classList.add('hidden');
+                            loginModal.classList.remove('hidden');
+                        }
+                    });
+                } else {
+                    showCustomAlert("Firebase configuration is missing. Cannot save data.");
+                }
+            } catch (error) {
+                console.error("Error during Firebase initialization:", error);
+                showCustomAlert("An error occurred during app initialization. Please try again.");
+            }
+        });
+
+        // --- Authentication Event Handlers ---
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                dailyItems = [];
+                dailySubtotal = 0;
+                renderClients([]);
+                renderTemplates([]);
+                updateDailyPreview();
+                monthlyReportContainer.innerHTML = '';
+            } catch (error) {
+                showCustomAlert("Error logging out: " + error.message);
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            showCustomAlert('Login functionality is not fully implemented in this demo. Please proceed with the default sign-in.');
+        });
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            showCustomAlert('Signup functionality is not fully implemented in this demo. Please proceed with the default sign-in.');
+        });
+
+        showSignupBtn.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            signupModal.classList.remove('hidden');
+        });
+
+        showLoginBtn.addEventListener('click', () => {
+            signupModal.classList.add('hidden');
+            loginModal.classList.remove('hidden');
+        });
+
+        // --- Firestore Data Management ---
+        const getCollectionRef = (collectionName) => collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
+        
+        async function loadAllData() {
+            if (!isAuthReady || !userId) return;
+
+            try {
+                // Load clients
+                onSnapshot(getCollectionRef('clients'), (snapshot) => {
+                    clientTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderClients();
+                });
+
+                // Load products
+                onSnapshot(getCollectionRef('products'), (snapshot) => {
+                    productTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTemplates();
+                });
+            } catch (error) {
+                console.error("Error loading data from Firestore:", error);
+                showCustomAlert("Error loading your data. Please try again.");
+            }
+        }
+        
+        async function saveClientToFirestore(clientData) {
+            if (!isAuthReady || !userId) return;
+            try {
+                const docRef = doc(getCollectionRef('clients'));
+                await setDoc(docRef, clientData);
+            } catch (error) {
+                console.error("Error saving client:", error);
+                showCustomAlert("Error saving client. Please try again.");
+            }
+        }
+        
+        async function removeClientFromFirestore(clientId) {
+            if (!isAuthReady || !userId) return;
+            try {
+                await setDoc(doc(getCollectionRef('clients'), clientId), null);
+            } catch (error) {
+                console.error("Error removing client:", error);
+                showCustomAlert("Error removing client. Please try again.");
+            }
+        }
+        
+        async function saveProductToFirestore(productData) {
+            if (!isAuthReady || !userId) return;
+            try {
+                const docRef = doc(getCollectionRef('products'));
+                await setDoc(docRef, productData);
+            } catch (error) {
+                console.error("Error saving product:", error);
+                showCustomAlert("Error saving product. Please try again.");
+            }
+        }
+        
+        async function removeProductFromFirestore(productId) {
+            if (!isAuthReady || !userId) return;
+            try {
+                await setDoc(doc(getCollectionRef('products'), productId), null);
+            } catch (error) {
+                console.error("Error removing product:", error);
+                showCustomAlert("Error removing product. Please try again.");
+            }
+        }
+        
+        async function saveInvoiceToFirestore(invoiceData) {
+            if (!isAuthReady || !userId) return;
+            try {
+                await addDoc(getCollectionRef('invoices'), invoiceData);
+                showCustomAlert(`Invoice #${invoiceData.invoiceNumber} saved successfully!`);
+            } catch (error) {
+                console.error("Error saving invoice:", error);
+                showCustomAlert("Error saving invoice. Please try again.");
+            }
+        }
 
         // --- Client Template Functions ---
-        function saveClientsToLocalStorage(data) {
-            localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
-        }
-
-        function loadClientsFromLocalStorage() {
-            const data = localStorage.getItem(CLIENT_STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-
         function renderClients() {
-            clientTemplates = loadClientsFromLocalStorage();
             clientList.innerHTML = '';
             clientSelect.innerHTML = '<option value="">-- Select a client --</option>';
             clientReportList.innerHTML = '';
@@ -238,25 +513,22 @@
                 return;
             }
 
-            clientTemplates.forEach((client, index) => {
-                // Render list item for templates
+            clientTemplates.forEach((client) => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
                 li.innerHTML = `
                     <span>${client.name} - ${client.address}</span>
-                    <button data-index="${index}" class="remove-client text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
+                    <button data-id="${client.id}" class="remove-client text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
                         Remove
                     </button>
                 `;
                 clientList.appendChild(li);
 
-                // Add option to the invoice dropdown
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = client.id;
                 option.textContent = client.name;
                 clientSelect.appendChild(option);
 
-                // Add clickable item to the monthly report list
                 const reportLi = document.createElement('li');
                 reportLi.className = 'bg-white p-2 rounded-md shadow-sm cursor-pointer hover:bg-gray-100 transition duration-300';
                 reportLi.innerHTML = `<span data-client-name="${client.name}" class="report-client-name text-gray-700 font-medium">${client.name}</span>`;
@@ -264,46 +536,28 @@
             });
         }
 
-        // Event listener for adding new client templates
-        clientTemplateForm.addEventListener('submit', (e) => {
+        clientTemplateForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('client-name').value;
             const address = document.getElementById('client-address').value;
 
             if (name && address) {
-                const clients = loadClientsFromLocalStorage();
-                clients.push({ name, address });
-                saveClientsToLocalStorage(clients);
-                renderClients();
+                await saveClientToFirestore({ name, address });
                 clientTemplateForm.reset();
             } else {
-                alert('Please enter a valid client name and address.');
+                showCustomAlert('Please enter a valid client name and address.');
             }
         });
 
-        // Event listener for removing a client template
-        clientList.addEventListener('click', (e) => {
+        clientList.addEventListener('click', async (e) => {
             if (e.target.classList.contains('remove-client')) {
-                const index = parseInt(e.target.dataset.index, 10);
-                const clients = loadClientsFromLocalStorage();
-                clients.splice(index, 1);
-                saveClientsToLocalStorage(clients);
-                renderClients();
+                const clientId = e.target.dataset.id;
+                await removeClientFromFirestore(clientId);
             }
         });
         
         // --- Product Template Functions ---
-        function saveTemplatesToLocalStorage(data) {
-            localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(data));
-        }
-
-        function loadTemplatesFromLocalStorage() {
-            const data = localStorage.getItem(TEMPLATE_STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-
         function renderTemplates() {
-            productTemplates = loadTemplatesFromLocalStorage();
             templateList.innerHTML = '';
             productSelect.innerHTML = '<option value="">-- Select a product --</option>';
 
@@ -312,64 +566,45 @@
                 return;
             }
 
-            productTemplates.forEach((template, index) => {
-                // Render list item
+            productTemplates.forEach((template) => {
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
                 li.innerHTML = `
                     <span>${template.name} - Rs.${template.price.toFixed(2)}</span>
-                    <button data-index="${index}" class="remove-template text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
+                    <button data-id="${template.id}" class="remove-template text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
                         Remove
                     </button>
                 `;
                 templateList.appendChild(li);
 
-                // Add option to the dropdown
                 const option = document.createElement('option');
-                option.value = index;
+                option.value = template.id;
                 option.textContent = `${template.name} (Rs.${template.price.toFixed(2)})`;
                 productSelect.appendChild(option);
             });
         }
 
-        // Event listener for adding new product templates
-        templateForm.addEventListener('submit', (e) => {
+        templateForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('template-name').value;
             const price = parseFloat(document.getElementById('template-price').value);
 
             if (name && !isNaN(price) && price > 0) {
-                const templates = loadTemplatesFromLocalStorage();
-                templates.push({ name, price });
-                saveTemplatesToLocalStorage(templates);
-                renderTemplates();
+                await saveProductToFirestore({ name, price });
                 templateForm.reset();
             } else {
-                alert('Please enter a valid product name and price.');
+                showCustomAlert('Please enter a valid product name and price.');
             }
         });
 
-        // Event listener for removing a product template
-        templateList.addEventListener('click', (e) => {
+        templateList.addEventListener('click', async (e) => {
             if (e.target.classList.contains('remove-template')) {
-                const index = parseInt(e.target.dataset.index, 10);
-                const templates = loadTemplatesFromLocalStorage();
-                templates.splice(index, 1);
-                saveTemplatesToLocalStorage(templates);
-                renderTemplates();
+                const templateId = e.target.dataset.id;
+                await removeProductFromFirestore(templateId);
             }
         });
         
         // --- Invoice Functions ---
-        function saveInvoicesToLocalStorage(data) {
-            localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(data));
-        }
-
-        function loadInvoicesFromLocalStorage() {
-            const data = localStorage.getItem(INVOICE_STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-
         function updateDailyPreview() {
             itemList.innerHTML = '';
             if (dailyItems.length === 0) {
@@ -473,10 +708,22 @@
                 </div>
             `;
         }
+        
+        async function getInvoicesFromFirestore() {
+            if (!isAuthReady || !userId) return [];
+            try {
+                const q = query(getCollectionRef('invoices'));
+                const querySnapshot = await getDocs(q);
+                return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error("Error fetching invoices:", error);
+                return [];
+            }
+        }
 
         // Function to generate the monthly report HTML for printing
-        function generateMonthlyReportHTML(clientName) {
-            const invoices = loadInvoicesFromLocalStorage();
+        async function generateMonthlyReportHTML(clientName) {
+            const invoices = await getInvoicesFromFirestore();
             const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
 
             if (clientInvoices.length === 0) {
@@ -533,8 +780,8 @@
         }
 
         // Function to render a specific client's monthly report
-        function renderClientMonthlyReport(clientName) {
-            const invoices = loadInvoicesFromLocalStorage();
+        async function renderClientMonthlyReport(clientName) {
+            const invoices = await getInvoicesFromFirestore();
             const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
 
             monthlyReportContainer.innerHTML = '';
@@ -544,7 +791,6 @@
                 return;
             }
 
-            // Group invoices by month and year for the selected client
             const monthlyData = clientInvoices.reduce((acc, invoice) => {
                 const date = new Date(invoice.date);
                 const monthYear = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
@@ -598,7 +844,6 @@
                 monthlyReportContainer.appendChild(monthDiv);
             }
             
-            // Add download button after rendering the report
             const downloadButton = document.createElement('button');
             downloadButton.id = 'download-monthly-report';
             downloadButton.dataset.clientName = clientName;
@@ -607,7 +852,6 @@
             monthlyReportContainer.appendChild(downloadButton);
         }
         
-        // Event listener for clicking on a client in the report list
         clientReportList.addEventListener('click', (e) => {
             if (e.target.classList.contains('report-client-name')) {
                 const clientName = e.target.dataset.clientName;
@@ -615,57 +859,54 @@
             }
         });
 
-        // Event listener for downloading the monthly report
-        monthlyReportContainer.addEventListener('click', (e) => {
+        monthlyReportContainer.addEventListener('click', async (e) => {
             if (e.target.id === 'download-monthly-report') {
                 const clientName = e.target.dataset.clientName;
-                const reportHtml = generateMonthlyReportHTML(clientName);
+                const reportHtml = await generateMonthlyReportHTML(clientName);
                 if (reportHtml) {
                     printContainer.innerHTML = reportHtml;
                     window.print();
                     printContainer.innerHTML = '';
                 } else {
-                    alert('Failed to generate report for download.');
+                    showCustomAlert('Failed to generate report for download.');
                 }
             }
         });
 
-        // Event listener for adding items to the daily invoice
         invoiceForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const selectedClientIndex = clientSelect.value;
-            const selectedProductIndex = productSelect.value;
+            const selectedClient = clientTemplates.find(c => c.id === clientSelect.value);
+            const selectedProduct = productTemplates.find(p => p.id === productSelect.value);
             const quantity = parseInt(document.getElementById('quantity').value, 10);
 
-            if (selectedClientIndex !== "" && selectedProductIndex !== "" && !isNaN(quantity) && quantity > 0) {
-                const selectedProduct = productTemplates[selectedProductIndex];
+            if (selectedClient && selectedProduct && !isNaN(quantity) && quantity > 0) {
                 dailyItems.push({ product: selectedProduct.name, price: selectedProduct.price, quantity });
                 updateDailyPreview();
-                // We keep the client selected, but reset the product and quantity fields
                 document.getElementById('quantity').value = '';
                 productSelect.value = '';
             } else {
-                alert('Please select a client and a product, and enter a valid quantity.');
+                showCustomAlert('Please select a client and a product, and enter a valid quantity.');
             }
         });
 
-        // Event listener for generating and saving the daily invoice
-        generateButton.addEventListener('click', () => {
+        generateButton.addEventListener('click', async () => {
             if (dailyItems.length === 0) {
-                alert('Please add at least one item to generate an invoice.');
+                showCustomAlert('Please add at least one item to generate an invoice.');
                 return;
             }
 
-            const selectedClientIndex = clientSelect.value;
-            if (selectedClientIndex === "") {
-                alert('Please select a client before generating the invoice.');
+            const selectedClient = clientTemplates.find(c => c.id === clientSelect.value);
+            if (!selectedClient) {
+                showCustomAlert('Please select a client before generating the invoice.');
                 return;
             }
-            const selectedClient = clientTemplates[selectedClientIndex];
+            
             const discount = parseFloat(discountInput.value) || 0;
             const dueDate = dueDateInput.value || new Date().toISOString().split('T')[0];
-            const invoices = loadInvoicesFromLocalStorage();
+            
+            const invoices = await getInvoicesFromFirestore();
             const newInvoiceNumber = invoices.length > 0 ? Math.max(...invoices.map(inv => inv.invoiceNumber)) + 1 : 1001;
+            
             const newInvoice = {
                 invoiceNumber: newInvoiceNumber,
                 date: new Date().toISOString(),
@@ -677,42 +918,40 @@
                 total: dailySubtotal - discount
             };
 
-            invoices.push(newInvoice);
-            saveInvoicesToLocalStorage(invoices);
+            await saveInvoiceToFirestore(newInvoice);
+
             dailyItems = [];
             dailySubtotal = 0;
             updateDailyPreview();
-            renderClients(); // Re-render client list for reports
             invoiceForm.reset();
-            alert(`Invoice #${newInvoiceNumber} saved successfully!`);
-        });
-
-        // Event listener for downloading today's invoice
-        downloadButton.addEventListener('click', () => {
-            const invoices = loadInvoicesFromLocalStorage();
-            if (invoices.length === 0) {
-                alert('No invoices have been saved to download.');
-                return;
-            }
             
-            const lastInvoice = invoices[invoices.length - 1];
-            
-            // Create a temporary container to render the full invoice for printing
-            printContainer.innerHTML = generateInvoiceHTML(lastInvoice);
-            window.print();
-            printContainer.innerHTML = '';
-        });
-
-        // Initial render on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            renderClients();
-            renderTemplates();
-            updateDailyPreview();
-            // Set default due date to one week from today
             const today = new Date();
             const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
             dueDateInput.value = oneWeekFromNow.toISOString().split('T')[0];
         });
+
+        downloadButton.addEventListener('click', async () => {
+            const invoices = await getInvoicesFromFirestore();
+            if (invoices.length === 0) {
+                showCustomAlert('No invoices have been saved to download.');
+                return;
+            }
+            
+            const lastInvoice = invoices.find(inv => inv.client.id === clientSelect.value);
+            if (!lastInvoice) {
+                showCustomAlert("Please select a client that has a saved invoice.");
+                return;
+            }
+            
+            printContainer.innerHTML = generateInvoiceHTML(lastInvoice);
+            window.print();
+            printContainer.innerHTML = '';
+        });
+        
+        // Initial setup
+        const today = new Date();
+        const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        dueDateInput.value = oneWeekFromNow.toISOString().split('T')[0];
     </script>
 </body>
 </html>
