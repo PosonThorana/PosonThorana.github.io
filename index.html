@@ -177,7 +177,7 @@
                                         <td id="total-display" class="px-6 py-3 text-left text-lg font-bold">$0.00</td>
                                         <td></td>
                                     </tr>
-                                </tfoot>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -475,15 +475,7 @@
 
     <script>
         // --- START: Firebase Configuration and Initialization ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdFr4gLREBC2K9G8GXzEBHpckCXax8M2A",
-            authDomain: "invoice-genaraor.firebaseapp.com",
-            projectId: "invoice-genaraor",
-            storageBucket: "invoice-genaraor.firebasestorage.app",
-            messagingSenderId: "691350547086",
-            appId: "1:691350547086:web:6490d19dc93fa636ee77df",
-            measurementId: "G-C2C7ELHC1F"
-        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -496,9 +488,11 @@
                 app = firebase.initializeApp(firebaseConfig);
                 auth = firebase.auth();
                 db = firebase.firestore();
+                
+                // Note: This app uses anonymous sign-in for simplicity.
+                // A production app would have a full login/signup flow.
 
                 // Sign in the user. We'll use a custom token or anonymous auth.
-                // The custom token is automatically provided in the canvas environment.
                 if (initialAuthToken) {
                     await auth.signInWithCustomToken(initialAuthToken);
                 } else {
@@ -512,18 +506,18 @@
                         isAuthReady = true;
                         document.getElementById('user-id-display').value = userId;
                         showToast("Signed in successfully.");
-                        startListeners(); // Start listening to database changes
+                        startListeners(); // Start listening to database changes now that we have a user
                         renderPage('dashboard');
                     } else {
                         userId = null;
                         isAuthReady = false;
                         document.getElementById('user-id-display').value = 'Not signed in';
-                        // Handle signed out state, e.g., redirect to a login page
+                        // Optionally, you could show a "Signed Out" message or a login screen here
                     }
                 });
             } catch (error) {
                 console.error("Error during Firebase initialization:", error);
-                showToast("Firebase initialization failed.", 'error');
+                showToast("Firebase initialization failed: " + error.message, 'error');
             }
         }
         // --- END: Firebase Configuration and Initialization ---
