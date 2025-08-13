@@ -32,7 +32,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, addDoc, onSnapshot, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.firebase = {
             initializeApp,
@@ -43,13 +43,12 @@
             onAuthStateChanged,
             getFirestore,
             doc,
-            getDoc,
             setDoc,
             collection,
             addDoc,
             onSnapshot,
             query,
-            orderBy
+            getDocs
         };
     </script>
 </head>
@@ -67,10 +66,7 @@
         <!-- Auth Section -->
         <div id="auth-section" class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
             <div id="user-info" class="flex-1 text-gray-700">
-                <span id="user-display" class="font-medium">Checking authentication...</span>
-            </div>
-            <div class="flex space-x-2">
-                <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300 hidden">Logout</button>
+                <span id="user-display" class="font-medium">Initializing...</span>
             </div>
         </div>
         
@@ -199,7 +195,8 @@
                     </ul>
                 </div>
                 <div id="monthly-report-container" class="space-y-4 hidden">
-                    <!-- Individual client's monthly report will be dynamically added here -->
+                    <h3 id="report-title" class="text-2xl font-bold text-gray-700 mb-4"></h3>
+                    <div id="report-content"></div>
                 </div>
             </section>
         </div>
@@ -220,7 +217,7 @@
     <script type="module">
         const {
             initializeApp, getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged,
-            getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, getDocs
+            getFirestore, doc, setDoc, collection, addDoc, onSnapshot, query, getDocs
         } = window.firebase;
 
         // Custom alert function
@@ -242,7 +239,7 @@
 
         // --- Firebase Initialization and Auth ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
         
         let app, auth, db, userId;
@@ -262,7 +259,6 @@
 
         // UI element references
         const appContent = document.getElementById('app-content');
-        const logoutButton = document.getElementById('logout-button');
         const userDisplay = document.getElementById('user-display');
         const clientTemplateForm = document.getElementById('client-template-form');
         const clientList = document.getElementById('client-list');
@@ -276,6 +272,8 @@
         const generateButton = document.getElementById('generate-daily-invoice');
         const downloadButton = document.getElementById('download-daily-invoice');
         const monthlyReportContainer = document.getElementById('monthly-report-container');
+        const reportTitle = document.getElementById('report-title');
+        const reportContent = document.getElementById('report-content');
         const printContainer = document.getElementById('print-container');
         const discountInput = document.getElementById('discount-input');
         const dueDateInput = document.getElementById('due-date-input');
@@ -291,6 +289,7 @@
         
         document.addEventListener('DOMContentLoaded', async () => {
             try {
+                const firebaseConfig = JSON.parse(firebaseConfigString);
                 if (Object.keys(firebaseConfig).length > 0) {
                     app = initializeApp(firebaseConfig);
                     auth = getAuth(app);
@@ -309,39 +308,22 @@
                             isAuthReady = true;
                             userDisplay.textContent = `User ID: ${userId}`;
                             appContent.classList.remove('hidden');
-                            logoutButton.classList.remove('hidden');
                             
                             // Load data from Firestore after successful login
                             await loadAllData();
                         } else {
                             userId = null;
                             isAuthReady = false;
-                            userDisplay.textContent = 'Please log in.';
+                            userDisplay.textContent = 'Awaiting authentication...';
                             appContent.classList.add('hidden');
-                            logoutButton.classList.add('hidden');
                         }
                     });
                 } else {
-                    showCustomAlert("Firebase configuration is missing. Cannot save data.");
+                    showCustomAlert("Firebase configuration is missing. Data persistence is unavailable.");
                 }
             } catch (error) {
                 console.error("Error during Firebase initialization:", error);
                 showCustomAlert("An error occurred during app initialization. Please try again.");
-            }
-        });
-
-        // --- Authentication Event Handlers ---
-        logoutButton.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                dailyItems = [];
-                dailySubtotal = 0;
-                renderClients([]);
-                renderTemplates([]);
-                updateDailyPreview();
-                monthlyReportContainer.innerHTML = '';
-            } catch (error) {
-                showCustomAlert("Error logging out: " + error.message);
             }
         });
         
@@ -705,10 +687,11 @@
             const invoices = await getInvoicesFromFirestore();
             const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
 
-            monthlyReportContainer.innerHTML = '';
+            reportContent.innerHTML = '';
             if (clientInvoices.length === 0) {
                 monthlyReportContainer.classList.remove('hidden');
-                monthlyReportContainer.innerHTML = `<p class="text-center text-gray-500">No invoices for ${clientName} yet.</p>`;
+                reportTitle.textContent = `Report for ${clientName}`;
+                reportContent.innerHTML = `<p class="text-center text-gray-500">No invoices for ${clientName} yet.</p>`;
                 return;
             }
 
@@ -727,6 +710,8 @@
             }, {});
             
             monthlyReportContainer.classList.remove('hidden');
+            reportTitle.textContent = `Report for ${clientName}`;
+
             for (const month in monthlyData) {
                 const monthDiv = document.createElement('div');
                 monthDiv.className = 'border-t border-gray-300 pt-4';
@@ -762,7 +747,7 @@
                     </tbody>
                 `;
                 monthDiv.appendChild(table);
-                monthlyReportContainer.appendChild(monthDiv);
+                reportContent.appendChild(monthDiv);
             }
             
             const downloadButton = document.createElement('button');
@@ -770,7 +755,7 @@
             downloadButton.dataset.clientName = clientName;
             downloadButton.textContent = `Download Report for ${clientName}`;
             downloadButton.className = 'mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300';
-            monthlyReportContainer.appendChild(downloadButton);
+            reportContent.appendChild(downloadButton);
         }
         
         clientReportList.addEventListener('click', (e) => {
