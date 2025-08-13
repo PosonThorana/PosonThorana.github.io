@@ -3,1085 +3,606 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nqame Project - Fixed Layout</title>
-    <!-- Tailwind CSS CDN for easy styling -->
+    <title>Invoice Generator</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
     <style>
-        /* Custom font for a modern look */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        /* Import Noto Sans Sinhala Black and Regular from Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;700;900&display=swap');
-
         body {
-            /* Prioritize Noto Sans Sinhala for all weights, fallback to Inter and sans-serif */
-            font-family: 'Noto Sans Sinhala', 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
-
-        /* Base styling for outer circle bulbs */
-        .outline-bulb {
-            position: absolute; /* Position bulbs absolutely within their parent circle */
-            width: 7px; /* Reduced from 8px to 7px */
-            height: 7px; /* Reduced from 8px to 7px */
-            border-radius: 9999px; /* Make it perfectly circular */
-            background-color: #4a5568; /* Initial dark gray color */
-            transition: background-color 0.3s ease-in-out; /* Smooth transition for color changes */
-            /* Center the bulb itself at the calculated position */
-            transform: translate(-50%, -50%);
-        }
-
-        /* Styling for inner halo bulbs (smaller) */
-        .inner-halo-bulb {
-            position: absolute; /* Position bulbs absolutely within their parent container */
-            width: 5px; /* Reduced from 6px to 5px */
-            height: 5px; /* Reduced from 5px to 5px */
-            border-radius: 9999px; /* Make it perfectly circular */
-            background-color: #4a5568; /* Initial dark gray color */
-            transition: background-color 0.3s ease-in-out; /* Smooth transition for color changes */
-            /* Center the bulb itself at the calculated position */
-            transform: translate(-50%, -50%);
-        }
-
-        /* Styles for the overlay (dark background when zoom window is active) */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
-            z-index: 90; /* Below the zoomed window, but above main content */
-            opacity: 0;
-            pointer-events: none; /* Allows clicks to pass through when not active */
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        .overlay.active {
-            opacity: 1;
-            pointer-events: auto; /* Captures clicks when active */
-        }
-
-        /* Styles for generic popup window */
-        .popup-window {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.8); /* Start slightly smaller and centered */
-            opacity: 0;
-            pointer-events: none; /* Initially not interactive */
-            z-index: 100; /* On top of everything */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: black;
-            border-radius: 0.5rem; /* rounded-lg */
-            padding: 10px; /* Padding for the entire window */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            width: 280px; /* Increased width for the entire window */
-            height: auto; /* Allow height to adjust to content */
-            max-height: 90%; /* Prevent overflow on smaller screens */
-            border: 2px solid #fbbf24; /* yellow-500 border for the main window */
-        }
-
-        .popup-window.active {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1); /* Zoom to original size */
-            pointer-events: auto; /* Make interactive */
-        }
-
-        /* Container for bulbs within the zoom window. Must be relative to #full-screen-zoom-window */
-        #zoom-window-bulbs-container {
-            position: absolute;
-            inset: 0; /* Cover the entire parent */
-            z-index: 1; /* Below the image display area and title bar */
-        }
-
-        /* Styles for the image display area inside the zoom window */
-        #image-display-area {
-            position: relative; /* To contain bulbs if needed, but not for this design */
-            width: 220px; /* Increased width for the square image area */
-            height: 220px; /* Increased height for the square image area */
-            background-color: black;
-            border: 2px solid #fbbf24; /* Yellow border for the image area */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden; /* Hide any overflow from image */
-            border-radius: 0.5rem; /* rounded-lg */
-            z-index: 2; /* Ensure it's above the bulbs */
-        }
-
-        #zoomed-display-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* Ensure image fits while maintaining aspect ratio */
-        }
-
-        /* Styles for the title bar inside the zoom window */
-        #zoomed-image-title-bar {
-            width: 100%; /* Match width of image display area */
-            height: 80px; /* Increased height to accommodate title and subtitle */
-            background-color: #fbbf24; /* yellow-500 */
-            display: flex;
-            flex-direction: column; /* Stack title and subtitle vertically */
-            align-items: center;
-            justify-content: center;
-            padding: 5px; /* Add some padding */
-            border-radius: 0.5rem; /* rounded-lg */
-            margin-top: 20px; /* Increased space between image area and title bar */
-            z-index: 2; /* Ensure it's above the bulbs */
-            text-align: center; /* Center the text */
-        }
-
-        #zoomed-image-title {
-            font-size: 1.5rem; /* text-2xl */
-            font-weight: 900; /* Black weight for Noto Sans Sinhala */
-            color: black; /* text-black */
-            line-height: 1.2; /* Adjust line height for stacking */
-        }
-
-        #zoomed-image-subtitle {
-            font-size: 0.9rem; /* Smaller font size for subtitle */
-            font-weight: 400; /* Regular weight for Noto Sans Sinhala */
-            color: black; /* text-black */
-            margin-top: 5px; /* Small margin from title */
-        }
-
-        /* Styles for the finger icon */
-        #finger-icon {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            color: yellow; /* Bright color to stand out */
-            z-index: 20; /* Above circles, below overlay/zoom window */
-            opacity: 0;
-            pointer-events: none; /* Not interactive itself */
-            transition: opacity 0.5s ease-in-out;
-            animation: bounce-tap 1.5s infinite; /* Basic tapping animation */
-        }
-
-        @keyframes bounce-tap {
-            0%, 100% {
-                transform: translateY(0);
+        @media print {
+            body > *:not(#print-container) {
+                display: none;
             }
-            50% {
-                transform: translateY(-10px);
+            #print-container {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 2rem;
+                box-sizing: border-box;
             }
-        }
-
-        /* Styles for bottom buttons */
-        #bottom-buttons-container {
-            position: absolute;
-            bottom: -80px; /* Position below the main yellow title bar */
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            z-index: 10; /* Ensure buttons are clickable */
-        }
-
-        #bottom-buttons-container button {
-            background-color: white;
-            color: black;
-            padding: 8px 16px;
-            border-radius: 0.375rem; /* rounded-md */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
-            transition: background-color 0.15s ease-in-out;
-            cursor: pointer;
-            display: flex; /* For icon and text alignment */
-            align-items: center;
-            font-weight: bold;
-        }
-
-        #bottom-buttons-container button:hover {
-            background-color: #f3f4f6; /* gray-100 */
-        }
-
-        /* Styles for Copyright popup specific content */
-        #copyright-popup-content {
-            font-family: 'Noto Sans Sinhala', sans-serif; /* Ensure Sinhala font for popup text */
-        }
-
-        /* Music control button */
-        #music-control-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: white;
-            color: black;
-            border-radius: 9999px; /* Fully rounded */
-            padding: 8px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            z-index: 50; /* Ensure it's above other elements but below overlay/popups */
-        }
-        #music-control-btn svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        /* Hidden YouTube player container */
-        #youtube-player-container {
-            position: absolute;
-            top: -9999px; /* Move far off-screen */
-            left: -9999px;
-            width: 1px; /* Minimal size */
-            height: 1px;
-            overflow: hidden; /* Hide content */
-            opacity: 0; /* Make invisible */
-            pointer-events: none; /* Not interactive */
-        }
-
-        /* Styles for audio hint */
-        #audio-hint {
-            position: absolute;
-            top: 10px; /* Position relative to parent, within black background */
-            right: 60px; /* Adjusted to make space for text */
-            z-index: 51; /* Above music button, below overlay/popups */
-            opacity: 0;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end; /* Align text to the right for pointing */
-            color: white; /* Changed to white */
-            font-size: 0.9rem; /* Increased font size */
-            font-weight: 900; /* Made bold/black */
-            transition: opacity 0.5s ease-in-out;
-            text-align: right;
-        }
-
-        #audio-hint.active {
-            opacity: 1;
-            animation: point-and-fade 2s infinite; /* Animation for pointing */
-        }
-
-        @keyframes point-and-fade {
-            0% { transform: translateY(0) translateX(0); opacity: 1; }
-            25% { transform: translateY(-5px) translateX(-5px); opacity: 1; }
-            50% { transform: translateY(0) translateX(0); opacity: 0.8; }
-            75% { transform: translateY(-5px) translateX(-5px); opacity: 1; }
-            100% { transform: translateY(0) translateX(0); opacity: 1; }
-        }
-
-        #audio-hint svg {
-            width: 30px; /* Size of the hand icon */
-            height: 30px;
-            transform: rotate(20deg) scaleX(-1); /* Angle the hand to point towards button, flip horizontally */
-            margin-bottom: 5px;
-            margin-right: -15px; /* Adjust SVG closer to button */
-            color: yellow; /* Hand icon remains yellow */
-        }
-
-        /* Styles for circle hint */
-        #circle-hint {
-            position: absolute;
-            top: 30px; /* Moved higher up */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20; /* Same as finger-icon */
-            opacity: 0;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: white; /* White text on black background */
-            font-size: 1.1rem; /* Increased font size */
-            font-weight: 900; /* Made bold/black */
-            transition: opacity 0.5s ease-in-out;
-            text-align: center;
-        }
-
-        #circle-hint.active {
-            opacity: 1;
-            animation: bounce-and-point 1.8s infinite; /* New animation for pointing down */
-        }
-
-        @keyframes bounce-and-point {
-            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
-            50% { transform: translateX(-50%) translateY(10px); opacity: 0.8; }
-        }
-
-        #circle-hint svg {
-            width: 40px; /* Size of the hand icon */
-            height: 40px;
-            transform: rotate(90deg); /* Rotate to point downwards */
-            margin-top: 5px; /* Space between text and hand */
-            color: yellow; /* Hand icon remains yellow */
-        }
-
-        /* New style for the bottom copyright text */
-        #bottom-copyright-text {
-            position: absolute;
-            bottom: 60px; /* Position above the very bottom buttons */
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 0.75rem; /* text-xs */
-            font-weight: normal;
-            cursor: pointer;
-            z-index: 15; /* Ensure it's above bottom buttons but below popups */
-            text-align: center;
-            padding: 5px; /* Add some padding for better click area */
         }
     </style>
 </head>
-<!-- The body uses flexbox to center the main design container -->
-<body class="bg-black flex items-center justify-center min-h-screen p-4 overflow-hidden">
+<body class="bg-gray-100 flex flex-col items-center p-4">
 
-    <!-- Overlay for click-away functionality -->
-    <div id="overlay" class="overlay"></div>
+    <!-- Main Application Container -->
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-8">
 
-    <!-- Hidden YouTube Player Container -->
-    <div id="youtube-player-container"></div>
+        <!-- Header -->
+        <header class="text-center">
+            <h1 class="text-4xl font-bold text-gray-800">Invoice Generator</h1>
+            <p class="text-gray-500 mt-2">Generate and track your daily and monthly invoices</p>
+        </header>
 
-    <!-- Main design container -->
-    <!-- This div acts as the canvas for the entire design.
-         It's set to 'relative' so its children can be absolutely positioned within it.
-         Fixed width and height for a non-responsive layout. -->
-    <div class="relative w-[300px] h-[533px] bg-black rounded-lg shadow-2xl">
-        <!-- Music Control Button -->
-        <button id="music-control-btn">
-            <svg id="speaker-icon-on" style="display: none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                <path d="M13.5 4.062c0-1.31-1.28-2.42-2.5-1.92a1.5 1.5 0 00-1.5 1.5v16.125c0 1.31 1.28 2.42 2.5 1.92a1.5 1.5 0 001.5-1.5V4.062zM18 14.5a.5.5 0 01-.5.5c-1.39 0-2.58-.2-3.7-.6V9.6c1.12-.4 2.31-.6 3.7-.6a.5.5 0 01.5.5v4z"></path>
-            </svg>
-            <svg id="speaker-icon-off" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                <path d="M13.5 4.062c0-1.31-1.28-2.42-2.5-1.92a1.5 1.5 0 00-1.5 1.5v16.125c0 1.31 1.28 2.42 2.5 1.92a1.5 1.5 0 001.5-1.5V4.062zM16.88 7.391a.75.75 0 011.06 0L20.25 8.75l1.309 1.309a.75.75 0 01-1.06 1.06L19.19 9.81l-1.309-1.309a.75.75 0 010-1.06zm-4.75 1.838a.75.75 0 011.06 0L17.25 12l.939.94a.75.75 0 01-1.06 1.06L16.19 13.06l-.939-.94-.94.94a.75.75 0 01-1.06-1.06l.94-.94-.94-.939a.75.75 0 010-1.06z"></path>
-            </svg>
-        </button>
-        
-        <!-- Audio Hint for Music Button -->
-        <div id="audio-hint">
-            <span>හඬ ඇසීමට මෙහි ක්ලික් කරන්න</span>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                <path d="M15.75 11.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12a.75.75 0 01.75-.75zM18 11.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12a.75.75 0 01.75-.75zM20.25 11.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V12a.75.75 0 01.75-.75zM12 2.25c-5.16 0-9.444 3.98-9.941 9h19.882c-.5-5.02-4.781-9-9.941-9zm-9.941 11.25c.5 5.02 4.781 9 9.941 9 5.16 0 9.444-3.98 9.941-9H2.059z" />
-                <path fill-rule="evenodd" d="M10.25 6.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0V7.5a.75.75 0 01.75-.75zM10.25 9.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75zM10.25 12.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75zM10.25 15.75a.75.75 0 01.75.75v.75a.75.75 0 01-1.5 0v-.75a.75.75 0 01.75-.75z" clip-rule="evenodd" />
-            </svg>
-        </div>
+        <!-- Client Templates Section -->
+        <section class="border border-gray-200 rounded-xl p-6 space-y-4">
+            <h2 class="text-2xl font-bold text-gray-700">Client Templates</h2>
+            <form id="client-template-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="client-name" class="block text-sm font-medium text-gray-700">Client Name</label>
+                        <input type="text" id="client-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="client-address" class="block text-sm font-medium text-gray-700">Client Address</label>
+                        <input type="text" id="client-address" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Save Client Template
+                </button>
+            </form>
+            <div id="client-list-container" class="mt-4">
+                <h3 class="text-lg font-semibold text-gray-800">Saved Clients</h3>
+                <ul id="client-list" class="mt-2 space-y-2">
+                    <!-- Client templates will be dynamically added here -->
+                </ul>
+            </div>
+        </section>
 
-        <!-- Audio Hint for Circle Click -->
-        <div id="circle-hint">
-            <span>රූපය බැලීමට රවුම ක්ලික් කරන්න</span>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                <path d="M13.25 1.5C12.75 1.5 12.33 1.63 11.97 1.88C11.61 2.13 11.33 2.45 11.14 2.84C10.95 3.23 10.86 3.65 10.86 4.1C10.86 4.54 10.95 4.96 11.14 5.35C11.33 5.74 11.61 6.06 11.97 6.31C12.33 6.56 12.75 6.69 13.25 6.69H16.25C16.75 6.69 17.17 6.56 17.53 6.31C17.89 6.06 18.17 5.74 18.36 5.35C18.55 4.96 18.64 4.54 18.64 4.1C18.64 3.65 18.55 3.23 18.36 2.84C18.17 2.45 17.89 2.13 17.53 1.88C17.17 1.63 16.75 1.5 16.25 1.5H13.25ZM10.5 7.75C10.5 7.55 10.45 7.35 10.37 7.17C10.29 6.99 10.18 6.83 10.04 6.7C9.9 6.57 9.74 6.47 9.55 6.4C9.36 6.33 9.17 6.29 8.97 6.29H7.75C7.25 6.29 6.83 6.42 6.47 6.67C6.11 6.92 5.83 7.24 5.64 7.63C5.45 8.02 5.36 8.44 5.36 8.89C5.36 9.34 5.45 9.76 5.64 10.15C5.83 10.54 6.11 10.86 6.47 11.11C6.83 11.36 7.25 11.49 7.75 11.49H11.5L12.5 16.5C12.5 16.6 12.51 16.7 12.53 16.8C12.55 16.9 12.58 16.99 12.63 17.07L13.78 19.25C13.88 19.45 13.98 19.63 14.07 19.8C14.16 19.97 14.24 20.12 14.28 20.25H9.75V17.5L8.25 16.25C8.05 16.05 7.82 15.88 7.57 15.75C7.32 15.62 7.05 15.54 6.75 15.5V13.75C6.75 13.55 6.7 13.35 6.62 13.17C6.54 12.99 6.43 12.83 6.29 12.7C6.15 12.57 5.99 12.47 5.8 12.4C5.61 12.33 5.42 12.29 5.22 12.29H4.25C3.75 12.29 3.33 12.42 2.97 12.67C2.61 12.92 2.33 13.24 2.14 13.63C1.95 14.02 1.86 14.44 1.86 14.89C1.86 15.34 1.95 15.76 2.14 16.15C2.33 16.54 2.61 16.86 2.97 17.11C3.33 17.36 3.75 17.49 4.25 17.49H6.25V22.5L12.5 20.5L18.75 22.5V17.5H19.75C20.25 17.5 20.67 17.37 21.03 17.12C21.39 16.87 21.67 16.55 21.86 16.16C22.05 15.77 22.14 15.35 22.14 14.9C22.14 14.45 22.05 14.03 21.86 13.64C21.67 13.25 21.39 12.93 21.03 12.68C20.67 12.43 20.25 12.3 19.75 12.3H18.75V8.25C18.75 8.1 18.72 7.95 18.66 7.8C18.6 7.65 18.52 7.52 18.42 7.42C18.32 7.32 18.2 7.24 18.05 7.18C17.9 7.12 17.75 7.09 17.6 7.09H14.75C14.55 7.09 14.35 7.14 14.17 7.22C13.99 7.3 13.83 7.41 13.7 7.55C13.57 7.69 13.47 7.85 13.4 8.04C13.33 8.23 13.29 8.42 13.29 8.62V10.25C13.29 10.45 13.34 10.65 13.42 10.83C13.5 11.01 13.61 11.17 13.75 11.3C13.89 11.43 14.05 11.53 14.24 11.6C14.43 11.67 14.62 11.71 14.82 11.71H15.75V14.75L16.25 16.5H17.5L16.5 11.75C16.5 11.55 16.45 11.35 16.37 11.17C16.29 10.99 16.18 10.83 16.04 10.7C15.9 10.57 15.74 10.47 15.55 10.4C15.36 10.33 15.17 10.29 14.97 10.29H14.05C13.78 10.29 13.53 10.19 13.32 9.98C13.11 9.77 13.01 9.52 13.01 9.25V7.75H10.5Z" />
-            </svg>
-        </div>
+        <!-- Product Templates Section -->
+        <section class="border border-gray-200 rounded-xl p-6 space-y-4">
+            <h2 class="text-2xl font-bold text-gray-700">Product Templates</h2>
+            <form id="product-template-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="template-name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                        <input type="text" id="template-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="template-price" class="block text-sm font-medium text-gray-700">Price (LKR)</label>
+                        <input type="number" id="template-price" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Save Product Template
+                </button>
+            </form>
+            <div id="template-list-container" class="mt-4">
+                <h3 class="text-lg font-semibold text-gray-800">Saved Products</h3>
+                <ul id="template-list" class="mt-2 space-y-2">
+                    <!-- Templates will be dynamically added here -->
+                </ul>
+            </div>
+        </section>
 
-        <!-- Central Rectangle (Buddha Image Slot) - Original Layout -->
-        <div id="buddha-image-container" class="absolute left-[50%] -translate-x-1/2 top-[95px] w-[105px] h-[373px] bg-black rounded-[2.5rem] flex items-center justify-center shadow-xl z-50 border-2 border-yellow-500">
-            <!-- Inner container for the Buddha image slot bulbs. No inset to control positioning via JS offset. -->
-            <div id="inner-halo-container" class="absolute inset-0 z-52"></div>
-            <!-- Original Buddha Image -->
-            <img src="./budhdha.png" alt="Buddha Image" class="absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1">
-        </div>
+        <!-- Daily Invoice Section -->
+        <section class="border border-gray-200 rounded-xl p-6 space-y-6">
+            <h2 class="text-2xl font-bold text-gray-700">Daily Invoice Entry</h2>
+            <form id="invoice-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label for="client-select" class="block text-sm font-medium text-gray-700">Select Client</label>
+                        <select id="client-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                            <option value="">-- Select a client --</option>
+                            <!-- Options will be dynamically added here -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="product-select" class="block text-sm font-medium text-gray-700">Select Product</label>
+                        <select id="product-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                            <option value="">-- Select a product --</option>
+                            <!-- Options will be dynamically added here -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                        <input type="number" id="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="discount-input" class="block text-sm font-medium text-gray-700">Discount (LKR)</label>
+                        <input type="number" id="discount-input" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                    <div>
+                        <label for="due-date-input" class="block text-sm font-medium text-gray-700">Due Date</label>
+                        <input type="date" id="due-date-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Add Item to Invoice
+                </button>
+            </form>
 
-        <!-- Circles -->
-        <!-- Fixed positioning and size. Circles now have a yellow border. -->
-        <!-- Order of circles adjusted for desired z-index layering (later in HTML means on top for same z-index) -->
+            <!-- Current Day's Invoice Preview -->
+            <div id="current-invoice-preview" class="border border-dashed border-gray-300 rounded-lg p-4 mt-6 bg-gray-50">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Today's Invoice Items</h3>
+                <ul id="item-list" class="space-y-2">
+                    <!-- Items will be dynamically added here -->
+                    <li class="text-gray-500">No items added yet.</li>
+                </ul>
+                <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <span class="text-lg font-bold text-gray-800">Total:</span>
+                    <span id="daily-total" class="text-xl font-extrabold text-indigo-600">Rs.0.00</span>
+                </div>
+            </div>
 
-        <!-- Left Bottom Circle -->
-        <div id="circle-4" class="absolute top-[330px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 4 -->
-            <img src="./Gemini_Generated_Image_pz9b4cpz9b4cpz9b.png" alt="Circle Image 4" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
-        <!-- Left Middle Circle -->
-        <div id="circle-3" class="absolute top-[200px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 3 -->
-            <img src="./ChatGPT Image Jun 10, 2025, 08_53_43 AM.png" alt="Circle Image 3" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
-        <!-- Left Top Circle -->
-        <div id="circle-2" class="absolute top-[70px] left-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 2 -->
-            <img src="./ChatGPT Image Jun 10, 2025, 09_01_28 AM.png" alt="Circle Image 2" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
+            <!-- Action Buttons for Daily Invoice -->
+            <div class="flex flex-col md:flex-row gap-4 mt-6">
+                <button id="generate-daily-invoice" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Generate & Save Invoice
+                </button>
+                <button id="download-daily-invoice" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Download Today's Invoice
+                </button>
+            </div>
+        </section>
 
-        <!-- Right Bottom Circle -->
-        <div id="circle-7" class="absolute top-[330px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 7 -->
-            <img src="./generate very same i.png" alt="Circle Image 7" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
-        <!-- Right Middle Circle -->
-        <div id="circle-6" class="absolute top-[200px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 6 -->
-            <img src="./ChatGPT Image Jun 10, 2025, 09_53_58 AM.png" alt="Circle Image 6" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
-        <!-- Right Top Circle -->
-        <div id="circle-5" class="absolute top-[70px] right-[-30px] w-[135px] h-[135px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 5 -->
-            <img src="./ChatGPT Image Jun 10, 2025, 09_41_25 AM.png" alt="Circle Image 5" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
+        <!-- Monthly Report Section -->
+        <section class="border border-gray-200 rounded-xl p-6 space-y-6">
+            <h2 class="text-2xl font-bold text-gray-700">Monthly Report</h2>
+            <div id="monthly-report-container" class="space-y-4">
+                <!-- Monthly report will be dynamically added here -->
+            </div>
+        </section>
 
-        <!-- Top Center Circle (positioned last to overlap side circles) -->
-        <div id="circle-1" class="absolute top-[1px] left-[50%] -translate-x-1/2 w-[145px] h-[145px] rounded-full shadow-lg z-10 border-2 border-yellow-500 cursor-pointer">
-            <!-- Image placeholder for circle 1 -->
-            <img src="./ChatGPT Image Jun 10, 2025, 09_08_58 AM.png" alt="Circle Image 1" class="w-full h-full object-cover rounded-full">
-            <!-- Bulbs will be dynamically added here by JavaScript -->
-        </div>
-
-        <!-- Bottom Title Rectangle (now a plain rectangle) -->
-        <!-- Fixed height and placed behind circles with z-0 -->
-        <div class="absolute bottom-[-10px] left-0 w-full h-[106px] bg-yellow-500 flex items-center justify-center p-4 shadow-xl rounded-lg z-0 pt-4">
-            <h1 class="text-black text-3xl sm:text-4xl md:text-5xl font-bold text-center">
-                සත් සතිය
-            </h1>
-        </div>
-
-        <!-- New: Copyright text just below the title box -->
-        <div id="bottom-copyright-text">
-            Copyright
-        </div>
     </div>
 
-    <!-- Bottom Buttons Container -->
-    <div id="bottom-buttons-container">
-        <!-- The Copyrights button was removed from here -->
-        <button id="share-btn">
-            <svg class="w-5 h-5 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M15 8a3 3 0 10-2.977-2.977l-4.242 2.438A3 3 0 106 13a3 3 0 10-2.977-2.977l4.242-2.438A3 3 0 1015 8zm0 2a1 1 0 110-2 1 1 0 010 2zm-6 3a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-            Share
-        </button>
-    </div>
-
-    <!-- NEW: Full Screen Zoom Window -->
-    <div id="full-screen-zoom-window" class="popup-window">
-        <!-- New container for bulbs along the border of the zoom window -->
-        <div id="zoom-window-bulbs-container" class="absolute inset-0"></div>
-
-        <!-- Image display area inside the zoom window -->
-        <div id="image-display-area">
-            <img id="zoomed-display-image" src="" alt="Zoomed Image">
-        </div>
-        <!-- Title bar for the zoomed image -->
-        <div id="zoomed-image-title-bar">
-            <h2 id="zoomed-image-title" class="text-2xl font-bold text-center">Image Title</h2>
-            <p id="zoomed-image-subtitle" class="text-sm font-normal text-center">Image Subtitle</p>
-        </div>
-    </div>
-
-    <!-- NEW: Copyright Popup Window -->
-    <div id="copyright-popup" class="popup-window">
-        <div id="copyright-popup-content" class="flex flex-col items-center justify-center p-4 text-white text-center">
-            <p class="mb-4 text-lg font-bold">මෙම යෙදුමේ හඬ අන්තර්ගතය YouTube හි මුල් නිර්මාතෘවරුන්ට හිමි වේ.</p>
-            <a href="https://www.youtube.com/watch?v=V_A6M0Trc2E" target="_blank" class="text-blue-400 underline mb-4 text-sm">https://www.youtube.com/watch?v=V_A6M0Trc2E</a>
-            <p class="text-base">සංකල්පය සහ නිර්මාණය:<br>ගයන්ත ප්‍රනාන්දු (gayanthamethmina11@outlook.com)</p>
-        </div>
-    </div>
+    <!-- Hidden Container for Printing -->
+    <div id="print-container" class="hidden"></div>
 
     <script>
-        // Load the IFrame Player API code asynchronously.
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        // Use a descriptive namespace for local storage
+        const INVOICE_STORAGE_KEY = 'invoice_data';
+        const TEMPLATE_STORAGE_KEY = 'product_templates';
+        const CLIENT_STORAGE_KEY = 'client_templates';
+        
+        let dailyItems = [];
+        let dailySubtotal = 0;
+        let productTemplates = [];
+        let clientTemplates = [];
 
-        // Global variable for the YouTube player
-        let player;
-        let isMusicPlaying = false; // To track if music is explicitly playing (unmuted)
-        let shouldShowAudioHint = true; // Flag to control audio hint visibility
-        let shouldShowCircleHint = true; // Flag to control circle hint visibility
-
-        // This function will be called when the YouTube IFrame Player API is ready.
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('youtube-player-container', {
-                videoId: 'V_A6M0Trc2E', // The ID of the YouTube video
-                playerVars: {
-                    'autoplay': 1,      // Autoplay the video (will be muted due to browser policies)
-                    'controls': 0,      // Hide video controls
-                    'showinfo': 0,      // Hide video title and uploader info
-                    'rel': 0,           // Do not show related videos (deprecated, but still included)
-                    'modestbranding': 1,// Hide YouTube logo
-                    'loop': 1,          // Loop the video
-                    'playlist': 'V_A6M0Trc2E', // Required for looping a single video reliably
-                    'mute': 1           // Start muted to allow autoplay (browser policy)
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
-        function onPlayerReady(event) {
-            // Player is ready, attempt to play (still muted)
-            event.target.playVideo();
-            updateMusicControlIcon(false); // Music starts muted (speaker-off icon)
-            // Show audio hint after a short delay to allow elements to render
-            setTimeout(() => {
-                showAudioHint();
-            }, 2000); // 2 seconds delay
-        }
-
-        function onPlayerStateChange(event) {
-            // If the video ends, explicitly seek to the beginning and play again.
-            // This ensures consistent looping of the single video and prevents related videos from playing.
-            if (event.data === YT.PlayerState.ENDED) {
-                player.seekTo(0); // Go to the beginning of the video
-                player.playVideo(); // Play it again
+        // Company Details (Customizable)
+        const companyDetails = {
+            name: "MEGA DESIGNS",
+            phone: "0752200448",
+            email: "methminagayantha11@gmail.com",
+            bankDetails: {
+                accountNumber: "8013939584",
+                accountName: "Methnina Gayantha",
+                bank: "Commercial bank",
+                branch: "Raddolugama branch"
             }
-        }
-
-        // DOM Elements (Initialized inside DOMContentLoaded)
-        let buddhaImageContainer; 
-        let innerHaloContainer;
-        let overlay;
-        let fingerIcon;
-        let musicControlBtn;
-        let speakerIconOn;
-        let speakerIconOff;
-        let audioHint;
-        let circleHint; // New DOM element for circle hint
-        let bottomCopyrightText; // New DOM element for bottom copyright text
-
-        let imageZoomWindow;
-        let zoomWindowBulbsContainer;
-        let imageDisplayArea;
-        let zoomedDisplayImage;
-        let zoomedImageTitle;
-        let zoomedImageSubtitle;
-
-        let copyrightBtn; // This will now be null as the button is removed
-        let shareBtn;
-        let copyrightPopup;
-
-        // Original Buddha image source and classes (for resetting)
-        const originalBuddhaImageSrc = './budhdha.png';
-        const originalBuddhaImageClasses = 'absolute w-full h-[105%] object-cover rounded-[2.5rem] z-55 -top-[1%] transform rotate-1';
-
-        // Array of colors for the outer bulbs
-        const outerBulbColors = [
-            '#FFD700', // Gold
-            '#FFA500', // Orange
-            '#FF4500', // OrangeRed
-            '#FFFF00', // Yellow
-            '#ADFF2F', // GreenYellow
-            '#00CED1', // DarkTurquoise
-            '#1E90FF', // DodgerBlue
-            '#FF69B4', // HotPink
-            '#8A2BE2', // BlueViolet
-            '#FFFFFF'  // White
-        ];
-
-        // Array of colors for the inner halo bulbs (mostly whites and subtle yellows)
-        const innerBulbColors = [
-            '#FFFFFF', // White
-            '#F0F0F0', // Light Gray
-            '#E0E0E0', // Lighter Gray
-            '#FFFFE0', // Light Yellow
-            '#FFFACD'  // Lemon Chiffon
-        ];
-
-        // Mapping for image alt text to Sinhala titles and subtitles
-        const imageTitles = {
-            "Circle Image 1": { title: "පළමු සතිය", subtitle: "ඇසතු බෝ රුක මුල" },
-            "Circle Image 2": { title: "දෙවන සතිය", subtitle: "අනිමිසලෝචන පූජාව" },
-            "Circle Image 3": { title: "තෙවන සතිය", subtitle: "රුවන් සක්මන" },
-            "Circle Image 4": { title: "සිව්වන සතිය", subtitle: "රුවන් ගෙයි වැඩ සිටීම" },
-            "Circle Image 5": { title: "පස්වන සතිය", subtitle: "අජපාල නුගරුක මුල" },
-            "Circle Image 6": { title: "සයවන සතිය", subtitle: "මුචලින්ද නාග දරණය" },
-            "Circle Image 7": { title: "සත්වන සතිය", subtitle: "රජනායක කිරි රුක මුල" }
         };
 
-        let userInteractedWithCircles = false; // Flag to track if the user has clicked a circle
-        let fingerIconInterval; // Variable to hold the interval for the finger icon animation
+        // HTML element references
+        const clientTemplateForm = document.getElementById('client-template-form');
+        const clientList = document.getElementById('client-list');
+        const clientSelect = document.getElementById('client-select');
+        const templateForm = document.getElementById('product-template-form');
+        const templateList = document.getElementById('template-list');
+        const productSelect = document.getElementById('product-select');
+        const invoiceForm = document.getElementById('invoice-form');
+        const itemList = document.getElementById('item-list');
+        const dailyTotalEl = document.getElementById('daily-total');
+        const generateButton = document.getElementById('generate-daily-invoice');
+        const downloadButton = document.getElementById('download-daily-invoice');
+        const monthlyReportContainer = document.getElementById('monthly-report-container');
+        const printContainer = document.getElementById('print-container');
+        const discountInput = document.getElementById('discount-input');
+        const dueDateInput = document.getElementById('due-date-input');
 
-        /**
-         * Creates and appends bulbs along the outline of a given container.
-         * @param {HTMLElement} containerElement - The container element to add bulbs to.
-         * @param {number} numberOfBulbs - The total number of bulbs to create.
-         * @param {string} bulbClassName - The CSS class name to apply to each bulb (e.g., 'outline-bulb', 'inner-halo-bulb').
-         * @param {number} offsetFromContainerEdge - Pixels inwards from the container's edge where bulbs are placed.
-         * This offset is from the *border-box* edge of the container.
-         */
-        function createOutlineBulbs(containerElement, numberOfBulbs, bulbClassName, offsetFromContainerEdge) {
-            const style = window.getComputedStyle(containerElement);
-            const containerWidth = parseFloat(style.width);
-            const containerHeight = parseFloat(style.height);
-
-            // Determine if the container is circular or rectangular based on its rounded-ness/dimensions
-            const isCircular = containerElement.classList.contains('rounded-full');
-
-            // Calculate the effective dimensions for positioning bulbs based on offset
-            const effectiveWidth = containerWidth - (2 * offsetFromContainerEdge);
-            const effectiveHeight = containerHeight - (2 * offsetFromContainerEdge);
-
-            // Only clear existing bulbs of the specified class, preserving other content like images.
-            const existingBulbs = containerElement.querySelectorAll(`.${bulbClassName}`);
-            existingBulbs.forEach(bulb => bulb.remove());
-
-            for (let i = 0; i < numberOfBulbs; i++) {
-                const bulb = document.createElement('div');
-                bulb.classList.add(bulbClassName);
-
-                let x, y;
-
-                if (isCircular) {
-                    // Existing circular logic for outer circles
-                    const angle = (i / numberOfBulbs) * 2 * Math.PI;
-                    const effectiveRadius = effectiveWidth / 2;
-                    x = (containerWidth / 2) + effectiveRadius * Math.cos(angle - Math.PI / 2);
-                    y = (containerHeight / 2) + effectiveRadius * Math.sin(angle - Math.PI / 2);
-                } else {
-                    // Logic for non-circular (rectangular with rounded corners)
-                    const perimeter = 2 * (effectiveWidth + effectiveHeight);
-                    const segmentLength = perimeter / numberOfBulbs;
-                    let currentLength = i * segmentLength;
-
-                    // Calculate position along the rectangle's perimeter
-                    if (currentLength < effectiveWidth) { // Top edge
-                        x = offsetFromContainerEdge + currentLength;
-                        y = offsetFromContainerEdge;
-                    } else if (currentLength < effectiveWidth + effectiveHeight) { // Right edge
-                        x = offsetFromContainerEdge + effectiveWidth;
-                        y = offsetFromContainerEdge + (currentLength - effectiveWidth);
-                    } else if (currentLength < 2 * effectiveWidth + effectiveHeight) { // Bottom edge
-                        x = offsetFromContainerEdge + effectiveWidth - (currentLength - (effectiveWidth + effectiveHeight));
-                        y = offsetFromContainerEdge + effectiveHeight;
-                    } else { // Left edge
-                        x = offsetFromContainerEdge;
-                        y = offsetFromContainerEdge + effectiveHeight - (currentLength - (2 * effectiveWidth + effectiveHeight));
-                    }
-                }
-                
-                bulb.style.left = `${(x / containerWidth) * 100}%`;
-                bulb.style.top = `${(y / containerHeight) * 100}%`;
-                containerElement.appendChild(bulb);
-            }
+        // --- Client Template Functions ---
+        function saveClientsToLocalStorage(data) {
+            localStorage.setItem(CLIENT_STORAGE_KEY, JSON.stringify(data));
         }
 
-        // Function to animate outline bulbs based on their class
-        function animateBulbs() {
-            let patternTypeOuter; // Declare at function scope
-            let innerPatternTypeForHalo; // Declare at function scope
+        function loadClientsFromLocalStorage() {
+            const data = localStorage.getItem(CLIENT_STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
 
-            // Animate outer circles' bulbs (main design)
-            const allOuterCircleContainers = document.querySelectorAll('[id^="circle-"]');
-            allOuterCircleContainers.forEach(container => {
-                const bulbs = container.querySelectorAll('.outline-bulb');
-                if (bulbs.length === 0) return;
+        function renderClients() {
+            clientTemplates = loadClientsFromLocalStorage();
+            clientList.innerHTML = '';
+            clientSelect.innerHTML = '<option value="">-- Select a client --</option>';
 
-                patternTypeOuter = Math.floor(Math.random() * 3); // Re-assign for each container
+            if (clientTemplates.length === 0) {
+                clientList.innerHTML = '<li class="text-gray-500">No client templates saved yet.</li>';
+                return;
+            }
 
-                if (patternTypeOuter === 0) {
-                    bulbs.forEach(bulb => {
-                        const randomColor = outerBulbColors[Math.floor(Math.random() * outerBulbColors.length)];
-                        bulb.style.backgroundColor = randomColor;
-                    });
-                } else if (patternTypeOuter === 1) {
-                    let delay = 0;
-                    bulbs.forEach((bulb, index) => {
-                        setTimeout(() => {
-                            bulb.style.backgroundColor = outerBulbColors[index % outerBulbColors.length];
-                        }, delay);
-                        delay += 50;
-                    });
-                } else if (patternTypeOuter === 2) {
-                    const startBulbIndex = Math.floor(Math.random() * bulbs.length);
-                    let delay = 0;
-                    bulbs.forEach((bulb, index) => {
-                        const distance = Math.min(
-                            Math.abs(index - startBulbIndex),
-                            bulbs.length - Math.abs(index - startBulbIndex)
-                        );
-                        setTimeout(() => {
-                            bulb.style.backgroundColor = outerBulbColors[distance % outerBulbColors.length];
-                        }, delay + distance * 70);
-                    });
-                }
+            clientTemplates.forEach((client, index) => {
+                // Render list item
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
+                li.innerHTML = `
+                    <span>${client.name} - ${client.address}</span>
+                    <button data-index="${index}" class="remove-client text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
+                        Remove
+                    </button>
+                `;
+                clientList.appendChild(li);
+
+                // Add option to the dropdown
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = client.name;
+                clientSelect.appendChild(option);
+            });
+        }
+
+        // Event listener for adding new client templates
+        clientTemplateForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('client-name').value;
+            const address = document.getElementById('client-address').value;
+
+            if (name && address) {
+                const clients = loadClientsFromLocalStorage();
+                clients.push({ name, address });
+                saveClientsToLocalStorage(clients);
+                renderClients();
+                clientTemplateForm.reset();
+            } else {
+                alert('Please enter a valid client name and address.');
+            }
+        });
+
+        // Event listener for removing a client template
+        clientList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-client')) {
+                const index = parseInt(e.target.dataset.index, 10);
+                const clients = loadClientsFromLocalStorage();
+                clients.splice(index, 1);
+                saveClientsToLocalStorage(clients);
+                renderClients();
+            }
+        });
+        
+        // --- Product Template Functions ---
+        function saveTemplatesToLocalStorage(data) {
+            localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadTemplatesFromLocalStorage() {
+            const data = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function renderTemplates() {
+            productTemplates = loadTemplatesFromLocalStorage();
+            templateList.innerHTML = '';
+            productSelect.innerHTML = '<option value="">-- Select a product --</option>';
+
+            if (productTemplates.length === 0) {
+                templateList.innerHTML = '<li class="text-gray-500">No product templates saved yet.</li>';
+                return;
+            }
+
+            productTemplates.forEach((template, index) => {
+                // Render list item
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
+                li.innerHTML = `
+                    <span>${template.name} - Rs.${template.price.toFixed(2)}</span>
+                    <button data-index="${index}" class="remove-template text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
+                        Remove
+                    </button>
+                `;
+                templateList.appendChild(li);
+
+                // Add option to the dropdown
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${template.name} (Rs.${template.price.toFixed(2)})`;
+                productSelect.appendChild(option);
+            });
+        }
+
+        // Event listener for adding new product templates
+        templateForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('template-name').value;
+            const price = parseFloat(document.getElementById('template-price').value);
+
+            if (name && !isNaN(price) && price > 0) {
+                const templates = loadTemplatesFromLocalStorage();
+                templates.push({ name, price });
+                saveTemplatesToLocalStorage(templates);
+                renderTemplates();
+                templateForm.reset();
+            } else {
+                alert('Please enter a valid product name and price.');
+            }
+        });
+
+        // Event listener for removing a product template
+        templateList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-template')) {
+                const index = parseInt(e.target.dataset.index, 10);
+                const templates = loadTemplatesFromLocalStorage();
+                templates.splice(index, 1);
+                saveTemplatesToLocalStorage(templates);
+                renderTemplates();
+            }
+        });
+        
+        // --- Invoice Functions ---
+        function saveInvoicesToLocalStorage(data) {
+            localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadInvoicesFromLocalStorage() {
+            const data = localStorage.getItem(INVOICE_STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function updateDailyPreview() {
+            itemList.innerHTML = '';
+            if (dailyItems.length === 0) {
+                itemList.innerHTML = '<li class="text-gray-500">No items added yet.</li>';
+                dailyTotalEl.textContent = 'Rs.0.00';
+                return;
+            }
+
+            dailyItems.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center text-gray-700';
+                li.innerHTML = `
+                    <span>${item.product} (${item.quantity} x Rs.${item.price.toFixed(2)})</span>
+                    <span>Rs.${(item.quantity * item.price).toFixed(2)}</span>
+                `;
+                itemList.appendChild(li);
             });
 
-            // Animate inner halo bulbs (main rectangle's outer bulbs)
-            if (innerHaloContainer) {
-                const innerBulbs = innerHaloContainer.querySelectorAll('.inner-halo-bulb');
-                if (innerBulbs.length === 0) return;
+            dailySubtotal = dailyItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            dailyTotalEl.textContent = `Rs.${dailySubtotal.toFixed(2)}`;
+        }
 
-                // For inner bulbs, let's always use a sequential or a simple random blink
-                innerPatternTypeForHalo = Math.floor(Math.random() * 2); // Re-assign here
+        // Function to generate the daily invoice HTML (updated to match the PDF sample)
+        function generateInvoiceHTML(invoice) {
+            const creationDate = new Date(invoice.date);
+            const dueDate = new Date(invoice.dueDate);
+            const formattedCreationDate = creationDate.toLocaleDateString('en-US');
+            const formattedDueDate = dueDate.toLocaleDateString('en-US');
 
-                if (innerPatternTypeForHalo === 0) {
-                    innerBulbs.forEach(bulb => {
-                        const randomColor = innerBulbColors[Math.floor(Math.random() * innerBulbColors.length)];
-                        bulb.style.backgroundColor = randomColor;
-                    });
-                } else if (innerPatternTypeForHalo === 1) {
-                    let delay = 0;
-                    innerBulbs.forEach((bulb, index) => {
-                        setTimeout(() => {
-                            bulb.style.backgroundColor = innerBulbColors[index % innerBulbColors.length];
-                        }, delay);
-                        delay += 30; // Faster sequential effect for inner bulbs
-                    });
+            let itemsHTML = invoice.items.map(item => `
+                <tr class="border-b border-gray-200 last:border-b-0">
+                    <td class="py-2 px-4 text-left">${item.product}</td>
+                    <td class="py-2 px-4 text-center">${item.quantity}</td>
+                    <td class="py-2 px-4 text-right">Rs.${item.price.toFixed(2)}</td>
+                    <td class="py-2 px-4 text-right">Rs.${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="bg-white p-8">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h1 class="text-4xl font-bold text-gray-800">${companyDetails.name}</h1>
+                            <p class="text-sm text-gray-600">${companyDetails.phone}</p>
+                            <p class="text-sm text-gray-600">${companyDetails.email}</p>
+                        </div>
+                        <div class="text-right">
+                            <h2 class="text-3xl font-bold text-gray-800 mb-2">INVOICE</h2>
+                            <p class="text-sm text-gray-600">INVOICE #: <span class="font-bold">${invoice.invoiceNumber}</span></p>
+                            <p class="text-sm text-gray-600">CREATION DATE: <span class="font-bold">${formattedCreationDate}</span></p>
+                            <p class="text-sm text-gray-600">DUE DATE: <span class="font-bold">${formattedDueDate}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">BILL TO</h3>
+                        <p class="text-md text-gray-600 font-semibold">${invoice.client.name}</p>
+                        <p class="text-md text-gray-600">${invoice.client.address}</p>
+                    </div>
+
+                    <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-4 text-left">DESCRIPTION</th>
+                                <th class="py-3 px-4 text-center">QTY</th>
+                                <th class="py-3 px-4 text-right">PRICE</th>
+                                <th class="py-3 px-4 text-right">AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light">
+                            ${itemsHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="flex justify-end">
+                        <div class="w-full md:w-1/2 space-y-2 text-right">
+                            <div class="flex justify-between border-t border-gray-200 pt-2">
+                                <span class="text-md font-medium text-gray-600">SUBTOTAL:</span>
+                                <span class="text-md font-bold text-gray-800">Rs.${invoice.subtotal.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-md font-medium text-gray-600">DISCOUNT:</span>
+                                <span class="text-md font-bold text-red-500">-Rs.${invoice.discount.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between border-t border-gray-400 pt-2">
+                                <span class="text-xl font-bold text-gray-800">TOTAL:</span>
+                                <span class="text-xl font-extrabold text-indigo-600">Rs.${invoice.total.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 border-t border-gray-200 pt-4">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">PAYMENT METHOD</h3>
+                        <p class="text-md text-gray-600">Account Number: ${companyDetails.bankDetails.accountNumber}</p>
+                        <p class="text-md text-gray-600">Account Name: ${companyDetails.bankDetails.accountName}</p>
+                        <p class="text-md text-gray-600">${companyDetails.bankDetails.bank}</p>
+                        <p class="text-md text-gray-600">${companyDetails.bankDetails.branch}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to render the monthly report
+        function renderMonthlyReport() {
+            const invoices = loadInvoicesFromLocalStorage();
+            if (invoices.length === 0) {
+                monthlyReportContainer.innerHTML = '<p class="text-center text-gray-500">No invoices generated yet.</p>';
+                return;
+            }
+
+            // Group invoices by month and year
+            const monthlyData = invoices.reduce((acc, invoice) => {
+                const date = new Date(invoice.date);
+                const monthYear = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
+                if (!acc[monthYear]) {
+                    acc[monthYear] = {
+                        invoices: [],
+                        total: 0
+                    };
                 }
-            }
+                acc[monthYear].invoices.push(invoice);
+                acc[monthYear].total += invoice.total;
+                return acc;
+            }, {});
 
-            // Animate bulbs for the new zoom window's outer border
-            if (imageZoomWindow && imageZoomWindow.classList.contains('active') && zoomWindowBulbsContainer) {
-                const zoomWindowBulbs = zoomWindowBulbsContainer.querySelectorAll('.outline-bulb');
-                // Ensure bulbs are created if they don't exist yet for the zoom window
-                if (zoomWindowBulbs.length === 0) {
-                    createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
-                }
-                const zoomPatternType = Math.floor(Math.random() * 3); // 0: random, 1: sequential, 2: ripple
+            monthlyReportContainer.innerHTML = '';
+            for (const month in monthlyData) {
+                const monthDiv = document.createElement('div');
+                monthDiv.className = 'border-t border-gray-300 pt-4';
+                
+                const heading = document.createElement('div');
+                heading.className = 'flex justify-between items-center mb-4';
+                heading.innerHTML = `
+                    <h3 class="text-xl font-bold text-gray-700">${month}</h3>
+                    <p class="text-lg font-semibold text-indigo-600">Total: Rs.${monthlyData[month].total.toFixed(2)}</p>
+                `;
+                monthDiv.appendChild(heading);
 
-                if (zoomPatternType === 0) {
-                    zoomWindowBulbs.forEach(bulb => {
-                        const randomColor = outerBulbColors[Math.floor(Math.random() * outerBulbColors.length)];
-                        bulb.style.backgroundColor = randomColor;
-                    });
-                } else if (zoomPatternType === 1) {
-                    let delay = 0;
-                    zoomWindowBulbs.forEach((bulb, index) => {
-                        setTimeout(() => {
-                            bulb.style.backgroundColor = outerBulbColors[index % outerBulbColors.length];
-                        }, delay);
-                        delay += 40; // Slightly faster sequential for zoom window
-                    });
-                } else if (zoomPatternType === 2) {
-                    const startBulbIndex = Math.floor(Math.random() * zoomWindowBulbs.length);
-                    let delay = 0;
-                    bulbs.forEach((bulb, index) => {
-                        const distance = Math.min(
-                            Math.abs(index - startBulbIndex),
-                            bulbs.length - Math.abs(index - startBulbIndex)
-                        );
-                        setTimeout(() => {
-                            bulb.style.backgroundColor = outerBulbColors[distance % outerBulbColors.length];
-                        }, delay + distance * 50); // Slightly faster ripple for zoom window
-                    });
-                }
-            }
-        }
-
-        /**
-         * Shows the finger icon.
-         */
-        function showFingerIcon() {
-            if (!userInteractedWithCircles) {
-                if (fingerIcon) {
-                    fingerIcon.style.opacity = '1';
-                    fingerIcon.style.pointerEvents = 'auto'; // Make it clickable (though it's just a visual cue)
-                    setTimeout(() => {
-                        hideFingerIcon();
-                    }, 3000); // Show for 3 seconds
-                }
+                const table = document.createElement('table');
+                table.className = 'min-w-full bg-white border border-gray-200 rounded-lg';
+                table.innerHTML = `
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-4 text-left">Invoice #</th>
+                            <th class="py-3 px-4 text-left">Date</th>
+                            <th class="py-3 px-4 text-left">Client</th>
+                            <th class="py-3 px-4 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600 text-sm font-light">
+                        ${monthlyData[month].invoices.map(invoice => `
+                            <tr class="border-b border-gray-200">
+                                <td class="py-2 px-4">${invoice.invoiceNumber}</td>
+                                <td class="py-2 px-4">${new Date(invoice.date).toLocaleDateString()}</td>
+                                <td class="py-2 px-4">${invoice.client ? invoice.client.name : 'N/A'}</td>
+                                <td class="py-2 px-4 text-right">Rs.${invoice.total.toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                monthDiv.appendChild(table);
+                monthlyReportContainer.appendChild(monthDiv);
             }
         }
 
-        /**
-         * Hides the finger icon and schedules its next appearance if no interaction.
-         */
-        function hideFingerIcon() {
-            if (fingerIcon) {
-                fingerIcon.style.opacity = '0';
-                fingerIcon.style.pointerEvents = 'none';
-            }
-            if (!userInteractedWithCircles) {
-                // Schedule next appearance after 10 seconds of being hidden
-                fingerIconInterval = setTimeout(() => {
-                    showFingerIcon();
-                }, 10000); 
-            }
-        }
+        // Event listener for adding items to the daily invoice
+        invoiceForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedClientIndex = clientSelect.value;
+            const selectedProductIndex = productSelect.value;
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
 
-        /**
-         * Shows the audio hint (hand and text).
-         */
-        function showAudioHint() {
-            if (shouldShowAudioHint) {
-                if (audioHint) {
-                    audioHint.classList.add('active');
-                }
+            if (selectedClientIndex !== "" && selectedProductIndex !== "" && !isNaN(quantity) && quantity > 0) {
+                const selectedProduct = productTemplates[selectedProductIndex];
+                dailyItems.push({ product: selectedProduct.name, price: selectedProduct.price, quantity });
+                updateDailyPreview();
+                // We keep the client selected, but reset the product and quantity fields
+                document.getElementById('quantity').value = '';
+                productSelect.value = '';
+            } else {
+                alert('Please select a client and a product, and enter a valid quantity.');
             }
-        }
+        });
 
-        /**
-         * Hides the audio hint (hand and text).
-         */
-        function hideAudioHint() {
-            if (audioHint) {
-                audioHint.classList.remove('active');
-            }
-            shouldShowAudioHint = false; // Once hidden, don't show again
-        }
-
-        /**
-         * Shows the circle hint (hand and text).
-         */
-        function showCircleHint() {
-            if (shouldShowCircleHint) {
-                if (circleHint) {
-                    circleHint.classList.add('active');
-                }
-            }
-        }
-
-        /**
-         * Hides the circle hint (hand and text).
-         */
-        function hideCircleHint() {
-            if (circleHint) {
-                circleHint.classList.remove('active');
-            }
-            shouldShowCircleHint = false; // Once hidden, don't show again
-        }
-
-
-        /**
-         * Zooms an image into the new full-screen zoom window.
-         * @param {string} imageUrl - The URL of the image to zoom.
-         * @param {string} imageAlt - The alt text of the image to use as title.
-         */
-        function zoomImage(imageUrl, imageAlt) {
-            userInteractedWithCircles = true; // User has interacted, stop showing finger icon
-            clearTimeout(fingerIconInterval); // Clear any pending timeouts
-            if (fingerIcon) {
-                fingerIcon.style.opacity = '0'; // Hide immediately
-                fingerIcon.style.pointerEvents = 'none';
+        // Event listener for generating and saving the daily invoice
+        generateButton.addEventListener('click', () => {
+            if (dailyItems.length === 0) {
+                alert('Please add at least one item to generate an invoice.');
+                return;
             }
 
-            hideAudioHint(); // Also hide audio hint if user interacts with circles
-            hideCircleHint(); // Also hide circle hint if user interacts with circles
+            const selectedClientIndex = clientSelect.value;
+            if (selectedClientIndex === "") {
+                alert('Please select a client before generating the invoice.');
+                return;
+            }
+            const selectedClient = clientTemplates[selectedClientIndex];
+            const discount = parseFloat(discountInput.value) || 0;
+            const dueDate = dueDateInput.value || new Date().toISOString().split('T')[0];
 
-            if (zoomedDisplayImage) { // Added null check
-                zoomedDisplayImage.src = imageUrl;
-                zoomedDisplayImage.alt = imageAlt;
+            const invoices = loadInvoicesFromLocalStorage();
+            const newInvoiceNumber = invoices.length > 0 ? Math.max(...invoices.map(inv => inv.invoiceNumber)) + 1 : 1001;
+            const newInvoice = {
+                invoiceNumber: newInvoiceNumber,
+                date: new Date().toISOString(),
+                dueDate: dueDate,
+                client: selectedClient,
+                items: dailyItems,
+                subtotal: dailySubtotal,
+                discount: discount,
+                total: dailySubtotal - discount
+            };
+
+            invoices.push(newInvoice);
+            saveInvoicesToLocalStorage(invoices);
+            dailyItems = [];
+            dailySubtotal = 0;
+            updateDailyPreview();
+            renderMonthlyReport();
+            invoiceForm.reset();
+            alert(`Invoice #${newInvoiceNumber} saved successfully!`);
+        });
+
+        // Event listener for downloading today's invoice
+        downloadButton.addEventListener('click', () => {
+            const invoices = loadInvoicesFromLocalStorage();
+            if (invoices.length === 0) {
+                alert('No invoices have been saved to download.');
+                return;
             }
             
-            const titles = imageTitles[imageAlt];
-            if (titles) {
-                if (zoomedImageTitle) zoomedImageTitle.textContent = titles.title; // Added null check
-                if (zoomedImageSubtitle) zoomedImageSubtitle.textContent = titles.subtitle; // Added null check
-            } else {
-                if (zoomedImageTitle) zoomedImageTitle.textContent = "Image Title"; // Fallback
-                if (zoomedImageSubtitle) zoomedImageSubtitle.textContent = "";
-            }
+            const lastInvoice = invoices[invoices.length - 1];
+            
+            // Create a temporary container to render the full invoice for printing
+            printContainer.innerHTML = generateInvoiceHTML(lastInvoice);
+            window.print();
+            printContainer.innerHTML = '';
+        });
 
-            // Hide other popups if active
-            hideAllPopups();
-
-            // Activate overlay and show zoom window with animation
-            if (overlay) overlay.classList.add('active'); // Added null check
-            if (imageZoomWindow) imageZoomWindow.classList.add('active'); // Added null check
-
-            // Initialize bulbs for the zoom window's outer border
-            if (zoomWindowBulbsContainer) { // Added null check
-                createOutlineBulbs(zoomWindowBulbsContainer, 40, 'outline-bulb', 5); // 40 bulbs, 5px offset
-            }
-            animateBulbs(); // Run animation immediately for the new window
-        }
-
-        /**
-         * Shows the copyright popup window.
-         */
-        function showCopyrightPopup() {
-            // Hide other popups if active
-            hideAllPopups();
-
-            if (overlay) overlay.classList.add('active'); // Added null check
-            if (copyrightPopup) copyrightPopup.classList.add('active'); // Added null check
-        }
-
-        /**
-         * Hides all active popup windows and the overlay.
-         */
-        function hideAllPopups() {
-            if (overlay) overlay.classList.remove('active'); // Added null check
-            if (imageZoomWindow) imageZoomWindow.classList.remove('active'); // Added null check
-            if (copyrightPopup) copyrightPopup.classList.remove('active'); // Added null check
-        }
-
-        /**
-         * Toggles music play/pause and mute/unmute.
-         */
-        function toggleMusic() {
-            if (player) {
-                hideAudioHint(); // Hide hint once user interacts with music
-                hideCircleHint(); // Also hide circle hint if user interacts with music
-
-                if (player.isMuted()) {
-                    player.unMute();
-                    updateMusicControlIcon(true);
-                    isMusicPlaying = true;
-                } else if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-                    player.mute();
-                    updateMusicControlIcon(false);
-                    isMusicPlaying = false;
-                } else {
-                    player.playVideo();
-                    player.unMute(); // Unmute if paused and then played
-                    updateMusicControlIcon(true);
-                    isMusicPlaying = true;
-                }
-            }
-        }
-
-        /**
-         * Updates the speaker icon based on mute status.
-         * @param {boolean} isMuted - True if music is muted, false otherwise.
-         */
-        function updateMusicControlIcon(isMuted) {
-            if (isMuted) {
-                if(speakerIconOn) speakerIconOn.style.display = 'block';
-                if(speakerIconOff) speakerIconOff.style.display = 'none';
-            } else {
-                if(speakerIconOn) speakerIconOn.style.display = 'none';
-                if(speakerIconOff) speakerIconOff.style.display = 'block';
-            }
-        }
-
-        /**
-         * Handles sharing content via Web Share API or fallbacks.
-         */
-        function shareContent() {
-            const shareText = "පොසොන් තොරණ නැරඹීමට ඔබටත් ආරාධනා! "; // Sinhala invitation text
-            const shareUrl = "https://posonthorana.github.io/"; // Poson Thorana link
-
-            if (navigator.share) {
-                // Use Web Share API if available
-                navigator.share({
-                    title: 'Poson Thorana',
-                    text: shareText,
-                    url: shareUrl,
-                })
-                .then(() => console.log('Successful share'))
-                .catch((error) => console.log('Error sharing', error));
-            } else {
-                // Fallback for browsers that do not support Web Share API
-                // Open a new window with WhatsApp and Facebook share links
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + shareUrl)}`;
-                const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
-
-                const shareWindow = window.open('', '_blank', 'width=600,height=400,resizable=yes,scrollbars=yes');
-                shareWindow.document.write(`
-                    <body style="font-family: 'Noto Sans Sinhala', sans-serif; background-color: #333; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; text-align: center;">
-                        <h2 style="font-weight: 900; font-size: 1.8rem; margin-bottom: 20px;">මෙම තොරණ බෙදාගන්න</h2>
-                        <a href="${whatsappUrl}" target="_blank" style="display: inline-block; background-color: #25D366; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-size: 1.1rem; margin-bottom: 15px;">WhatsApp මඟින් බෙදාගන්න</a>
-                        <a href="${facebookUrl}" target="_blank" style="display: inline-block; background-color: #1877F2; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-size: 1.1rem;">Facebook මඟින් බෙදාගන්න</a>
-                        <p style="margin-top: 25px; font-size: 0.9rem; color: #ccc;">නව කවුළුව වසන්න</p>
-                    </body>
-                `);
-                shareWindow.document.close();
-            }
-        }
-
-
-        // Initialize all bulbs for the main design when the DOM is loaded
-        function initializeAllMainDesignBulbs() {
-            const circleIds = ['circle-1', 'circle-2', 'circle-3', 'circle-4', 'circle-5', 'circle-6', 'circle-7'];
-            const numberOfOuterBulbsPerCircle = 30; // Number of bulbs around the circumference for outer circles
-            const outerBulbOffset = 5; // Pixels inwards from the border for outer bulbs (border is 2px)
-
-            circleIds.forEach(id => {
-                const circleElement = document.getElementById(id);
-                if (circleElement) {
-                    // Create bulbs for outer circles
-                    createOutlineBulbs(circleElement, numberOfOuterBulbsPerCircle, 'outline-bulb', outerBulbOffset);
-                }
-            });
-
-            // Initialize bulbs for the inner halo container (main rectangle's outer bulbs)
-            if (innerHaloContainer) {
-                const numberOfInnerBulbs = 20; // Fewer, denser bulbs for inner halo
-                const innerBulbOffset = 5; // Increased offset to create more space
-                createOutlineBulbs(innerHaloContainer, numberOfInnerBulbs, 'inner-halo-bulb', innerBulbOffset);
-            }
-        }
-
-        // Event Listeners
+        // Initial render on page load
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize DOM elements here to ensure they are available
-            buddhaImageContainer = document.getElementById('buddha-image-container');
-            innerHaloContainer = document.getElementById('inner-halo-container');
-            overlay = document.getElementById('overlay');
-            fingerIcon = document.getElementById('finger-icon');
-            musicControlBtn = document.getElementById('music-control-btn');
-            speakerIconOn = document.getElementById('speaker-icon-on');
-            speakerIconOff = document.getElementById('speaker-icon-off');
-            audioHint = document.getElementById('audio-hint');
-            circleHint = document.getElementById('circle-hint'); // Get the new circle hint element
-            bottomCopyrightText = document.getElementById('bottom-copyright-text'); // Initialize new copyright text element
-
-            imageZoomWindow = document.getElementById('full-screen-zoom-window');
-            zoomWindowBulbsContainer = document.getElementById('zoom-window-bulbs-container');
-            zoomedDisplayImage = document.getElementById('zoomed-display-image');
-            zoomedImageTitle = document.getElementById('zoomed-image-title');
-            zoomedImageSubtitle = document.getElementById('zoomed-image-subtitle');
-
-            // copyrightBtn is no longer present in HTML, so no need to initialize it.
-            shareBtn = document.getElementById('share-btn');
-            copyrightPopup = document.getElementById('copyright-popup');
-
-            initializeAllMainDesignBulbs(); // Initialize bulbs for the main design
-
-            // Start the animation loop for all bulbs
-            setInterval(animateBulbs, 1500); // Change pattern every 1.5 seconds
-
-            // Add click listeners to all circle images
-            const circleDivs = document.querySelectorAll('[id^="circle-"]'); // Select the div, not just the img
-            circleDivs.forEach(circleDiv => {
-                const img = circleDiv.querySelector('img'); // Get the img inside the div
-                if (img) {
-                    img.addEventListener('click', (event) => {
-                        event.stopPropagation(); // Prevent background click immediately
-                        zoomImage(img.src, img.alt); // Pass image src and alt
-                    });
-                }
-            });
-
-            // Add click listener to the overlay to reset zoom
-            if (overlay) {
-                overlay.addEventListener('click', () => {
-                    hideAllPopups();
-                });
-            }
-
-            // Prevent clicks inside the zoom window from closing it
-            if (imageZoomWindow) {
-                imageZoomWindow.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                });
-            }
-
-            // Prevent clicks inside the copyright popup from closing it
-            if (copyrightPopup) {
-                copyrightPopup.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                });
-            }
-
-            // Add event listeners for new buttons
-            // copyrightBtn is removed, so its event listener is also removed.
-            if (shareBtn) shareBtn.addEventListener('click', shareContent);
-
-            // Add event listener for the new bottom copyright text
-            if (bottomCopyrightText) {
-                bottomCopyrightText.addEventListener('click', showCopyrightPopup);
-            }
-
-            // Add event listener for music control button
-            if (musicControlBtn) musicControlBtn.addEventListener('click', toggleMusic);
-
-            // Show audio hint and circle hint after a short delay (2 seconds after DOMContentLoaded)
-            setTimeout(() => {
-                showAudioHint();
-                showCircleHint(); // Show circle hint along with audio hint
-            }, 2000);
-
-            // The finger icon animation for circles will now be redundant since we have circle-hint
-            // If you still want the finger icon, its logic can be re-enabled here.
-            // For now, it will not be shown as `showFingerIcon()` is not called on `DOMContentLoaded`.
+            renderClients();
+            renderTemplates();
+            updateDailyPreview();
+            renderMonthlyReport();
+            // Set default due date to one week from today
+            const today = new Date();
+            const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            dueDateInput.value = oneWeekFromNow.toISOString().split('T')[0];
         });
     </script>
-
 </body>
 </html>
