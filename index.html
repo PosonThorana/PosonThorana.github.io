@@ -67,59 +67,13 @@
         <!-- Auth Section -->
         <div id="auth-section" class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
             <div id="user-info" class="flex-1 text-gray-700">
-                <span id="user-display" class="font-medium">Please log in.</span>
+                <span id="user-display" class="font-medium">Checking authentication...</span>
             </div>
             <div class="flex space-x-2">
                 <button id="logout-button" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300 hidden">Logout</button>
             </div>
         </div>
         
-        <!-- Login Modal -->
-        <div id="login-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full space-y-6">
-                <h2 class="text-2xl font-bold text-gray-800 text-center">Login to Your Account</h2>
-                <form id="login-form" class="space-y-4">
-                    <div>
-                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" id="login-email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="login-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Login
-                    </button>
-                    <div class="text-center text-sm text-gray-500">
-                        Don't have an account? <button type="button" id="show-signup" class="text-indigo-600 hover:text-indigo-800 font-medium">Create one</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Signup Modal -->
-        <div id="signup-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
-            <div class="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full space-y-6">
-                <h2 class="text-2xl font-bold text-gray-800 text-center">Create an Account</h2>
-                <form id="signup-form" class="space-y-4">
-                    <div>
-                        <label for="signup-email" class="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" id="signup-email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <div>
-                        <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="signup-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                    </div>
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Create Account
-                    </button>
-                    <div class="text-center text-sm text-gray-500">
-                        Already have an account? <button type="button" id="show-login" class="text-indigo-600 hover:text-indigo-800 font-medium">Login</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         <!-- Main app content -->
         <div id="app-content" class="space-y-8 hidden">
             <!-- Client Templates Section -->
@@ -266,7 +220,7 @@
     <script type="module">
         const {
             initializeApp, getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged,
-            getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query
+            getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, getDocs
         } = window.firebase;
 
         // Custom alert function
@@ -308,12 +262,6 @@
 
         // UI element references
         const appContent = document.getElementById('app-content');
-        const loginModal = document.getElementById('login-modal');
-        const signupModal = document.getElementById('signup-modal');
-        const loginForm = document.getElementById('login-form');
-        const signupForm = document.getElementById('signup-form');
-        const showSignupBtn = document.getElementById('show-signup');
-        const showLoginBtn = document.getElementById('show-login');
         const logoutButton = document.getElementById('logout-button');
         const userDisplay = document.getElementById('user-display');
         const clientTemplateForm = document.getElementById('client-template-form');
@@ -362,8 +310,6 @@
                             userDisplay.textContent = `User ID: ${userId}`;
                             appContent.classList.remove('hidden');
                             logoutButton.classList.remove('hidden');
-                            loginModal.classList.add('hidden');
-                            signupModal.classList.add('hidden');
                             
                             // Load data from Firestore after successful login
                             await loadAllData();
@@ -373,7 +319,6 @@
                             userDisplay.textContent = 'Please log in.';
                             appContent.classList.add('hidden');
                             logoutButton.classList.add('hidden');
-                            loginModal.classList.remove('hidden');
                         }
                     });
                 } else {
@@ -399,31 +344,7 @@
                 showCustomAlert("Error logging out: " + error.message);
             }
         });
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            showCustomAlert('Login functionality is not fully implemented in this demo. Please proceed with the default sign-in.');
-        });
-
-        signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            showCustomAlert('Signup functionality is not fully implemented in this demo. Please proceed with the default sign-in.');
-        });
-
-        showSignupBtn.addEventListener('click', () => {
-            loginModal.classList.add('hidden');
-            signupModal.classList.remove('hidden');
-        });
-
-        showLoginBtn.addEventListener('click', () => {
-            signupModal.classList.add('hidden');
-            loginModal.classList.remove('hidden');
-        });
-
+        
         // --- Firestore Data Management ---
         const getCollectionRef = (collectionName) => collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
         
