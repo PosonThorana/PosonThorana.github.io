@@ -1,911 +1,1079 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Invoice App</title>
-  <!-- Tailwind CSS for styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-  </style>
-  <!-- jspdf library for PDF generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Pro</title>
+    <!-- Use Inter font -->
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-  <div id="app" class="container mx-auto p-4">
-    <!-- App will be rendered here dynamically -->
-  </div>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
-  <script type="module">
-    // Firebase SDK imports from CDN
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Global variables for Firebase services and app state
-    let db;
-    let auth;
-    let userId = null;
-    let appId;
-    let currentPage = 'invoice'; // Set default page to invoice after login
-    let userProfile = {}; // Store user profile data for the invoice PDF
-    let clients = []; // Global array to store client data
-    let projects = []; // Global array to store project data
-
-    // Get Firebase configuration from the environment
-    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-    // A function to render the entire application
-    const renderApp = (user) => {
-      const appContainer = document.getElementById('app');
-      appContainer.innerHTML = '';
-
-      if (!user) {
-        // Render the authentication section if no user is logged in
-        renderAuthSection(appContainer);
-      } else {
-        // After login, render the main application and go to the invoice page
-        currentPage = 'invoice';
-        renderMainApp(appContainer);
-      }
-    };
-
-    const renderMainApp = (container) => {
-      // Main app structure with navigation bar
-      container.innerHTML = `
-        <div class="bg-gray-100 p-8 flex items-center justify-center min-h-screen">
-          <div class="max-w-4xl w-full">
-            <nav class="mb-8 flex space-x-4 flex-wrap">
-              <button id="nav-invoice" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-white text-gray-800">Create Invoice</button>
-              <button id="nav-reports" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-white text-gray-800">Reports</button>
-              <button id="nav-clients" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-white text-gray-800">Clients</button>
-              <button id="nav-projects" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-white text-gray-800">Project Templates</button>
-              <button id="nav-profile" class="px-4 py-2 rounded-lg font-semibold transition-colors bg-white text-gray-800">Profile</button>
-            </nav>
-            <div id="content-area"></div>
-          </div>
-        </div>
-      `;
-
-      // Add event listeners for navigation buttons
-      document.getElementById('nav-profile').addEventListener('click', () => { currentPage = 'profile'; renderContent(); });
-      document.getElementById('nav-clients').addEventListener('click', () => { currentPage = 'clients'; renderContent(); });
-      document.getElementById('nav-projects').addEventListener('click', () => { currentPage = 'projects'; renderContent(); });
-      document.getElementById('nav-invoice').addEventListener('click', () => { currentPage = 'invoice'; renderContent(); });
-      document.getElementById('nav-reports').addEventListener('click', () => { currentPage = 'reports'; renderContent(); });
-
-      renderContent();
-    };
-
-    const renderContent = () => {
-      const contentArea = document.getElementById('content-area');
-      if (!contentArea) {
-        console.error("Content area not found.");
-        return;
-      }
-
-      // Update active navigation button styles
-      document.querySelectorAll('nav button').forEach(button => {
-        if (button.id === `nav-${currentPage}`) {
-          button.classList.add('bg-indigo-600', 'text-white');
-          button.classList.remove('bg-white', 'text-gray-800');
-        } else {
-          button.classList.remove('bg-indigo-600', 'text-white');
-          button.classList.add('bg-white', 'text-gray-800');
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.0/html-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Date Formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.28.0/dist/date-fns.min.js"></script>
+    <!-- Toast & Dialog Libraries (simplified inline versions) -->
+    <style>
+        .toast-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 1000;
         }
-      });
-
-      // Render the content for the current page
-      switch (currentPage) {
-        case 'profile':
-          renderProfileSection(contentArea);
-          break;
-        case 'clients':
-          renderClientsSection(contentArea);
-          break;
-        case 'projects':
-          renderProjectsSection(contentArea);
-          break;
-        case 'invoice':
-          renderInvoiceGenerator(contentArea);
-          break;
-        case 'reports':
-          renderReportsSection(contentArea);
-          break;
-      }
-    };
-
-    // Render the authentication section
-    const renderAuthSection = (container) => {
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 w-full max-w-md mx-auto">
-          <h1 class="text-3xl font-extrabold text-gray-900 text-center mb-6">Welcome to your Account</h1>
-          <form id="auth-form" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Email</label>
-              <input type="email" id="auth-email" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Password</label>
-              <input type="password" id="auth-password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required />
-            </div>
-            <div id="auth-error" class="hidden p-3 bg-red-100 text-red-700 rounded-lg text-sm"></div>
-            <div class="flex space-x-4">
-              <button type="button" id="login-btn" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Log In</button>
-              <button type="button" id="create-account-btn" class="w-full px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors">Create Account</button>
-            </div>
-          </form>
-        </div>
-      `;
-
-      // Add event listeners for auth buttons
-      const emailInput = document.getElementById('auth-email');
-      const passwordInput = document.getElementById('auth-password');
-      const errorDiv = document.getElementById('auth-error');
-
-      document.getElementById('login-btn').addEventListener('click', async () => {
-        try {
-          await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        } catch (error) {
-          errorDiv.textContent = error.message;
-          errorDiv.classList.remove('hidden');
+        .toast {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            max-width: 300px;
         }
-      });
-
-      document.getElementById('create-account-btn').addEventListener('click', async () => {
-        try {
-          await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        } catch (error) {
-          errorDiv.textContent = error.message;
-          errorDiv.classList.remove('hidden');
+        .toast.show {
+            opacity: 1;
         }
-      });
-    };
-
-    // Render the Profile section
-    const renderProfileSection = (container) => {
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-3xl font-extrabold text-gray-900">User Profile</h2>
-          </div>
-          <div class="mb-6 text-gray-600">
-            <p class="text-sm font-medium">Your User ID:</p>
-            <p id="user-id-display" class="font-mono break-all text-sm mt-1">${userId}</p>
-          </div>
-          <form id="profile-form" class="space-y-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Service Name</label>
-              <input type="text" id="service-name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" required />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Payment Information</label>
-              <textarea id="payment-info" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" rows="4" placeholder="Add your bank account details or other payment methods here."></textarea>
-            </div>
-            <div id="profile-message" class="hidden p-3 rounded-lg text-sm"></div>
-            <button type="submit" id="save-profile-btn" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Save Changes</button>
-            <button type="button" id="signout-btn" class="w-full mt-4 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors">Sign Out</button>
-          </form>
-        </div>
-      `;
-
-      // Set up the form with current user profile data
-      const serviceNameInput = document.getElementById('service-name');
-      const paymentInfoInput = document.getElementById('payment-info');
-      serviceNameInput.value = userProfile.serviceName || '';
-      paymentInfoInput.value = userProfile.paymentInfo || '';
-
-      // Add event listener for the form submission
-      document.getElementById('profile-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const serviceName = document.getElementById('service-name').value;
-        const paymentInfo = document.getElementById('payment-info').value;
-        const messageDiv = document.getElementById('profile-message');
-        const saveBtn = document.getElementById('save-profile-btn');
-        saveBtn.textContent = 'Saving...';
-        saveBtn.disabled = true;
-
-        try {
-          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/profile`, 'info'), { serviceName, paymentInfo }, { merge: true });
-          messageDiv.textContent = 'Profile updated successfully!';
-          messageDiv.classList.add('bg-green-100', 'text-green-700');
-          messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-        } catch (error) {
-          console.error("Error updating profile:", error);
-          messageDiv.textContent = `Error updating profile: ${error.message}`;
-          messageDiv.classList.add('bg-red-100', 'text-red-700');
-          messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-        } finally {
-          saveBtn.textContent = 'Save Changes';
-          saveBtn.disabled = false;
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
         }
-      });
-      
-      // Add event listener for the sign out button
-      document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
-    };
-
-    // Render the Clients section
-    const renderClientsSection = (container) => {
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Clients</h2>
-          <form id="add-client-form" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Client Name</label>
-              <input type="text" id="client-name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" required />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Contact/Company</label>
-              <input type="text" id="client-contact" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" />
-            </div>
-            <div id="client-message" class="hidden p-3 rounded-lg text-sm"></div>
-            <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Add Client</button>
-          </form>
-          <div class="mt-8">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Saved Clients</h3>
-            <ul id="clients-list" class="divide-y divide-gray-200">
-              <!-- Clients will be rendered here -->
-            </ul>
-          </div>
-        </div>
-      `;
-      
-      // Render the clients list from the global clients array
-      const clientsList = document.getElementById('clients-list');
-      if (clientsList) {
-        clientsList.innerHTML = '';
-        clients.forEach(client => {
-          const li = document.createElement('li');
-          li.className = 'py-4 flex justify-between items-center';
-          li.innerHTML = `
-            <div>
-              <p class="font-semibold text-gray-900">${client.name}</p>
-              <p class="text-sm text-gray-500">${client.contact}</p>
-            </div>
-            <div>
-                <button class="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors delete-client-btn" data-client-id="${client.id}">Delete</button>
-            </div>
-          `;
-          clientsList.appendChild(li);
-        });
-      }
-
-      // Add event listener for the form submission
-      document.getElementById('add-client-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const clientName = document.getElementById('client-name').value;
-        const clientContact = document.getElementById('client-contact').value;
-        const messageDiv = document.getElementById('client-message');
-        if (!clientName) {
-          messageDiv.textContent = 'Client name cannot be empty.';
-          messageDiv.classList.add('bg-red-100', 'text-red-700');
-          messageDiv.classList.remove('hidden');
-          return;
+        .dialog-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
         }
+    </style>
 
-        try {
-          // Use clientName as the document ID
-          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/clients`, clientName), { name: clientName, contact: clientContact });
-          messageDiv.textContent = 'Client added successfully!';
-          messageDiv.classList.add('bg-green-100', 'text-green-700');
-          messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-          document.getElementById('add-client-form').reset();
-        } catch (error) {
-          console.error("Error adding client:", error);
-          messageDiv.textContent = `Error adding client: ${error.message}`;
-          messageDiv.classList.add('bg-red-100', 'text-red-700');
-          messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-        }
-      });
-      
-      // Add event listener for delete buttons (using event delegation)
-      document.getElementById('clients-list').addEventListener('click', async (e) => {
-          if (e.target.classList.contains('delete-client-btn')) {
-              const clientId = e.target.dataset.clientId;
-              try {
-                  await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/clients`, clientId));
-              } catch (error) {
-                  console.error("Error deleting client:", error);
-              }
-          }
-      });
-    };
-
-    // Render the Projects section
-    const renderProjectsSection = (container) => {
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Project Templates</h2>
-          <form id="add-project-form" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Template Name</label>
-              <input type="text" id="project-name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" required />
+    <!-- Main App Layout -->
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-blue-600">Invoice Pro</h1>
+                <nav class="flex items-center space-x-4">
+                    <button class="nav-button bg-blue-600 text-white font-semibold py-2 px-4 rounded-full hover:bg-blue-700 transition duration-300" data-page="dashboard">Dashboard</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="clients">Clients</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="projects">Projects</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="reports">Reports</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="profile">Profile</button>
+                    <button id="sign-out-btn" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-full hover:bg-red-600 transition duration-300">Sign Out</button>
+                </nav>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Description</label>
-              <textarea id="project-description" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" rows="2"></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Price</label>
-              <input type="number" id="project-price" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" value="0" />
-            </div>
-            <div id="project-message" class="hidden p-3 rounded-lg text-sm"></div>
-            <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Add Project Template</button>
-          </form>
-          <div class="mt-8">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Saved Templates</h3>
-            <ul id="projects-list" class="divide-y divide-gray-200">
-              <!-- Projects will be rendered here -->
-            </ul>
-          </div>
-        </div>
-      `;
+        </header>
 
-      // Render the projects list from the global projects array
-      const projectsList = document.getElementById('projects-list');
-      if (projectsList) {
-        projectsList.innerHTML = '';
-        projects.forEach(project => {
-          const li = document.createElement('li');
-          li.className = 'py-4 flex justify-between items-center';
-          li.innerHTML = `
-            <div>
-              <p class="font-semibold text-gray-900">${project.id}</p>
-              <p class="text-sm text-gray-500">${project.description}</p>
-              <p class="text-sm text-gray-500">Price: Rs${project.price.toFixed(2)}</p>
-            </div>
-            <div>
-                <button class="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors delete-project-btn" data-project-id="${project.id}">Delete</button>
-            </div>
-          `;
-          projectsList.appendChild(li);
-        });
-      }
-
-      // Add event listener for the form submission
-      document.getElementById('add-project-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const projectName = document.getElementById('project-name').value;
-        const projectDescription = document.getElementById('project-description').value;
-        const projectPrice = parseFloat(document.getElementById('project-price').value) || 0;
-        const messageDiv = document.getElementById('project-message');
-
-        if (!projectName) {
-          messageDiv.textContent = 'Project name cannot be empty.';
-          messageDiv.classList.add('bg-red-100', 'text-red-700');
-          messageDiv.classList.remove('hidden');
-          return;
-        }
-
-        try {
-          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/projects`, projectName), {
-            description: projectDescription,
-            price: projectPrice
-          });
-          messageDiv.textContent = 'Project template added successfully!';
-          messageDiv.classList.add('bg-green-100', 'text-green-700');
-          messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-          document.getElementById('add-project-form').reset();
-        } catch (error) {
-          console.error("Error adding project:", error);
-          messageDiv.textContent = `Error adding project: ${error.message}`;
-          messageDiv.classList.add('bg-red-100', 'text-red-700');
-          messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-        }
-      });
-      
-      // Add event listener for delete buttons (using event delegation)
-      document.getElementById('projects-list').addEventListener('click', async (e) => {
-          if (e.target.classList.contains('delete-project-btn')) {
-              const projectId = e.target.dataset.projectId;
-              try {
-                  await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/projects`, projectId));
-              } catch (error) {
-                  console.error("Error deleting project:", error);
-              }
-          }
-      });
-    };
-
-    // Helper function to download an invoice as a PDF
-    const downloadInvoiceAsPDF = (invoiceData, docId = null) => {
-      // Check if jspdf library is available
-      if (typeof window.jsPDF === 'undefined') {
-        console.error("jsPDF library not loaded. Cannot download invoice.");
-        return;
-      }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      let y = 20;
-
-      // Header with service name and payment info from user profile
-      doc.setFontSize(22);
-      doc.text("INVOICE", 14, y);
-      y += 10;
-      doc.setFontSize(14);
-      doc.text(`From: ${userProfile.serviceName || 'Your Service'}`, 14, y);
-      y += 7;
-      doc.setFontSize(12);
-      doc.text(`Payment Info: ${userProfile.paymentInfo || 'N/A'}`, 14, y);
-      y += 10;
-
-      // Invoice metadata
-      doc.setFontSize(12);
-      doc.text(`Invoice # ${docId || new Date().getTime()}`, 140, 20);
-      doc.text(`Creation Date: ${new Date().toLocaleDateString()}`, 140, 27);
-      y = Math.max(y, 35); // Ensure a clean separation
-
-      // Client information
-      y += 10;
-      doc.setFontSize(14);
-      doc.text("Bill To:", 14, y);
-      y += 7;
-      doc.setFontSize(12);
-      doc.text(`Client Name: ${invoiceData.client.name}`, 14, y);
-      y += 7;
-      doc.text(`Contact/Company: ${invoiceData.client.contact || 'N/A'}`, 14, y);
-      y += 10;
-
-      // Invoice Items Table Header
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Description", 14, y);
-      doc.text("Qty", 100, y);
-      doc.text("Price", 130, y);
-      doc.text("Amount", 170, y);
-      doc.line(14, y + 2, 196, y + 2); // Underline header
-      y += 5;
-
-      // Invoice Items Table Content
-      doc.setFont("helvetica", "normal");
-      const items = invoiceData.items;
-      items.forEach(item => {
-        y += 7;
-        doc.text(item.description.substring(0, 50), 14, y); // Truncate description for space
-        doc.text(item.quantity.toString(), 100, y);
-        doc.text(`Rs${item.price.toFixed(2)}`, 130, y);
-        doc.text(`Rs${(item.quantity * item.price).toFixed(2)}`, 170, y);
-      });
-
-      // Total
-      y += 10;
-      doc.line(14, y, 196, y); // Horizontal line before total
-      y += 7;
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Total:", 130, y);
-      doc.text(`Rs${invoiceData.total.toFixed(2)}`, 170, y);
-
-      // Save the PDF
-      doc.save(`invoice-${docId || new Date().toISOString().split('T')[0]}.pdf`);
-    };
-
-    // Render the Invoice Generator section
-    const renderInvoiceGenerator = (container) => {
-      let invoiceItems = [];
-
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Invoice Generator</h2>
-          <form id="invoice-form" class="space-y-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Select Client</label>
-              <select id="client-select" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm" required>
-                <option value="">-- Select a saved client --</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Client Name</label>
-              <input type="text" id="invoice-client-name" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-200" disabled />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Contact/Company</label>
-              <input type="text" id="invoice-client-contact" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-200" disabled />
-            </div>
-            <div id="invoice-items-container" class="space-y-4">
-              <h3 class="text-xl font-bold text-gray-800">Invoice Items</h3>
-            </div>
-            <button type="button" id="add-item-btn" class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors">Add Invoice Item</button>
-            <div class="text-right">
-              <h3 class="text-xl font-bold text-gray-800">Total: <span id="invoice-total">0.00</span></h3>
-            </div>
-            <div id="invoice-message" class="hidden p-3 rounded-lg text-sm"></div>
-            <div class="flex space-x-4">
-              <button type="submit" id="save-invoice-btn" class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Save Invoice</button>
-              <button type="button" id="download-invoice-btn" class="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">Download as PDF</button>
-            </div>
-          </form>
-        </div>
-      `;
-      
-      const updateInvoiceFormState = () => {
-          const clientSelect = document.getElementById('client-select');
-          const saveBtn = document.getElementById('save-invoice-btn');
-          const downloadBtn = document.getElementById('download-invoice-btn');
-          
-          const isClientSelected = clientSelect.value !== '';
-          const hasItems = invoiceItems.length > 0;
-          
-          if (isClientSelected && hasItems) {
-              saveBtn.disabled = false;
-              downloadBtn.disabled = false;
-              saveBtn.classList.remove('bg-gray-400');
-              downloadBtn.classList.remove('bg-gray-400');
-              saveBtn.classList.add('bg-indigo-600');
-              downloadBtn.classList.add('bg-green-600');
-          } else {
-              saveBtn.disabled = true;
-              downloadBtn.disabled = true;
-              saveBtn.classList.add('bg-gray-400');
-              downloadBtn.classList.add('bg-gray-400');
-              saveBtn.classList.remove('bg-indigo-600');
-              downloadBtn.classList.remove('bg-green-600');
-          }
-      };
-
-
-      const renderInvoiceItems = () => {
-        const container = document.getElementById('invoice-items-container');
-        if (!container) return; // Guard against null container
-        container.innerHTML = `<h3 class="text-xl font-bold text-gray-800">Invoice Items</h3>`;
-        invoiceItems.forEach((item, index) => {
-          const itemDiv = document.createElement('div');
-          itemDiv.className = 'p-4 border border-gray-200 rounded-lg grid grid-cols-5 gap-4 items-end';
-          itemDiv.innerHTML = `
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Template</label>
-              <select class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm project-select" data-index="${index}">
-                <option value="">-- Select template --</option>
-                ${projects.map(p => `<option value="${p.id}" ${item.templateName === p.id ? 'selected' : ''}>${p.id}</option>`).join('')}
-              </select>
-            </div>
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Description</label>
-              <textarea class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm item-description" rows="2" data-index="${index}">${item.description}</textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Quantity</label>
-              <input type="number" value="${item.quantity}" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm item-quantity" data-index="${index}" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Price</label>
-              <input type="number" value="${item.price}" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm item-price" data-index="${index}" />
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-medium text-gray-700">Amount</p>
-              <p class="mt-1 font-bold text-gray-900">${(item.quantity * item.price).toFixed(2)}</p>
-            </div>
-          `;
-          container.appendChild(itemDiv);
-        });
-
-        document.getElementById('invoice-total').textContent = invoiceItems.reduce((acc, item) => acc + (item.quantity * item.price), 0).toFixed(2);
-        updateInvoiceFormState();
-
-        // Add event listeners for the newly rendered items
-        document.querySelectorAll('.project-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const index = parseInt(e.target.dataset.index);
-                const selectedProject = projects.find(p => p.id === e.target.value);
-                if (selectedProject) {
-                    invoiceItems[index].description = selectedProject.description;
-                    invoiceItems[index].price = selectedProject.price;
-                    invoiceItems[index].quantity = 1;
-                    invoiceItems[index].templateName = selectedProject.id;
-                } else {
-                    invoiceItems[index].description = '';
-                    invoiceItems[index].price = 0;
-                    invoiceItems[index].templateName = '';
-                    invoiceItems[index].quantity = 1;
-                }
-                renderInvoiceItems();
-            });
-        });
-        document.querySelectorAll('.item-description').forEach(textarea => {
-            textarea.addEventListener('input', (e) => {
-                const index = parseInt(e.target.dataset.index);
-                invoiceItems[index].description = e.target.value;
-                renderInvoiceItems();
-            });
-        });
-        document.querySelectorAll('.item-quantity').forEach(input => {
-            input.addEventListener('input', (e) => {
-                const index = parseInt(e.target.dataset.index);
-                invoiceItems[index].quantity = parseFloat(e.target.value) || 0;
-                renderInvoiceItems();
-            });
-        });
-        document.querySelectorAll('.item-price').forEach(input => {
-            input.addEventListener('input', (e) => {
-                const index = parseInt(e.target.dataset.index);
-                invoiceItems[index].price = parseFloat(e.target.value) || 0;
-                renderInvoiceItems();
-            });
-        });
-      };
-      
-      // Populate client dropdown
-      const clientSelect = document.getElementById('client-select');
-      if (clientSelect) {
-        clientSelect.innerHTML = `<option value="">-- Select a saved client --</option>`;
-        clients.forEach(client => {
-          const option = document.createElement('option');
-          option.value = client.id;
-          option.textContent = client.name;
-          clientSelect.appendChild(option);
-        });
-      }
-
-      document.getElementById('client-select').addEventListener('change', (e) => {
-        const selectedId = e.target.value;
-        const clientNameInput = document.getElementById('invoice-client-name');
-        const clientContactInput = document.getElementById('invoice-client-contact');
-        if (selectedId) {
-          const client = clients.find(c => c.id === selectedId);
-          if (client) {
-            clientNameInput.value = client.name;
-            clientContactInput.value = client.contact;
-          }
-        } else {
-            clientNameInput.value = '';
-            clientContactInput.value = '';
-        }
-        updateInvoiceFormState();
-      });
-      
-      document.getElementById('add-item-btn').addEventListener('click', () => {
-          invoiceItems.push({ templateName: '', description: '', quantity: 1, price: 0, amount: 0 });
-          renderInvoiceItems();
-      });
-
-      document.getElementById('invoice-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const clientSelect = document.getElementById('client-select');
-        const clientName = document.getElementById('invoice-client-name').value;
-        const clientContact = document.getElementById('invoice-client-contact').value;
-        const messageDiv = document.getElementById('invoice-message');
-
-        if (!clientName || invoiceItems.length === 0) {
-            messageDiv.textContent = 'Please select a client and add at least one invoice item.';
-            messageDiv.classList.add('bg-red-100', 'text-red-700');
-            messageDiv.classList.remove('hidden');
-            return;
-        }
-
-        try {
-            const itemsToSave = invoiceItems.map(item => ({
-                ...item,
-                amount: item.quantity * item.price
-            }));
-
-            await addDoc(collection(db, `artifacts/${appId}/users/${userId}/invoices`), {
-                client: { name: clientName, contact: clientContact },
-                items: JSON.stringify(itemsToSave), // Use JSON.stringify to store the array of objects
-                total: itemsToSave.reduce((acc, item) => acc + item.amount, 0),
-                createdAt: serverTimestamp()
-            });
-            messageDiv.textContent = 'Invoice saved successfully!';
-            messageDiv.classList.add('bg-green-100', 'text-green-700');
-            messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-            
-            // Clear the form after submission
-            document.getElementById('invoice-form').reset();
-            invoiceItems = [];
-            renderInvoiceItems();
-        } catch (error) {
-            console.error("Error saving invoice:", error);
-            messageDiv.textContent = `Error saving invoice: ${error.message}`;
-            messageDiv.classList.add('bg-red-100', 'text-red-700');
-            messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-        }
-      });
-
-      document.getElementById('download-invoice-btn').addEventListener('click', (e) => {
-          const downloadBtn = e.target;
-          // Disable the button to prevent multiple clicks
-          downloadBtn.disabled = true;
-          downloadBtn.textContent = 'Downloading...';
-
-          const clientName = document.getElementById('invoice-client-name').value;
-          const clientContact = document.getElementById('invoice-client-contact').value;
-          const total = invoiceItems.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-          const messageDiv = document.getElementById('invoice-message');
-
-          if (!clientName || invoiceItems.length === 0) {
-              messageDiv.textContent = 'Please select a client and add at least one invoice item.';
-              messageDiv.classList.add('bg-red-100', 'text-red-700');
-              messageDiv.classList.remove('hidden');
-              // Re-enable the button since there's an error
-              downloadBtn.disabled = false;
-              downloadBtn.textContent = 'Download as PDF';
-              return;
-          }
-
-          const itemsForPDF = invoiceItems.map(item => ({
-              ...item,
-              amount: item.quantity * item.price
-          }));
-
-          const invoiceData = {
-              client: { name: clientName, contact: clientContact },
-              items: itemsForPDF,
-              total: total
-          };
-          
-          try {
-            downloadInvoiceAsPDF(invoiceData);
-            // Re-enable the button after a short delay for visual feedback
-            setTimeout(() => {
-                downloadBtn.disabled = false;
-                downloadBtn.textContent = 'Download as PDF';
-            }, 1000);
-          } catch (error) {
-              console.error("Error downloading invoice:", error);
-              messageDiv.textContent = `Error downloading invoice: ${error.message}`;
-              messageDiv.classList.add('bg-red-100', 'text-red-700');
-              messageDiv.classList.remove('hidden', 'bg-green-100', 'text-green-700');
-              // Re-enable the button on error
-              downloadBtn.disabled = false;
-              downloadBtn.textContent = 'Download as PDF';
-          }
-      });
-
-      renderInvoiceItems(); // Initial render
-    };
-
-    // Render the Reports section (displaying invoices)
-    const renderReportsSection = (container) => {
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-          <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Invoices</h2>
-          <div id="invoices-list" class="divide-y divide-gray-200">
-            <p class="text-gray-500">Loading invoices...</p>
-          </div>
-        </div>
-      `;
-
-      const invoicesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/invoices`);
-      onSnapshot(query(invoicesCollectionRef), (snapshot) => {
-        const invoicesList = document.getElementById('invoices-list');
-        if (!invoicesList) return; // Guard against null element
-        invoicesList.innerHTML = '';
-        if (snapshot.docs.length === 0) {
-            invoicesList.innerHTML = `<p class="text-gray-500">No invoices saved yet.</p>`;
-        } else {
-            snapshot.docs.forEach(doc => {
-                const invoice = doc.data();
-                const items = JSON.parse(invoice.items);
-                const li = document.createElement('li');
-                li.className = 'py-4';
-                li.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-semibold text-gray-900">${invoice.client.name}</p>
-                            <p class="text-sm text-gray-500">${invoice.createdAt?.toDate().toLocaleDateString() || 'N/A'}</p>
+        <!-- Main Content Area -->
+        <main class="flex-1 container mx-auto px-4 py-8">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-content active">
+                <div class="p-8 space-y-8">
+                    <h1 class="text-4xl font-bold">Create Invoice</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 col-span-1 md:col-span-2">
+                            <h2 class="text-2xl font-semibold mb-4">Invoice Details</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="invoice-number" class="block text-sm font-medium">Invoice #</label>
+                                    <input type="text" id="invoice-number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" readonly>
+                                </div>
+                                <div>
+                                    <label for="invoice-date" class="block text-sm font-medium">Invoice Date</label>
+                                    <input type="date" id="invoice-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="due-date" class="block text-sm font-medium">Due Date</label>
+                                    <input type="date" id="due-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                </div>
+                                <div>
+                                    <label for="client-select" class="block text-sm font-medium">Client</label>
+                                    <select id="client-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-xl font-bold text-gray-900">Rs${invoice.total.toFixed(2)}</p>
-                            <p class="text-sm text-gray-500">Invoice ID: ${doc.id}</p>
+                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 col-span-1 lg:col-span-1">
+                            <h2 class="text-2xl font-semibold mb-4">Add Projects</h2>
+                            <select id="project-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
                         </div>
                     </div>
-                    <div class="mt-4 text-sm text-gray-600">
-                        <strong>Items:</strong>
-                        <ul class="list-disc pl-5 mt-1">
-                            ${items.map(item => `<li>${item.description} (Qty: ${item.quantity}, Price: Rs${item.price.toFixed(2)})</li>`).join('')}
+                    <div class="space-y-4">
+                        <h2 class="text-2xl font-bold">Invoice Items</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rate</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Qty</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-items-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <!-- Invoice items will be dynamically added here -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="bg-white dark:bg-gray-800">
+                                        <td colspan="4" class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-300">Subtotal</td>
+                                        <td id="subtotal-display" class="px-6 py-3 text-left font-semibold">$0.00</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr class="bg-white dark:bg-gray-800">
+                                        <td colspan="4" class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-300">
+                                            <div class="flex items-center justify-end space-x-2">
+                                                <span>Tax Rate (%)</span>
+                                                <input type="number" id="tax-rate-input" value="0" class="w-20 rounded-md border-gray-300 p-1 text-gray-900">
+                                            </div>
+                                        </td>
+                                        <td id="tax-display" class="px-6 py-3 text-left font-semibold">$0.00</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr class="bg-blue-600 text-white">
+                                        <td colspan="4" class="px-6 py-3 text-right text-lg font-bold">Total</td>
+                                        <td id="total-display" class="px-6 py-3 text-left text-lg font-bold">$0.00</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-4 mt-8">
+                        <button id="generate-invoice-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Generate & Save Invoice</button>
+                        <button id="download-invoice-btn" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition duration-300">Download Invoice</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clients Page -->
+            <div id="clients-page" class="page-content">
+                <div class="p-8 space-y-8">
+                    <div class="flex justify-between items-center">
+                        <h1 class="text-4xl font-bold">My Clients</h1>
+                        <button id="add-client-dialog-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Add Client</button>
+                    </div>
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-table-body" class="bg-white divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Clients will be dynamically added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Page -->
+            <div id="projects-page" class="page-content">
+                <div class="p-8 space-y-8">
+                    <div class="flex justify-between items-center">
+                        <h1 class="text-4xl font-bold">My Projects/Services</h1>
+                        <button id="add-project-dialog-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Add Project</button>
+                    </div>
+                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="projects-table-body" class="bg-white divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Projects will be dynamically added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Page -->
+            <div id="reports-page" class="page-content">
+                <div class="p-8 space-y-8">
+                    <h1 class="text-4xl font-bold">Monthly Reports</h1>
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6">
+                        <h2 class="text-2xl font-semibold mb-4">Generate Report</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="report-client-select" class="block text-sm font-medium">Select Client</label>
+                                <select id="report-client-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                            </div>
+                            <div>
+                                <label for="report-start-date" class="block text-sm font-medium">Start Date</label>
+                                <input type="date" id="report-start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label for="report-end-date" class="block text-sm font-medium">End Date</label>
+                                <input type="date" id="report-end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button id="download-report-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Download Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile-page" class="page-content">
+                <div class="p-8 space-y-8">
+                    <h1 class="text-4xl font-bold">My Profile</h1>
+                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
+                        <h2 class="text-2xl font-semibold mb-4">Account Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="brand-name-input" class="block text-sm font-medium">Brand Name</label>
+                                <input type="text" id="brand-name-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label for="user-id-display" class="block text-sm font-medium">User ID</label>
+                                <input type="text" id="user-id-display" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" readonly>
+                            </div>
+                        </div>
+                        <h2 class="text-xl font-semibold mt-4">Contact Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="contact-name-input" class="block text-sm font-medium">Name</label>
+                                <input type="text" id="contact-name-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label for="contact-email-input" class="block text-sm font-medium">Email</label>
+                                <input type="email" id="contact-email-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label for="contact-phone-input" class="block text-sm font-medium">Phone</label>
+                                <input type="tel" id="contact-phone-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label for="contact-address-input" class="block text-sm font-medium">Address</label>
+                                <input type="text" id="contact-address-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                            </div>
+                        </div>
+                        <h2 class="text-xl font-semibold mt-4">Payment Options</h2>
+                        <div id="payment-options-container" class="space-y-2">
+                            <!-- Payment options will be added here -->
+                        </div>
+                        <button id="add-payment-option-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition duration-300">Add Payment Option</button>
+                        <div class="flex justify-end mt-4 gap-4">
+                            <button id="save-profile-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Save Changes</button>
+                            <button id="delete-profile-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition duration-300">Delete Account</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Client Dialog Modal -->
+    <div id="add-client-dialog" class="dialog-overlay">
+        <div class="dialog-content">
+            <h3 class="text-xl font-semibold mb-4">Add New Client</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="new-client-name" class="block text-sm font-medium">Name</label>
+                    <input type="text" id="new-client-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+                <div>
+                    <label for="new-client-email" class="block text-sm font-medium">Email</label>
+                    <input type="email" id="new-client-email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+                <div>
+                    <label for="new-client-address" class="block text-sm font-medium">Address</label>
+                    <input type="text" id="new-client-address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+            </div>
+            <div class="flex justify-end mt-6 space-x-2">
+                <button id="cancel-add-client-btn" class="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
+                <button id="save-client-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Save Client</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Dialog Modal -->
+    <div id="add-project-dialog" class="dialog-overlay">
+        <div class="dialog-content">
+            <h3 class="text-xl font-semibold mb-4">Add New Project/Service</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="new-project-name" class="block text-sm font-medium">Name</label>
+                    <input type="text" id="new-project-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+                <div>
+                    <label for="new-project-description" class="block text-sm font-medium">Description</label>
+                    <input type="text" id="new-project-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="new-project-rate" class="block text-sm font-medium">Rate</label>
+                        <input type="number" id="new-project-rate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    </div>
+                    <div>
+                        <label for="new-project-unit" class="block text-sm font-medium">Unit</label>
+                        <input type="text" id="new-project-unit" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end mt-6 space-x-2">
+                <button id="cancel-add-project-btn" class="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
+                <button id="save-project-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Save Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Hidden element for PDF generation -->
+    <div class="hidden">
+        <div id="invoice-to-pdf" class="p-8 bg-white text-gray-800 rounded-lg shadow-xl max-w-4xl mx-auto">
+            <header class="flex justify-between items-start mb-12 border-b-2 border-gray-200 pb-4">
+                <div>
+                    <h1 id="pdf-brand-name" class="text-4xl font-bold text-blue-600">Your Brand Name</h1>
+                    <p id="pdf-brand-address" class="text-sm mt-1">Your address</p>
+                    <p id="pdf-brand-email" class="text-sm">Your email</p>
+                    <p id="pdf-brand-phone" class="text-sm">Your phone</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-2xl font-semibold text-gray-600">INVOICE</h2>
+                    <p id="pdf-invoice-number" class="text-sm mt-1">Invoice #</p>
+                    <p id="pdf-invoice-date" class="text-sm">Date:</p>
+                    <p id="pdf-due-date" class="text-sm font-semibold text-red-500">Due:</p>
+                </div>
+            </header>
+
+            <section class="flex justify-between items-start mb-12">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-700 mb-2">BILL TO:</h3>
+                    <p id="pdf-client-name" class="font-semibold"></p>
+                    <p id="pdf-client-email" class="text-sm"></p>
+                    <p id="pdf-client-address" class="text-sm"></p>
+                </div>
+            </section>
+
+            <section class="mb-12">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">DESCRIPTION</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">RATE</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">QTY</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pdf-invoice-items" class="bg-white divide-y divide-gray-200">
+                        <!-- Invoice items for PDF will go here -->
+                    </tbody>
+                </table>
+            </section>
+
+            <footer class="flex justify-end">
+                <div class="w-full md:w-1/2">
+                    <table class="w-full">
+                        <tbody>
+                            <tr>
+                                <td class="font-semibold py-2">Subtotal</td>
+                                <td id="pdf-subtotal" class="text-right py-2">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold py-2">Tax (<span id="pdf-tax-rate">0</span>%)</td>
+                                <td id="pdf-tax" class="text-right py-2">$0.00</td>
+                            </tr>
+                            <tr class="bg-blue-600 text-white font-bold text-lg">
+                                <td class="py-2">Total Due</td>
+                                <td id="pdf-total" class="text-right py-2">$0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="pdf-payment-options-container" class="mt-6 p-4 bg-gray-100 rounded-lg">
+                        <h4 class="font-bold mb-2">Payment Options:</h4>
+                        <ul id="pdf-payment-options-list" class="list-disc list-inside text-sm">
+                            <!-- Payment options for PDF will go here -->
                         </ul>
                     </div>
-                    <div class="mt-4 text-right">
-                      <button class="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors download-saved-btn" data-doc-id="${doc.id}">Download</button>
-                    </div>
-                `;
-                invoicesList.appendChild(li);
-            });
+                </div>
+            </footer>
+        </div>
+    </div>
 
-            document.querySelectorAll('.download-saved-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const downloadBtn = e.target;
-                    // Disable the button to prevent multiple clicks
-                    downloadBtn.disabled = true;
-                    downloadBtn.textContent = 'Downloading...';
 
-                    const docId = e.target.dataset.docId;
-                    const invoiceDoc = snapshot.docs.find(d => d.id === docId);
-                    
-                    try {
-                        if (invoiceDoc) {
-                            const invoiceData = invoiceDoc.data();
-                            const items = JSON.parse(invoiceData.items);
-                            downloadInvoiceAsPDF({ ...invoiceData, items }, docId);
-                        }
-                        // Re-enable the button after a short delay
-                        setTimeout(() => {
-                            downloadBtn.disabled = false;
-                            downloadBtn.textContent = 'Download';
-                        }, 1000);
-                    } catch (error) {
-                        console.error("Error downloading invoice:", error);
-                        // Re-enable the button on error
-                        downloadBtn.disabled = false;
-                        downloadBtn.textContent = 'Download';
+    <script>
+        // --- START: Firebase Configuration and Initialization ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdFr4gLREBC2K9G8GXzEBHpckCXax8M2A",
+            authDomain: "invoice-genaraor.firebaseapp.com",
+            projectId: "invoice-genaraor",
+            storageBucket: "invoice-genaraor.firebasestorage.app",
+            messagingSenderId: "691350547086",
+            appId: "1:691350547086:web:6490d19dc93fa636ee77df",
+            measurementId: "G-C2C7ELHC1F"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, auth, db, userId;
+        let isAuthReady = false;
+
+        async function initFirebase() {
+            try {
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+
+                if (initialAuthToken) {
+                    await auth.signInWithCustomToken(initialAuthToken);
+                } else {
+                    await auth.signInAnonymously();
+                }
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        document.getElementById('user-id-display').value = userId;
+                        showToast("Signed in successfully.");
+                        startListeners();
+                        renderPage('dashboard');
+                    } else {
+                        userId = null;
+                        isAuthReady = false;
+                        document.getElementById('user-id-display').value = 'Not signed in';
+                        // Handle signed out state
                     }
                 });
-            });
-        }
-      }, (error) => {
-        console.error("Error listening to invoices:", error);
-        const invoicesList = document.getElementById('invoices-list');
-        if (invoicesList) invoicesList.innerHTML = `<p class="text-red-500">Error loading invoices.</p>`;
-      });
-    };
-
-    // Function to set up all Firestore listeners for the current user
-    const setupFirestoreListeners = (currentUserId) => {
-        // Set up a listener for profile data
-        onSnapshot(doc(db, `artifacts/${appId}/users/${currentUserId}/profile`, 'info'), (docSnap) => {
-          if (docSnap.exists()) {
-            userProfile = docSnap.data();
-          } else {
-            userProfile = { serviceName: 'MEGA DESIGNS', paymentInfo: '' };
-          }
-          if (userId) renderContent();
-        }, (error) => {
-          console.error("Error listening to profile data:", error);
-        });
-
-        // Set up a listener for clients data
-        onSnapshot(query(collection(db, `artifacts/${appId}/users/${currentUserId}/clients`)), (snapshot) => {
-          clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          if (userId) renderContent();
-        }, (error) => console.error("Error listening to clients:", error));
-
-        // Set up a listener for projects data
-        onSnapshot(query(collection(db, `artifacts/${appId}/users/${currentUserId}/projects`)), (snapshot) => {
-          projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          if (userId) renderContent();
-        }, (error) => console.error("Error listening to projects:", error));
-    };
-
-    // Initialize Firebase and set up the auth listener
-    // All code is now inside the module scope to correctly access imports
-    async function initializeAppAndRender() {
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            onAuthStateChanged(auth, async (user) => {
-                userId = user ? user.uid : null;
-                if (user) {
-                    setupFirestoreListeners(userId);
-                } else {
-                    // Clear data when user signs out
-                    clients = [];
-                    projects = [];
-                    userProfile = {};
-                }
-                renderApp(user);
-            });
-
-            // Sign in with the custom token if available
-            if (initialAuthToken) {
-                await signInWithCustomToken(auth, initialAuthToken);
-            } else {
-                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Error during Firebase initialization:", error);
+                showToast("Firebase initialization failed.", 'error');
             }
-        } catch (e) {
-            console.error("Error initializing Firebase:", e);
         }
-    }
+        // --- END: Firebase Configuration and Initialization ---
 
-    // Call the async function to start the app
-    initializeAppAndRender();
-  </script>
+
+        // --- START: Data and State Management ---
+        let state = {
+            clients: [],
+            projects: [],
+            invoices: [],
+            userProfile: {},
+            invoiceDetails: {
+                invoiceNumber: 'INV-' + Math.floor(Math.random() * 10000),
+                invoiceDate: new Date().toISOString().split('T')[0],
+                dueDate: new Date().toISOString().split('T')[0],
+                client: null,
+                items: [],
+                subtotal: 0,
+                taxRate: 0,
+                total: 0,
+                notes: '',
+            }
+        };
+
+        function startListeners() {
+            if (!isAuthReady) return;
+
+            // Profile Listener
+            const profileDocRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('profile').doc('data');
+            profileDocRef.onSnapshot(doc => {
+                if (doc.exists) {
+                    state.userProfile = doc.data();
+                    renderProfilePage();
+                    renderInvoicePreview();
+                } else {
+                    // Create default profile
+                    profileDocRef.set({
+                        brandName: 'My Brand',
+                        contactInfo: { name: '', email: '', phone: '', address: '' },
+                        paymentOptions: []
+                    });
+                }
+            });
+
+            // Clients Listener
+            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients')
+                .onSnapshot(snapshot => {
+                    state.clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderClientsPage();
+                    renderClientsSelect();
+                });
+
+            // Projects Listener
+            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects')
+                .onSnapshot(snapshot => {
+                    state.projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderProjectsPage();
+                    renderProjectsSelect();
+                });
+
+            // Invoices Listener
+            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('invoices')
+                .onSnapshot(snapshot => {
+                    state.invoices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Invoices are used for reports page, no need to re-render other pages here
+                });
+        }
+        // --- END: Data and State Management ---
+
+
+        // --- START: UI Rendering Functions ---
+        function renderPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId + '-page').classList.add('active');
+
+            // Update nav buttons
+            document.querySelectorAll('.nav-button').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                btn.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                if (btn.dataset.page === pageId) {
+                    btn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+                    btn.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                }
+            });
+            
+            // Re-render the specific page's content
+            if (pageId === 'profile') renderProfilePage();
+            if (pageId === 'clients') renderClientsPage();
+            if (pageId === 'projects') renderProjectsPage();
+            if (pageId === 'reports') renderReportsPage();
+        }
+
+        function renderClientsSelect() {
+            const clientSelect = document.getElementById('client-select');
+            const reportClientSelect = document.getElementById('report-client-select');
+            clientSelect.innerHTML = '<option value="" disabled selected>Select a client</option>';
+            reportClientSelect.innerHTML = '<option value="" disabled selected>Select a client</option>';
+            state.clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = client.name;
+                clientSelect.appendChild(option);
+                
+                const reportOption = document.createElement('option');
+                reportOption.value = client.id;
+                reportOption.textContent = client.name;
+                reportClientSelect.appendChild(reportOption);
+            });
+        }
+
+        function renderProjectsSelect() {
+            const projectSelect = document.getElementById('project-select');
+            projectSelect.innerHTML = '<option value="" disabled selected>Search or select a project</option>';
+            state.projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.name;
+                projectSelect.appendChild(option);
+            });
+        }
+
+        function renderClientsPage() {
+            const clientsTableBody = document.getElementById('clients-table-body');
+            clientsTableBody.innerHTML = '';
+            state.clients.forEach(client => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white dark:bg-gray-800';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${client.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${client.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${client.address}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-red-600 hover:text-red-900" onclick="deleteClient('${client.id}')">Delete</button>
+                    </td>
+                `;
+                clientsTableBody.appendChild(row);
+            });
+        }
+
+        function renderProjectsPage() {
+            const projectsTableBody = document.getElementById('projects-table-body');
+            projectsTableBody.innerHTML = '';
+            state.projects.forEach(project => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white dark:bg-gray-800';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${project.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${project.description}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">$${parseFloat(project.rate).toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${project.unit}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-red-600 hover:text-red-900" onclick="deleteProject('${project.id}')">Delete</button>
+                    </td>
+                `;
+                projectsTableBody.appendChild(row);
+            });
+        }
+
+        function renderProfilePage() {
+            if (!state.userProfile.brandName) return;
+
+            document.getElementById('brand-name-input').value = state.userProfile.brandName || '';
+            document.getElementById('contact-name-input').value = state.userProfile.contactInfo?.name || '';
+            document.getElementById('contact-email-input').value = state.userProfile.contactInfo?.email || '';
+            document.getElementById('contact-phone-input').value = state.userProfile.contactInfo?.phone || '';
+            document.getElementById('contact-address-input').value = state.userProfile.contactInfo?.address || '';
+
+            const paymentOptionsContainer = document.getElementById('payment-options-container');
+            paymentOptionsContainer.innerHTML = '';
+            state.userProfile.paymentOptions?.forEach((option, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <input type="text" value="${option}" class="flex-grow rounded-md border-gray-300 shadow-sm p-2" onchange="updatePaymentOption(${index}, this.value)">
+                    <button onclick="removePaymentOption(${index})" class="text-red-600 hover:text-red-900">&times;</button>
+                `;
+                paymentOptionsContainer.appendChild(div);
+            });
+        }
+
+        function renderInvoiceItems() {
+            const invoiceItemsBody = document.getElementById('invoice-items-body');
+            invoiceItemsBody.innerHTML = '';
+            state.invoiceDetails.items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white dark:bg-gray-800';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.description}" class="w-full bg-transparent border-none" onchange="updateInvoiceItem(${index}, 'description', this.value)"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.rate}" class="w-24 bg-transparent border-none text-right" onchange="updateInvoiceItem(${index}, 'rate', parseFloat(this.value))"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.quantity}" class="w-24 bg-transparent border-none text-right" onchange="updateInvoiceItem(${index}, 'quantity', parseFloat(this.value))"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.unit}" class="w-24 bg-transparent border-none" onchange="updateInvoiceItem(${index}, 'unit', this.value)"></td>
+                    <td class="px-6 py-4 whitespace-nowrap font-semibold">$${item.total.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button class="text-red-600 hover:text-red-900" onclick="removeInvoiceItem(${index})">&times;</button>
+                    </td>
+                `;
+                invoiceItemsBody.appendChild(row);
+            });
+        }
+
+        function updateInvoiceTotals() {
+            const subtotal = state.invoiceDetails.items.reduce((sum, item) => sum + item.total, 0);
+            const taxAmount = subtotal * (state.invoiceDetails.taxRate / 100);
+            const total = subtotal + taxAmount;
+
+            state.invoiceDetails.subtotal = subtotal;
+            state.invoiceDetails.total = total;
+
+            document.getElementById('subtotal-display').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('tax-display').textContent = `$${taxAmount.toFixed(2)}`;
+            document.getElementById('total-display').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function renderInvoicePreview() {
+             const data = state.invoiceDetails;
+             const profile = state.userProfile;
+
+             document.getElementById('pdf-brand-name').textContent = profile.brandName || 'Your Brand Name';
+             document.getElementById('pdf-brand-address').textContent = profile.contactInfo?.address || 'Your address';
+             document.getElementById('pdf-brand-email').textContent = profile.contactInfo?.email || 'Your email';
+             document.getElementById('pdf-brand-phone').textContent = profile.contactInfo?.phone || 'Your phone';
+             
+             document.getElementById('pdf-invoice-number').textContent = `Invoice #${data.invoiceNumber}`;
+             document.getElementById('pdf-invoice-date').textContent = `Date: ${data.invoiceDate ? dateFns.format(new Date(data.invoiceDate), 'PPP') : ''}`;
+             document.getElementById('pdf-due-date').textContent = `Due: ${data.dueDate ? dateFns.format(new Date(data.dueDate), 'PPP') : ''}`;
+             
+             if (data.client) {
+                 document.getElementById('pdf-client-name').textContent = data.client.name;
+                 document.getElementById('pdf-client-email').textContent = data.client.email;
+                 document.getElementById('pdf-client-address').textContent = data.client.address;
+             } else {
+                document.getElementById('pdf-client-name').textContent = 'No client selected';
+                document.getElementById('pdf-client-email').textContent = '';
+                document.getElementById('pdf-client-address').textContent = '';
+             }
+
+             const pdfItemsBody = document.getElementById('pdf-invoice-items');
+             pdfItemsBody.innerHTML = '';
+             data.items.forEach(item => {
+                 const row = document.createElement('tr');
+                 row.className = 'border-gray-200';
+                 row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${item.description}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">$${parseFloat(item.rate).toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">${item.quantity} ${item.unit}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-semibold">$${parseFloat(item.total).toFixed(2)}</td>
+                 `;
+                 pdfItemsBody.appendChild(row);
+             });
+
+             document.getElementById('pdf-subtotal').textContent = `$${data.subtotal.toFixed(2)}`;
+             document.getElementById('pdf-tax-rate').textContent = data.taxRate;
+             document.getElementById('pdf-tax').textContent = `$${(data.subtotal * (data.taxRate / 100)).toFixed(2)}`;
+             document.getElementById('pdf-total').textContent = `$${data.total.toFixed(2)}`;
+
+             const pdfPaymentOptions = document.getElementById('pdf-payment-options-list');
+             pdfPaymentOptions.innerHTML = '';
+             if (profile.paymentOptions && profile.paymentOptions.length > 0) {
+                 document.getElementById('pdf-payment-options-container').classList.remove('hidden');
+                 profile.paymentOptions.forEach(option => {
+                     const li = document.createElement('li');
+                     li.textContent = option;
+                     pdfPaymentOptions.appendChild(li);
+                 });
+             } else {
+                 document.getElementById('pdf-payment-options-container').classList.add('hidden');
+             }
+        }
+        // --- END: UI Rendering Functions ---
+
+
+        // --- START: Event Handlers and Logic ---
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast show';
+            if (type === 'error') {
+                toast.style.backgroundColor = '#dc2626';
+            }
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function handleSignOut() {
+            try {
+                await auth.signOut();
+                showToast("Signed out successfully.");
+            } catch (error) {
+                console.error("Error signing out:", error);
+                showToast("Error signing out.", 'error');
+            }
+        }
+
+        async function handleSaveClient() {
+            const name = document.getElementById('new-client-name').value;
+            const email = document.getElementById('new-client-email').value;
+            const address = document.getElementById('new-client-address').value;
+            if (!userId || !name) {
+                showToast("Client name is required.", 'error');
+                return;
+            }
+            try {
+                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients').add({ name, email, address });
+                document.getElementById('add-client-dialog').style.display = 'none';
+                showToast("Client saved successfully.");
+            } catch (error) {
+                console.error("Error saving client:", error);
+                showToast("Could not save client.", 'error');
+            }
+        }
+
+        async function deleteClient(clientId) {
+            try {
+                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients').doc(clientId).delete();
+                showToast("Client deleted successfully.");
+            } catch (error) {
+                console.error("Error deleting client:", error);
+                showToast("Could not delete client.", 'error');
+            }
+        }
+        
+        async function handleSaveProject() {
+            const name = document.getElementById('new-project-name').value;
+            const description = document.getElementById('new-project-description').value;
+            const rate = document.getElementById('new-project-rate').value;
+            const unit = document.getElementById('new-project-unit').value;
+            if (!userId || !name) {
+                showToast("Project name is required.", 'error');
+                return;
+            }
+            try {
+                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects').add({ name, description, rate: parseFloat(rate), unit });
+                document.getElementById('add-project-dialog').style.display = 'none';
+                showToast("Project saved successfully.");
+            } catch (error) {
+                console.error("Error saving project:", error);
+                showToast("Could not save project.", 'error');
+            }
+        }
+
+        async function deleteProject(projectId) {
+            try {
+                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects').doc(projectId).delete();
+                showToast("Project deleted successfully.");
+            } catch (error) {
+                console.error("Error deleting project:", error);
+                showToast("Could not delete project.", 'error');
+            }
+        }
+        
+        function addInvoiceItemFromProject() {
+            const projectId = document.getElementById('project-select').value;
+            const project = state.projects.find(p => p.id === projectId);
+            if (!project) return;
+            state.invoiceDetails.items.push({
+                description: project.description,
+                rate: project.rate,
+                quantity: 1,
+                unit: project.unit,
+                total: project.rate * 1,
+            });
+            renderInvoiceItems();
+            updateInvoiceTotals();
+            renderInvoicePreview();
+        }
+
+        function updateInvoiceItem(index, field, value) {
+            state.invoiceDetails.items[index][field] = value;
+            const item = state.invoiceDetails.items[index];
+            item.total = item.rate * item.quantity;
+            updateInvoiceTotals();
+            renderInvoicePreview();
+        }
+
+        function removeInvoiceItem(index) {
+            state.invoiceDetails.items.splice(index, 1);
+            renderInvoiceItems();
+            updateInvoiceTotals();
+            renderInvoicePreview();
+        }
+        
+        async function handleGenerateInvoice() {
+            const clientSelect = document.getElementById('client-select');
+            const clientId = clientSelect.value;
+            const client = state.clients.find(c => c.id === clientId);
+            if (!client) {
+                showToast("Please select a client.", 'error');
+                return;
+            }
+            state.invoiceDetails.client = client;
+            state.invoiceDetails.invoiceDate = document.getElementById('invoice-date').value;
+            state.invoiceDetails.dueDate = document.getElementById('due-date').value;
+            state.invoiceDetails.invoiceNumber = document.getElementById('invoice-number').value;
+
+            try {
+                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('invoices').add({
+                    ...state.invoiceDetails,
+                    client: {
+                        id: client.id,
+                        name: client.name,
+                        email: client.email,
+                    },
+                    createdAt: new Date(),
+                    invoiceDate: new Date(state.invoiceDetails.invoiceDate),
+                    dueDate: new Date(state.invoiceDetails.dueDate),
+                });
+                showToast("Invoice saved successfully.");
+                handleDownloadInvoice();
+            } catch (error) {
+                console.error("Error saving invoice:", error);
+                showToast("Could not save invoice.", 'error');
+            }
+        }
+        
+        async function handleDownloadInvoice() {
+             renderInvoicePreview();
+             const invoiceEl = document.getElementById('invoice-to-pdf');
+             if (!invoiceEl) return;
+             
+             htmlToImage.toPng(invoiceEl)
+                 .then(function (dataUrl) {
+                     const { jsPDF } = window.jspdf;
+                     const pdf = new jsPDF('p', 'mm', 'a4');
+                     const imgProps = pdf.getImageProperties(dataUrl);
+                     const pdfWidth = pdf.internal.pageSize.getWidth();
+                     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                     pdf.save(`${state.invoiceDetails.invoiceNumber}_${state.invoiceDetails.invoiceDate}.pdf`);
+                     showToast("Invoice downloaded.");
+                 })
+                 .catch(function (error) {
+                     console.error('oops, something went wrong!', error);
+                     showToast("Could not download invoice.", 'error');
+                 });
+        }
+        
+        async function handleGenerateReport() {
+            const clientId = document.getElementById('report-client-select').value;
+            const startDate = document.getElementById('report-start-date').value;
+            const endDate = document.getElementById('report-end-date').value;
+
+            if (!clientId || !startDate || !endDate) {
+                showToast("Please select a client and a date range.", 'error');
+                return;
+            }
+
+            const selectedClient = state.clients.find(c => c.id === clientId);
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+
+            const filteredInvoices = state.invoices.filter(inv => {
+                const invoiceDate = inv.createdAt.toDate();
+                return inv.client.id === clientId && invoiceDate >= start && invoiceDate <= end;
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            let y = 10;
+            pdf.setFontSize(18);
+            pdf.text(`Monthly Report for ${selectedClient.name}`, 10, y);
+            y += 10;
+            pdf.setFontSize(12);
+            pdf.text(`Date Range: ${dateFns.format(start, 'MM/dd/yyyy')} - ${dateFns.format(end, 'MM/dd/yyyy')}`, 10, y);
+            y += 15;
+
+            filteredInvoices.forEach(inv => {
+                pdf.text(`Invoice #${inv.invoiceNumber} | Date: ${dateFns.format(inv.createdAt.toDate(), 'MM/dd/yyyy')} | Total: $${inv.total.toFixed(2)}`, 15, y);
+                y += 7;
+            });
+
+            pdf.save(`Report_${selectedClient.name}_${dateFns.format(start, 'yyyyMM')}.pdf`);
+            showToast("Report downloaded successfully.");
+        }
+        
+        async function handleSaveProfile() {
+            const profileData = {
+                brandName: document.getElementById('brand-name-input').value,
+                contactInfo: {
+                    name: document.getElementById('contact-name-input').value,
+                    email: document.getElementById('contact-email-input').value,
+                    phone: document.getElementById('contact-phone-input').value,
+                    address: document.getElementById('contact-address-input').value,
+                },
+                paymentOptions: state.userProfile.paymentOptions || [],
+            };
+            try {
+                const profileDocRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('profile').doc('data');
+                await profileDocRef.set(profileData, { merge: true });
+                showToast("Profile saved successfully.");
+            } catch (error) {
+                console.error("Error saving profile:", error);
+                showToast("Could not save profile.", 'error');
+            }
+        }
+
+        async function updatePaymentOption(index, value) {
+            state.userProfile.paymentOptions[index] = value;
+        }
+
+        function addPaymentOption() {
+            const newOptions = state.userProfile.paymentOptions ? [...state.userProfile.paymentOptions, ''] : [''];
+            state.userProfile.paymentOptions = newOptions;
+            renderProfilePage();
+        }
+
+        async function removePaymentOption(index) {
+            state.userProfile.paymentOptions.splice(index, 1);
+            renderProfilePage();
+            await handleSaveProfile();
+        }
+
+        async function handleDeleteAccount() {
+             // In a real app, you would need a cloud function to delete all user data.
+             // Here, we just sign out and show a message.
+            try {
+                await auth.signOut();
+                showToast("Account deleted successfully (simulated).", 'error');
+            } catch (error) {
+                console.error("Error deleting account:", error);
+                showToast("Could not delete account.", 'error');
+            }
+        }
+
+        // --- END: Event Handlers and Logic ---
+
+
+        // --- START: Event Listeners and Initial Setup ---
+        window.onload = async () => {
+            initFirebase();
+        
+            // Navigation
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', () => renderPage(button.dataset.page));
+            });
+            document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+
+            // Dashboard
+            document.getElementById('invoice-date').value = state.invoiceDetails.invoiceDate;
+            document.getElementById('due-date').value = state.invoiceDetails.dueDate;
+            document.getElementById('invoice-number').value = state.invoiceDetails.invoiceNumber;
+            document.getElementById('project-select').addEventListener('change', addInvoiceItemFromProject);
+            document.getElementById('tax-rate-input').addEventListener('input', (e) => {
+                state.invoiceDetails.taxRate = parseFloat(e.target.value);
+                updateInvoiceTotals();
+                renderInvoicePreview();
+            });
+            document.getElementById('client-select').addEventListener('change', (e) => {
+                const client = state.clients.find(c => c.id === e.target.value);
+                state.invoiceDetails.client = client;
+                renderInvoicePreview();
+            });
+            document.getElementById('generate-invoice-btn').addEventListener('click', handleGenerateInvoice);
+            document.getElementById('download-invoice-btn').addEventListener('click', handleDownloadInvoice);
+            
+            // Clients
+            document.getElementById('add-client-dialog-btn').addEventListener('click', () => {
+                document.getElementById('add-client-dialog').style.display = 'flex';
+                document.getElementById('new-client-name').value = '';
+                document.getElementById('new-client-email').value = '';
+                document.getElementById('new-client-address').value = '';
+            });
+            document.getElementById('cancel-add-client-btn').addEventListener('click', () => document.getElementById('add-client-dialog').style.display = 'none');
+            document.getElementById('save-client-btn').addEventListener('click', handleSaveClient);
+
+            // Projects
+            document.getElementById('add-project-dialog-btn').addEventListener('click', () => {
+                document.getElementById('add-project-dialog').style.display = 'flex';
+                document.getElementById('new-project-name').value = '';
+                document.getElementById('new-project-description').value = '';
+                document.getElementById('new-project-rate').value = 0;
+                document.getElementById('new-project-unit').value = '';
+            });
+            document.getElementById('cancel-add-project-btn').addEventListener('click', () => document.getElementById('add-project-dialog').style.display = 'none');
+            document.getElementById('save-project-btn').addEventListener('click', handleSaveProject);
+            
+            // Reports
+            document.getElementById('download-report-btn').addEventListener('click', handleGenerateReport);
+
+            // Profile
+            document.getElementById('save-profile-btn').addEventListener('click', handleSaveProfile);
+            document.getElementById('add-payment-option-btn').addEventListener('click', addPaymentOption);
+            document.getElementById('delete-profile-btn').addEventListener('click', handleDeleteAccount);
+        };
+        // --- END: Event Listeners and Initial Setup ---
+    </script>
 </body>
 </html>
