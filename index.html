@@ -155,9 +155,15 @@
 
         <!-- Monthly Report Section -->
         <section class="border border-gray-200 rounded-xl p-6 space-y-6">
-            <h2 class="text-2xl font-bold text-gray-700">Monthly Report</h2>
-            <div id="monthly-report-container" class="space-y-4">
-                <!-- Monthly report will be dynamically added here -->
+            <h2 class="text-2xl font-bold text-gray-700">Monthly Reports</h2>
+            <div id="client-report-list-container">
+                <h3 class="text-lg font-semibold text-gray-800">Select a Client to View Report</h3>
+                <ul id="client-report-list" class="mt-2 space-y-2">
+                    <!-- List of clients for reports will be dynamically added here -->
+                </ul>
+            </div>
+            <div id="monthly-report-container" class="space-y-4 hidden">
+                <!-- Individual client's monthly report will be dynamically added here -->
             </div>
         </section>
 
@@ -206,6 +212,9 @@
         const printContainer = document.getElementById('print-container');
         const discountInput = document.getElementById('discount-input');
         const dueDateInput = document.getElementById('due-date-input');
+        const clientReportList = document.getElementById('client-report-list');
+        const clientReportListContainer = document.getElementById('client-report-list-container');
+
 
         // --- Client Template Functions ---
         function saveClientsToLocalStorage(data) {
@@ -221,14 +230,16 @@
             clientTemplates = loadClientsFromLocalStorage();
             clientList.innerHTML = '';
             clientSelect.innerHTML = '<option value="">-- Select a client --</option>';
+            clientReportList.innerHTML = '';
 
             if (clientTemplates.length === 0) {
                 clientList.innerHTML = '<li class="text-gray-500">No client templates saved yet.</li>';
+                clientReportList.innerHTML = '<li class="text-gray-500">No clients to show.</li>';
                 return;
             }
 
             clientTemplates.forEach((client, index) => {
-                // Render list item
+                // Render list item for templates
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
                 li.innerHTML = `
@@ -239,11 +250,17 @@
                 `;
                 clientList.appendChild(li);
 
-                // Add option to the dropdown
+                // Add option to the invoice dropdown
                 const option = document.createElement('option');
                 option.value = index;
                 option.textContent = client.name;
                 clientSelect.appendChild(option);
+
+                // Add clickable item to the monthly report list
+                const reportLi = document.createElement('li');
+                reportLi.className = 'bg-white p-2 rounded-md shadow-sm cursor-pointer hover:bg-gray-100 transition duration-300';
+                reportLi.innerHTML = `<span data-client-name="${client.name}" class="report-client-name text-gray-700 font-medium">${client.name}</span>`;
+                clientReportList.appendChild(reportLi);
             });
         }
 
@@ -366,16 +383,18 @@
                 li.className = 'flex justify-between items-center text-gray-700';
                 li.innerHTML = `
                     <span>${item.product} (${item.quantity} x Rs.${item.price.toFixed(2)})</span>
-                    <span>Rs.${(item.quantity * item.price).toFixed(2)}</span>
+                    <span>Rs.${(item.price * item.quantity).toFixed(2)}</span>
                 `;
                 itemList.appendChild(li);
             });
 
             dailySubtotal = dailyItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            dailyTotalEl.textContent = `Rs.${dailySubtotal.toFixed(2)}`;
+            const discount = parseFloat(discountInput.value) || 0;
+            const total = dailySubtotal - discount;
+            dailyTotalEl.textContent = `Rs.${total.toFixed(2)}`;
         }
 
-        // Function to generate the daily invoice HTML (updated to match the PDF sample)
+        // Function to generate the daily invoice HTML for printing
         function generateInvoiceHTML(invoice) {
             const creationDate = new Date(invoice.date);
             const dueDate = new Date(invoice.dueDate);
@@ -455,16 +474,16 @@
             `;
         }
 
-        // Function to render the monthly report
-        function renderMonthlyReport() {
+        // Function to generate the monthly report HTML for printing
+        function generateMonthlyReportHTML(clientName) {
             const invoices = loadInvoicesFromLocalStorage();
-            if (invoices.length === 0) {
-                monthlyReportContainer.innerHTML = '<p class="text-center text-gray-500">No invoices generated yet.</p>';
-                return;
+            const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
+
+            if (clientInvoices.length === 0) {
+                return `<p class="text-center text-gray-500">No invoices for ${clientName} yet.</p>`;
             }
 
-            // Group invoices by month and year
-            const monthlyData = invoices.reduce((acc, invoice) => {
+            const monthlyData = clientInvoices.reduce((acc, invoice) => {
                 const date = new Date(invoice.date);
                 const monthYear = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
                 if (!acc[monthYear]) {
@@ -478,7 +497,69 @@
                 return acc;
             }, {});
 
+            let reportHTML = `<div class="p-8"><h1 class="text-3xl font-bold text-gray-800 mb-4">Monthly Report for ${clientName}</h1>`;
+            for (const month in monthlyData) {
+                reportHTML += `
+                    <div class="border-t border-gray-300 pt-4 mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-gray-700">${month}</h3>
+                            <p class="text-lg font-semibold text-indigo-600">Total: Rs.${monthlyData[month].total.toFixed(2)}</p>
+                        </div>
+                        <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
+                                    <th class="py-3 px-4 text-left">Invoice #</th>
+                                    <th class="py-3 px-4 text-left">Date</th>
+                                    <th class="py-3 px-4 text-left">Client</th>
+                                    <th class="py-3 px-4 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600 text-sm font-light">
+                                ${monthlyData[month].invoices.map(invoice => `
+                                    <tr class="border-b border-gray-200">
+                                        <td class="py-2 px-4">${invoice.invoiceNumber}</td>
+                                        <td class="py-2 px-4">${new Date(invoice.date).toLocaleDateString()}</td>
+                                        <td class="py-2 px-4">${invoice.client ? invoice.client.name : 'N/A'}</td>
+                                        <td class="py-2 px-4 text-right">Rs.${invoice.total.toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            reportHTML += `</div>`;
+            return reportHTML;
+        }
+
+        // Function to render a specific client's monthly report
+        function renderClientMonthlyReport(clientName) {
+            const invoices = loadInvoicesFromLocalStorage();
+            const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
+
             monthlyReportContainer.innerHTML = '';
+            if (clientInvoices.length === 0) {
+                monthlyReportContainer.classList.remove('hidden');
+                monthlyReportContainer.innerHTML = `<p class="text-center text-gray-500">No invoices for ${clientName} yet.</p>`;
+                return;
+            }
+
+            // Group invoices by month and year for the selected client
+            const monthlyData = clientInvoices.reduce((acc, invoice) => {
+                const date = new Date(invoice.date);
+                const monthYear = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
+                if (!acc[monthYear]) {
+                    acc[monthYear] = {
+                        invoices: [],
+                        total: 0
+                    };
+                }
+                acc[monthYear].invoices.push(invoice);
+                acc[monthYear].total += invoice.total;
+                return acc;
+            }, {});
+            
+            monthlyReportContainer.classList.remove('hidden');
             for (const month in monthlyData) {
                 const monthDiv = document.createElement('div');
                 monthDiv.className = 'border-t border-gray-300 pt-4';
@@ -516,7 +597,38 @@
                 monthDiv.appendChild(table);
                 monthlyReportContainer.appendChild(monthDiv);
             }
+            
+            // Add download button after rendering the report
+            const downloadButton = document.createElement('button');
+            downloadButton.id = 'download-monthly-report';
+            downloadButton.dataset.clientName = clientName;
+            downloadButton.textContent = `Download Report for ${clientName}`;
+            downloadButton.className = 'mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300';
+            monthlyReportContainer.appendChild(downloadButton);
         }
+        
+        // Event listener for clicking on a client in the report list
+        clientReportList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('report-client-name')) {
+                const clientName = e.target.dataset.clientName;
+                renderClientMonthlyReport(clientName);
+            }
+        });
+
+        // Event listener for downloading the monthly report
+        monthlyReportContainer.addEventListener('click', (e) => {
+            if (e.target.id === 'download-monthly-report') {
+                const clientName = e.target.dataset.clientName;
+                const reportHtml = generateMonthlyReportHTML(clientName);
+                if (reportHtml) {
+                    printContainer.innerHTML = reportHtml;
+                    window.print();
+                    printContainer.innerHTML = '';
+                } else {
+                    alert('Failed to generate report for download.');
+                }
+            }
+        });
 
         // Event listener for adding items to the daily invoice
         invoiceForm.addEventListener('submit', (e) => {
@@ -552,7 +664,6 @@
             const selectedClient = clientTemplates[selectedClientIndex];
             const discount = parseFloat(discountInput.value) || 0;
             const dueDate = dueDateInput.value || new Date().toISOString().split('T')[0];
-
             const invoices = loadInvoicesFromLocalStorage();
             const newInvoiceNumber = invoices.length > 0 ? Math.max(...invoices.map(inv => inv.invoiceNumber)) + 1 : 1001;
             const newInvoice = {
@@ -571,7 +682,7 @@
             dailyItems = [];
             dailySubtotal = 0;
             updateDailyPreview();
-            renderMonthlyReport();
+            renderClients(); // Re-render client list for reports
             invoiceForm.reset();
             alert(`Invoice #${newInvoiceNumber} saved successfully!`);
         });
@@ -597,7 +708,6 @@
             renderClients();
             renderTemplates();
             updateDailyPreview();
-            renderMonthlyReport();
             // Set default due date to one week from today
             const today = new Date();
             const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
