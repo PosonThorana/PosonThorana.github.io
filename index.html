@@ -1,863 +1,288 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice Generator</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+
+// Create a context for our Firebase services to be accessible throughout the app
+const FirebaseContext = createContext(null);
+
+// Main App component
+const App = () => {
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Initialize Firebase and set up auth listener
+  useEffect(() => {
+    const initializeFirebase = async () => {
+      try {
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        if (!firebaseConfig) {
+          throw new Error('Firebase configuration is missing. Data persistence is unavailable.');
         }
-        @media print {
-            body > *:not(#print-container) {
-                display: none;
-            }
-            #print-container {
-                display: block !important;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                margin: 0;
-                padding: 2rem;
-                box-sizing: border-box;
-            }
-        }
-    </style>
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, addDoc, onSnapshot, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        window.firebase = {
-            initializeApp,
-            getAuth,
-            signInWithCustomToken,
-            signInAnonymously,
-            signOut,
-            onAuthStateChanged,
-            getFirestore,
-            doc,
-            setDoc,
-            collection,
-            addDoc,
-            onSnapshot,
-            query,
-            getDocs
-        };
-    </script>
-</head>
-<body class="bg-gray-100 flex flex-col items-center p-4">
+        const app = initializeApp(firebaseConfig);
+        const firestoreDb = getFirestore(app);
+        const firebaseAuth = getAuth(app);
 
-    <!-- Main Application Container -->
-    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 space-y-8">
+        setDb(firestoreDb);
+        setAuth(firebaseAuth);
 
-        <!-- Header -->
-        <header class="text-center">
-            <h1 class="text-4xl font-bold text-gray-800">Invoice Generator</h1>
-            <p class="text-gray-500 mt-2">Generate and track your daily and monthly invoices</p>
-        </header>
+        const authListener = onAuthStateChanged(firebaseAuth, async (user) => {
+          if (user) {
+            setUserId(user.uid);
+          } else {
+            setUserId(null);
+          }
+          setLoading(false);
+        });
 
-        <!-- Auth Section -->
-        <div id="auth-section" class="flex justify-between items-center bg-gray-50 p-4 rounded-xl">
-            <div id="user-info" class="flex-1 text-gray-700">
-                <span id="user-display" class="font-medium">Initializing...</span>
-            </div>
+        // Cleanup listener on unmount
+        return () => authListener();
+
+      } catch (e) {
+        console.error("Firebase initialization error:", e);
+        setError(e.message);
+        setLoading(false);
+      }
+    };
+    initializeFirebase();
+  }, []);
+
+  // Show a loading screen while Firebase is initializing or authenticating
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-xl font-semibold text-gray-700 animate-pulse">
+          Loading...
         </div>
-        
-        <!-- Main app content -->
-        <div id="app-content" class="space-y-8 hidden">
-            <!-- Client Templates Section -->
-            <section class="border border-gray-200 rounded-xl p-6 space-y-4">
-                <h2 class="text-2xl font-bold text-gray-700">Client Templates</h2>
-                <form id="client-template-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="client-name" class="block text-sm font-medium text-gray-700">Client Name</label>
-                            <input type="text" id="client-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                        <div>
-                            <label for="client-address" class="block text-sm font-medium text-gray-700">Client Address</label>
-                            <input type="text" id="client-address" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Save Client Template
-                    </button>
-                </form>
-                <div id="client-list-container" class="mt-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Saved Clients</h3>
-                    <ul id="client-list" class="mt-2 space-y-2">
-                        <!-- Client templates will be dynamically added here -->
-                    </ul>
-                </div>
-            </section>
+      </div>
+    );
+  }
 
-            <!-- Product Templates Section -->
-            <section class="border border-gray-200 rounded-xl p-6 space-y-4">
-                <h2 class="text-2xl font-bold text-gray-700">Product Templates</h2>
-                <form id="product-template-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="template-name" class="block text-sm font-medium text-gray-700">Product Name</label>
-                            <input type="text" id="template-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                        <div>
-                            <label for="template-price" class="block text-sm font-medium text-gray-700">Price (LKR)</label>
-                            <input type="number" id="template-price" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Save Product Template
-                    </button>
-                </form>
-                <div id="template-list-container" class="mt-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Saved Products</h3>
-                    <ul id="template-list" class="mt-2 space-y-2">
-                        <!-- Templates will be dynamically added here -->
-                    </ul>
-                </div>
-            </section>
-
-            <!-- Daily Invoice Section -->
-            <section class="border border-gray-200 rounded-xl p-6 space-y-6">
-                <h2 class="text-2xl font-bold text-gray-700">Daily Invoice Entry</h2>
-                <form id="invoice-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                            <label for="client-select" class="block text-sm font-medium text-gray-700">Select Client</label>
-                            <select id="client-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                <option value="">-- Select a client --</option>
-                                <!-- Options will be dynamically added here -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="product-select" class="block text-sm font-medium text-gray-700">Select Product</label>
-                            <select id="product-select" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                                <option value="">-- Select a product --</option>
-                                <!-- Options will be dynamically added here -->
-                            </select>
-                        </div>
-                        <div>
-                            <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                            <input type="number" id="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                        <div>
-                            <label for="discount-input" class="block text-sm font-medium text-gray-700">Discount (LKR)</label>
-                            <input type="number" id="discount-input" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                        <div>
-                            <label for="due-date-input" class="block text-sm font-medium text-gray-700">Due Date</label>
-                            <input type="date" id="due-date-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Add Item to Invoice
-                    </button>
-                </form>
-
-                <!-- Current Day's Invoice Preview -->
-                <div id="current-invoice-preview" class="border border-dashed border-gray-300 rounded-lg p-4 mt-6 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Today's Invoice Items</h3>
-                    <ul id="item-list" class="space-y-2">
-                        <!-- Items will be dynamically added here -->
-                        <li class="text-gray-500">No items added yet.</li>
-                    </ul>
-                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                        <span class="text-lg font-bold text-gray-800">Total:</span>
-                        <span id="daily-total" class="text-xl font-extrabold text-indigo-600">Rs.0.00</span>
-                    </div>
-                </div>
-
-                <!-- Action Buttons for Daily Invoice -->
-                <div class="flex flex-col md:flex-row gap-4 mt-6">
-                    <button id="generate-daily-invoice" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Generate & Save Invoice
-                    </button>
-                    <button id="download-daily-invoice" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">
-                        Download Today's Invoice
-                    </button>
-                </div>
-            </section>
-
-            <!-- Monthly Report Section -->
-            <section class="border border-gray-200 rounded-xl p-6 space-y-6">
-                <h2 class="text-2xl font-bold text-gray-700">Monthly Reports</h2>
-                <div id="client-report-list-container">
-                    <h3 class="text-lg font-semibold text-gray-800">Select a Client to View Report</h3>
-                    <ul id="client-report-list" class="mt-2 space-y-2">
-                        <!-- List of clients for reports will be dynamically added here -->
-                    </ul>
-                </div>
-                <div id="monthly-report-container" class="space-y-4 hidden">
-                    <h3 id="report-title" class="text-2xl font-bold text-gray-700 mb-4"></h3>
-                    <div id="report-content"></div>
-                </div>
-            </section>
+  // Handle the case where Firebase fails to initialize
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="p-8 bg-white rounded-lg shadow-xl text-red-500 font-bold">
+          <p className="text-xl">Error: {error}</p>
+          <p className="text-sm mt-4">Please ensure the Firebase environment variables are correctly configured.</p>
         </div>
+      </div>
+    );
+  }
 
+  return (
+    <FirebaseContext.Provider value={{ db, auth, userId }}>
+      <div className="min-h-screen bg-gray-100 p-8 flex items-center justify-center">
+        <div className="max-w-4xl w-full">
+          {userId ? <ProfileSection /> : <AuthSection />}
+        </div>
+      </div>
+    </FirebaseContext.Provider>
+  );
+};
+
+// Component for user authentication (login and create account)
+const AuthSection = () => {
+  const { auth, userId } = useContext(FirebaseContext);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState(null);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setAuthError(error.message);
+    }
+  };
+
+  const handleCreateAccount = async (e) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setAuthError(error.message);
+    }
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+      <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-6">
+        Welcome to your Account
+      </h1>
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+        </div>
+        {authError && (
+          <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {authError}
+          </div>
+        )}
+        <div className="flex space-x-4">
+          <button
+            type="submit"
+            className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors"
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateAccount}
+            className="w-full px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors"
+          >
+            Create Account
+          </button>
+        </div>
+      </form>
     </div>
+  );
+};
 
-    <!-- Hidden Container for Printing -->
-    <div id="print-container" class="hidden"></div>
-    <!-- Modal for custom alerts -->
-    <div id="custom-alert" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl p-6 shadow-xl max-w-sm w-full space-y-4">
-            <p id="alert-message" class="text-gray-800 text-center"></p>
-            <button id="alert-ok-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300">OK</button>
+// Component for the user profile
+const ProfileSection = () => {
+  const { db, auth, userId } = useContext(FirebaseContext);
+  const [serviceName, setServiceName] = useState('');
+  const [paymentInfo, setPaymentInfo] = useState('');
+  const [profileMessage, setProfileMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Function to save user data to Firestore
+  const saveProfile = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const docRef = doc(db, `/artifacts/default-app-id/users/${userId}/profile/info`);
+      await setDoc(docRef, {
+        serviceName,
+        paymentInfo
+      }, { merge: true });
+      setProfileMessage('Profile updated successfully!');
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setProfileMessage('Error updating profile.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Set up a real-time listener for the user's profile data
+  useEffect(() => {
+    if (!db || !userId) return;
+
+    const docRef = doc(db, `/artifacts/default-app-id/users/${userId}/profile/info`);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setServiceName(data.serviceName || '');
+        setPaymentInfo(data.paymentInfo || '');
+      } else {
+        // Doc doesn't exist, set initial values
+        setServiceName('MEGA DESIGNS');
+        setPaymentInfo('');
+      }
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error listening to profile data:", error);
+      setIsLoading(false);
+    });
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [db, userId]);
+
+  // Handle user sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-extrabold text-gray-900">
+          User Profile
+        </h2>
+        <button
+          onClick={handleSignOut}
+          className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors"
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <div className="mb-6 text-gray-600">
+        <p className="text-sm font-medium">Your User ID:</p>
+        <p className="font-mono break-all text-sm mt-1">{userId}</p>
+      </div>
+
+      <form onSubmit={saveProfile} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Service Name
+          </label>
+          <input
+            type="text"
+            value={serviceName}
+            onChange={(e) => setServiceName(e.target.value)}
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Payment Information
+          </label>
+          <textarea
+            value={paymentInfo}
+            onChange={(e) => setPaymentInfo(e.target.value)}
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            rows="4"
+            placeholder="Add your bank account details or other payment methods here."
+          />
+        </div>
+        {profileMessage && (
+          <div className={`p-3 rounded-lg text-sm ${profileMessage.startsWith('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+            {profileMessage}
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors disabled:bg-gray-400"
+        >
+          {isLoading ? 'Saving...' : 'Save Changes'}
+        </button>
+      </form>
     </div>
+  );
+};
 
-
-    <script type="module">
-        const {
-            initializeApp, getAuth, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged,
-            getFirestore, doc, setDoc, collection, addDoc, onSnapshot, query, getDocs
-        } = window.firebase;
-
-        // Custom alert function
-        function showCustomAlert(message) {
-            const alertModal = document.getElementById('custom-alert');
-            const alertMessage = document.getElementById('alert-message');
-            const alertOkButton = document.getElementById('alert-ok-button');
-
-            alertMessage.textContent = message;
-            alertModal.classList.remove('hidden');
-
-            const removeAlert = () => {
-                alertModal.classList.add('hidden');
-                alertOkButton.removeEventListener('click', removeAlert);
-            };
-
-            alertOkButton.addEventListener('click', removeAlert);
-        }
-
-        // --- Firebase Initialization and Auth ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
-        
-        let app, auth, db, userId;
-
-        // Company Details (Customizable)
-        const companyDetails = {
-            name: "MEGA DESIGNS",
-            phone: "0752200448",
-            email: "methminagayantha11@gmail.com",
-            bankDetails: {
-                accountNumber: "8013939584",
-                accountName: "Methnina Gayantha",
-                bank: "Commercial bank",
-                branch: "Raddolugama branch"
-            }
-        };
-
-        // UI element references
-        const appContent = document.getElementById('app-content');
-        const userDisplay = document.getElementById('user-display');
-        const clientTemplateForm = document.getElementById('client-template-form');
-        const clientList = document.getElementById('client-list');
-        const clientSelect = document.getElementById('client-select');
-        const templateForm = document.getElementById('product-template-form');
-        const templateList = document.getElementById('template-list');
-        const productSelect = document.getElementById('product-select');
-        const invoiceForm = document.getElementById('invoice-form');
-        const itemList = document.getElementById('item-list');
-        const dailyTotalEl = document.getElementById('daily-total');
-        const generateButton = document.getElementById('generate-daily-invoice');
-        const downloadButton = document.getElementById('download-daily-invoice');
-        const monthlyReportContainer = document.getElementById('monthly-report-container');
-        const reportTitle = document.getElementById('report-title');
-        const reportContent = document.getElementById('report-content');
-        const printContainer = document.getElementById('print-container');
-        const discountInput = document.getElementById('discount-input');
-        const dueDateInput = document.getElementById('due-date-input');
-        const clientReportList = document.getElementById('client-report-list');
-        
-        let dailyItems = [];
-        let dailySubtotal = 0;
-        let productTemplates = [];
-        let clientTemplates = [];
-        
-        // --- Firebase setup and auth state listener ---
-        let isAuthReady = false;
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const firebaseConfig = JSON.parse(firebaseConfigString);
-                if (Object.keys(firebaseConfig).length > 0) {
-                    app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-
-                    // Sign in with custom token if available, otherwise anonymously
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    
-                    onAuthStateChanged(auth, async (user) => {
-                        if (user) {
-                            userId = user.uid;
-                            isAuthReady = true;
-                            userDisplay.textContent = `User ID: ${userId}`;
-                            appContent.classList.remove('hidden');
-                            
-                            // Load data from Firestore after successful login
-                            await loadAllData();
-                        } else {
-                            userId = null;
-                            isAuthReady = false;
-                            userDisplay.textContent = 'Awaiting authentication...';
-                            appContent.classList.add('hidden');
-                        }
-                    });
-                } else {
-                    showCustomAlert("Firebase configuration is missing. Data persistence is unavailable.");
-                }
-            } catch (error) {
-                console.error("Error during Firebase initialization:", error);
-                showCustomAlert("An error occurred during app initialization. Please try again.");
-            }
-        });
-        
-        // --- Firestore Data Management ---
-        const getCollectionRef = (collectionName) => collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
-        
-        async function loadAllData() {
-            if (!isAuthReady || !userId) return;
-
-            try {
-                // Load clients
-                onSnapshot(getCollectionRef('clients'), (snapshot) => {
-                    clientTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderClients();
-                });
-
-                // Load products
-                onSnapshot(getCollectionRef('products'), (snapshot) => {
-                    productTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderTemplates();
-                });
-            } catch (error) {
-                console.error("Error loading data from Firestore:", error);
-                showCustomAlert("Error loading your data. Please try again.");
-            }
-        }
-        
-        async function saveClientToFirestore(clientData) {
-            if (!isAuthReady || !userId) return;
-            try {
-                const docRef = doc(getCollectionRef('clients'));
-                await setDoc(docRef, clientData);
-            } catch (error) {
-                console.error("Error saving client:", error);
-                showCustomAlert("Error saving client. Please try again.");
-            }
-        }
-        
-        async function removeClientFromFirestore(clientId) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await setDoc(doc(getCollectionRef('clients'), clientId), null);
-            } catch (error) {
-                console.error("Error removing client:", error);
-                showCustomAlert("Error removing client. Please try again.");
-            }
-        }
-        
-        async function saveProductToFirestore(productData) {
-            if (!isAuthReady || !userId) return;
-            try {
-                const docRef = doc(getCollectionRef('products'));
-                await setDoc(docRef, productData);
-            } catch (error) {
-                console.error("Error saving product:", error);
-                showCustomAlert("Error saving product. Please try again.");
-            }
-        }
-        
-        async function removeProductFromFirestore(productId) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await setDoc(doc(getCollectionRef('products'), productId), null);
-            } catch (error) {
-                console.error("Error removing product:", error);
-                showCustomAlert("Error removing product. Please try again.");
-            }
-        }
-        
-        async function saveInvoiceToFirestore(invoiceData) {
-            if (!isAuthReady || !userId) return;
-            try {
-                await addDoc(getCollectionRef('invoices'), invoiceData);
-                showCustomAlert(`Invoice #${invoiceData.invoiceNumber} saved successfully!`);
-            } catch (error) {
-                console.error("Error saving invoice:", error);
-                showCustomAlert("Error saving invoice. Please try again.");
-            }
-        }
-
-        // --- Client Template Functions ---
-        function renderClients() {
-            clientList.innerHTML = '';
-            clientSelect.innerHTML = '<option value="">-- Select a client --</option>';
-            clientReportList.innerHTML = '';
-
-            if (clientTemplates.length === 0) {
-                clientList.innerHTML = '<li class="text-gray-500">No client templates saved yet.</li>';
-                clientReportList.innerHTML = '<li class="text-gray-500">No clients to show.</li>';
-                return;
-            }
-
-            clientTemplates.forEach((client) => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
-                li.innerHTML = `
-                    <span>${client.name} - ${client.address}</span>
-                    <button data-id="${client.id}" class="remove-client text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
-                        Remove
-                    </button>
-                `;
-                clientList.appendChild(li);
-
-                const option = document.createElement('option');
-                option.value = client.id;
-                option.textContent = client.name;
-                clientSelect.appendChild(option);
-
-                const reportLi = document.createElement('li');
-                reportLi.className = 'bg-white p-2 rounded-md shadow-sm cursor-pointer hover:bg-gray-100 transition duration-300';
-                reportLi.innerHTML = `<span data-client-name="${client.name}" class="report-client-name text-gray-700 font-medium">${client.name}</span>`;
-                clientReportList.appendChild(reportLi);
-            });
-        }
-
-        clientTemplateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('client-name').value;
-            const address = document.getElementById('client-address').value;
-
-            if (name && address) {
-                await saveClientToFirestore({ name, address });
-                clientTemplateForm.reset();
-            } else {
-                showCustomAlert('Please enter a valid client name and address.');
-            }
-        });
-
-        clientList.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('remove-client')) {
-                const clientId = e.target.dataset.id;
-                await removeClientFromFirestore(clientId);
-            }
-        });
-        
-        // --- Product Template Functions ---
-        function renderTemplates() {
-            templateList.innerHTML = '';
-            productSelect.innerHTML = '<option value="">-- Select a product --</option>';
-
-            if (productTemplates.length === 0) {
-                templateList.innerHTML = '<li class="text-gray-500">No product templates saved yet.</li>';
-                return;
-            }
-
-            productTemplates.forEach((template) => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between items-center text-gray-700 bg-white p-2 rounded-md shadow-sm';
-                li.innerHTML = `
-                    <span>${template.name} - Rs.${template.price.toFixed(2)}</span>
-                    <button data-id="${template.id}" class="remove-template text-red-500 hover:text-red-700 font-bold text-sm transition duration-300">
-                        Remove
-                    </button>
-                `;
-                templateList.appendChild(li);
-
-                const option = document.createElement('option');
-                option.value = template.id;
-                option.textContent = `${template.name} (Rs.${template.price.toFixed(2)})`;
-                productSelect.appendChild(option);
-            });
-        }
-
-        templateForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('template-name').value;
-            const price = parseFloat(document.getElementById('template-price').value);
-
-            if (name && !isNaN(price) && price > 0) {
-                await saveProductToFirestore({ name, price });
-                templateForm.reset();
-            } else {
-                showCustomAlert('Please enter a valid product name and price.');
-            }
-        });
-
-        templateList.addEventListener('click', async (e) => {
-            if (e.target.classList.contains('remove-template')) {
-                const templateId = e.target.dataset.id;
-                await removeProductFromFirestore(templateId);
-            }
-        });
-        
-        // --- Invoice Functions ---
-        function updateDailyPreview() {
-            itemList.innerHTML = '';
-            if (dailyItems.length === 0) {
-                itemList.innerHTML = '<li class="text-gray-500">No items added yet.</li>';
-                dailyTotalEl.textContent = 'Rs.0.00';
-                return;
-            }
-
-            dailyItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between items-center text-gray-700';
-                li.innerHTML = `
-                    <span>${item.product} (${item.quantity} x Rs.${item.price.toFixed(2)})</span>
-                    <span>Rs.${(item.price * item.quantity).toFixed(2)}</span>
-                `;
-                itemList.appendChild(li);
-            });
-
-            dailySubtotal = dailyItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const discount = parseFloat(discountInput.value) || 0;
-            const total = dailySubtotal - discount;
-            dailyTotalEl.textContent = `Rs.${total.toFixed(2)}`;
-        }
-
-        // Function to generate the daily invoice HTML for printing
-        function generateInvoiceHTML(invoice) {
-            const creationDate = new Date(invoice.date);
-            const dueDate = new Date(invoice.dueDate);
-            const formattedCreationDate = creationDate.toLocaleDateString('en-US');
-            const formattedDueDate = dueDate.toLocaleDateString('en-US');
-
-            let itemsHTML = invoice.items.map(item => `
-                <tr class="border-b border-gray-200 last:border-b-0">
-                    <td class="py-2 px-4 text-left">${item.product}</td>
-                    <td class="py-2 px-4 text-center">${item.quantity}</td>
-                    <td class="py-2 px-4 text-right">Rs.${item.price.toFixed(2)}</td>
-                    <td class="py-2 px-4 text-right">Rs.${(item.price * item.quantity).toFixed(2)}</td>
-                </tr>
-            `).join('');
-
-            return `
-                <div class="bg-white p-8">
-                    <div class="flex justify-between items-start mb-8">
-                        <div>
-                            <h1 class="text-4xl font-bold text-gray-800">${companyDetails.name}</h1>
-                            <p class="text-sm text-gray-600">${companyDetails.phone}</p>
-                            <p class="text-sm text-gray-600">${companyDetails.email}</p>
-                        </div>
-                        <div class="text-right">
-                            <h2 class="text-3xl font-bold text-gray-800 mb-2">INVOICE</h2>
-                            <p class="text-sm text-gray-600">INVOICE #: <span class="font-bold">${invoice.invoiceNumber}</span></p>
-                            <p class="text-sm text-gray-600">CREATION DATE: <span class="font-bold">${formattedCreationDate}</span></p>
-                            <p class="text-sm text-gray-600">DUE DATE: <span class="font-bold">${formattedDueDate}</span></p>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-8">
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">BILL TO</h3>
-                        <p class="text-md text-gray-600 font-semibold">${invoice.client.name}</p>
-                        <p class="text-md text-gray-600">${invoice.client.address}</p>
-                    </div>
-
-                    <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
-                                <th class="py-3 px-4 text-left">DESCRIPTION</th>
-                                <th class="py-3 px-4 text-center">QTY</th>
-                                <th class="py-3 px-4 text-right">PRICE</th>
-                                <th class="py-3 px-4 text-right">AMOUNT</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-600 text-sm font-light">
-                            ${itemsHTML}
-                        </tbody>
-                    </table>
-
-                    <div class="flex justify-end">
-                        <div class="w-full md:w-1/2 space-y-2 text-right">
-                            <div class="flex justify-between border-t border-gray-200 pt-2">
-                                <span class="text-md font-medium text-gray-600">SUBTOTAL:</span>
-                                <span class="text-md font-bold text-gray-800">Rs.${invoice.subtotal.toFixed(2)}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-md font-medium text-gray-600">DISCOUNT:</span>
-                                <span class="text-md font-bold text-red-500">-Rs.${invoice.discount.toFixed(2)}</span>
-                            </div>
-                            <div class="flex justify-between border-t border-gray-400 pt-2">
-                                <span class="text-xl font-bold text-gray-800">TOTAL:</span>
-                                <span class="text-xl font-extrabold text-indigo-600">Rs.${invoice.total.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-8 border-t border-gray-200 pt-4">
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">PAYMENT METHOD</h3>
-                        <p class="text-md text-gray-600">Account Number: ${companyDetails.bankDetails.accountNumber}</p>
-                        <p class="text-md text-gray-600">Account Name: ${companyDetails.bankDetails.accountName}</p>
-                        <p class="text-md text-gray-600">${companyDetails.bankDetails.bank}</p>
-                        <p class="text-md text-gray-600">${companyDetails.bankDetails.branch}</p>
-                    </div>
-                </div>
-            `;
-        }
-        
-        async function getInvoicesFromFirestore() {
-            if (!isAuthReady || !userId) return [];
-            try {
-                const q = query(getCollectionRef('invoices'));
-                const querySnapshot = await getDocs(q);
-                return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            } catch (error) {
-                console.error("Error fetching invoices:", error);
-                return [];
-            }
-        }
-
-        // Function to generate the monthly report HTML for printing
-        async function generateMonthlyReportHTML(clientName) {
-            const invoices = await getInvoicesFromFirestore();
-            const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
-
-            if (clientInvoices.length === 0) {
-                return `<p class="text-center text-gray-500">No invoices for ${clientName} yet.</p>`;
-            }
-
-            const monthlyData = clientInvoices.reduce((acc, invoice) => {
-                const date = new Date(invoice.date);
-                const monthYear = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
-                if (!acc[monthYear]) {
-                    acc[monthYear] = {
-                        invoices: [],
-                        total: 0
-                    };
-                }
-                acc[monthYear].invoices.push(invoice);
-                acc[monthYear].total += invoice.total;
-                return acc;
-            }, {});
-
-            let reportHTML = `<div class="p-8"><h1 class="text-3xl font-bold text-gray-800 mb-4">Monthly Report for ${clientName}</h1>`;
-            for (const month in monthlyData) {
-                reportHTML += `
-                    <div class="border-t border-gray-300 pt-4 mb-8">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-bold text-gray-700">${month}</h3>
-                            <p class="text-lg font-semibold text-indigo-600">Total: Rs.${monthlyData[month].total.toFixed(2)}</p>
-                        </div>
-                        <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
-                                    <th class="py-3 px-4 text-left">Invoice #</th>
-                                    <th class="py-3 px-4 text-left">Date</th>
-                                    <th class="py-3 px-4 text-left">Client</th>
-                                    <th class="py-3 px-4 text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-gray-600 text-sm font-light">
-                                ${monthlyData[month].invoices.map(invoice => `
-                                    <tr class="border-b border-gray-200">
-                                        <td class="py-2 px-4">${invoice.invoiceNumber}</td>
-                                        <td class="py-2 px-4">${new Date(invoice.date).toLocaleDateString()}</td>
-                                        <td class="py-2 px-4">${invoice.client ? invoice.client.name : 'N/A'}</td>
-                                        <td class="py-2 px-4 text-right">Rs.${invoice.total.toFixed(2)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }
-            reportHTML += `</div>`;
-            return reportHTML;
-        }
-
-        // Function to render a specific client's monthly report
-        async function renderClientMonthlyReport(clientName) {
-            const invoices = await getInvoicesFromFirestore();
-            const clientInvoices = invoices.filter(inv => inv.client && inv.client.name === clientName);
-
-            reportContent.innerHTML = '';
-            if (clientInvoices.length === 0) {
-                monthlyReportContainer.classList.remove('hidden');
-                reportTitle.textContent = `Report for ${clientName}`;
-                reportContent.innerHTML = `<p class="text-center text-gray-500">No invoices for ${clientName} yet.</p>`;
-                return;
-            }
-
-            const monthlyData = clientInvoices.reduce((acc, invoice) => {
-                const date = new Date(invoice.date);
-                const monthYear = `${date.toLocaleString('en-US', { month: 'long' })} ${date.getFullYear()}`;
-                if (!acc[monthYear]) {
-                    acc[monthYear] = {
-                        invoices: [],
-                        total: 0
-                    };
-                }
-                acc[monthYear].invoices.push(invoice);
-                acc[monthYear].total += invoice.total;
-                return acc;
-            }, {});
-            
-            monthlyReportContainer.classList.remove('hidden');
-            reportTitle.textContent = `Report for ${clientName}`;
-
-            for (const month in monthlyData) {
-                const monthDiv = document.createElement('div');
-                monthDiv.className = 'border-t border-gray-300 pt-4';
-                
-                const heading = document.createElement('div');
-                heading.className = 'flex justify-between items-center mb-4';
-                heading.innerHTML = `
-                    <h3 class="text-xl font-bold text-gray-700">${month}</h3>
-                    <p class="text-lg font-semibold text-indigo-600">Total: Rs.${monthlyData[month].total.toFixed(2)}</p>
-                `;
-                monthDiv.appendChild(heading);
-
-                const table = document.createElement('table');
-                table.className = 'min-w-full bg-white border border-gray-200 rounded-lg';
-                table.innerHTML = `
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 uppercase text-sm leading-normal">
-                            <th class="py-3 px-4 text-left">Invoice #</th>
-                            <th class="py-3 px-4 text-left">Date</th>
-                            <th class="py-3 px-4 text-left">Client</th>
-                            <th class="py-3 px-4 text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-gray-600 text-sm font-light">
-                        ${monthlyData[month].invoices.map(invoice => `
-                            <tr class="border-b border-gray-200">
-                                <td class="py-2 px-4">${invoice.invoiceNumber}</td>
-                                <td class="py-2 px-4">${new Date(invoice.date).toLocaleDateString()}</td>
-                                <td class="py-2 px-4">${invoice.client ? invoice.client.name : 'N/A'}</td>
-                                <td class="py-2 px-4 text-right">Rs.${invoice.total.toFixed(2)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                `;
-                monthDiv.appendChild(table);
-                reportContent.appendChild(monthDiv);
-            }
-            
-            const downloadButton = document.createElement('button');
-            downloadButton.id = 'download-monthly-report';
-            downloadButton.dataset.clientName = clientName;
-            downloadButton.textContent = `Download Report for ${clientName}`;
-            downloadButton.className = 'mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300';
-            reportContent.appendChild(downloadButton);
-        }
-        
-        clientReportList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('report-client-name')) {
-                const clientName = e.target.dataset.clientName;
-                renderClientMonthlyReport(clientName);
-            }
-        });
-
-        monthlyReportContainer.addEventListener('click', async (e) => {
-            if (e.target.id === 'download-monthly-report') {
-                const clientName = e.target.dataset.clientName;
-                const reportHtml = await generateMonthlyReportHTML(clientName);
-                if (reportHtml) {
-                    printContainer.innerHTML = reportHtml;
-                    window.print();
-                    printContainer.innerHTML = '';
-                } else {
-                    showCustomAlert('Failed to generate report for download.');
-                }
-            }
-        });
-
-        invoiceForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const selectedClient = clientTemplates.find(c => c.id === clientSelect.value);
-            const selectedProduct = productTemplates.find(p => p.id === productSelect.value);
-            const quantity = parseInt(document.getElementById('quantity').value, 10);
-
-            if (selectedClient && selectedProduct && !isNaN(quantity) && quantity > 0) {
-                dailyItems.push({ product: selectedProduct.name, price: selectedProduct.price, quantity });
-                updateDailyPreview();
-                document.getElementById('quantity').value = '';
-                productSelect.value = '';
-            } else {
-                showCustomAlert('Please select a client and a product, and enter a valid quantity.');
-            }
-        });
-
-        generateButton.addEventListener('click', async () => {
-            if (dailyItems.length === 0) {
-                showCustomAlert('Please add at least one item to generate an invoice.');
-                return;
-            }
-
-            const selectedClient = clientTemplates.find(c => c.id === clientSelect.value);
-            if (!selectedClient) {
-                showCustomAlert('Please select a client before generating the invoice.');
-                return;
-            }
-            
-            const discount = parseFloat(discountInput.value) || 0;
-            const dueDate = dueDateInput.value || new Date().toISOString().split('T')[0];
-            
-            const invoices = await getInvoicesFromFirestore();
-            const newInvoiceNumber = invoices.length > 0 ? Math.max(...invoices.map(inv => inv.invoiceNumber)) + 1 : 1001;
-            
-            const newInvoice = {
-                invoiceNumber: newInvoiceNumber,
-                date: new Date().toISOString(),
-                dueDate: dueDate,
-                client: selectedClient,
-                items: dailyItems,
-                subtotal: dailySubtotal,
-                discount: discount,
-                total: dailySubtotal - discount
-            };
-
-            await saveInvoiceToFirestore(newInvoice);
-
-            dailyItems = [];
-            dailySubtotal = 0;
-            updateDailyPreview();
-            invoiceForm.reset();
-            
-            const today = new Date();
-            const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-            dueDateInput.value = oneWeekFromNow.toISOString().split('T')[0];
-        });
-
-        downloadButton.addEventListener('click', async () => {
-            const invoices = await getInvoicesFromFirestore();
-            if (invoices.length === 0) {
-                showCustomAlert('No invoices have been saved to download.');
-                return;
-            }
-            
-            const lastInvoice = invoices.find(inv => inv.client.id === clientSelect.value);
-            if (!lastInvoice) {
-                showCustomAlert("Please select a client that has a saved invoice.");
-                return;
-            }
-            
-            printContainer.innerHTML = generateInvoiceHTML(lastInvoice);
-            window.print();
-            printContainer.innerHTML = '';
-        });
-        
-        // Initial setup
-        const today = new Date();
-        const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-        dueDateInput.value = oneWeekFromNow.toISOString().split('T')[0];
-    </script>
-</body>
-</html>
+export default App;
