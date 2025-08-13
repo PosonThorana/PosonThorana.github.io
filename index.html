@@ -211,7 +211,7 @@
         saveBtn.disabled = true;
 
         try {
-          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/profile/info`), { serviceName, paymentInfo }, { merge: true });
+          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/profile`, 'info'), { serviceName, paymentInfo }, { merge: true });
           messageDiv.textContent = 'Profile updated successfully!';
           messageDiv.classList.add('bg-green-100', 'text-green-700');
           messageDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700');
@@ -845,6 +845,33 @@
       });
     };
 
+    // Function to set up all Firestore listeners for the current user
+    const setupFirestoreListeners = (currentUserId) => {
+        // Set up a listener for profile data
+        onSnapshot(doc(db, `artifacts/${appId}/users/${currentUserId}/profile`, 'info'), (docSnap) => {
+          if (docSnap.exists()) {
+            userProfile = docSnap.data();
+          } else {
+            userProfile = { serviceName: 'MEGA DESIGNS', paymentInfo: '' };
+          }
+          if (userId) renderContent();
+        }, (error) => {
+          console.error("Error listening to profile data:", error);
+        });
+
+        // Set up a listener for clients data
+        onSnapshot(query(collection(db, `artifacts/${appId}/users/${currentUserId}/clients`)), (snapshot) => {
+          clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          if (userId) renderContent();
+        }, (error) => console.error("Error listening to clients:", error));
+
+        // Set up a listener for projects data
+        onSnapshot(query(collection(db, `artifacts/${appId}/users/${currentUserId}/projects`)), (snapshot) => {
+          projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          if (userId) renderContent();
+        }, (error) => console.error("Error listening to projects:", error));
+    };
+
     // Initialize Firebase and set up the auth listener
     // All code is now inside the module scope to correctly access imports
     async function initializeAppAndRender() {
@@ -853,34 +880,16 @@
             db = getFirestore(app);
             auth = getAuth(app);
 
-            // Set up a listener for profile data
-            onSnapshot(doc(db, `artifacts/${appId}/users/profile/info`), (docSnap) => {
-              if (docSnap.exists()) {
-                userProfile = docSnap.data();
-              } else {
-                userProfile = { serviceName: 'MEGA DESIGNS', paymentInfo: '' };
-              }
-              if (userId) renderContent();
-            }, (error) => {
-              console.error("Error listening to profile data:", error);
-            });
-
-            // Set up a listener for clients data
-            const clientsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/clients`);
-            onSnapshot(query(clientsCollectionRef), (snapshot) => {
-              clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              if (userId) renderContent();
-            }, (error) => console.error("Error listening to clients:", error));
-
-            // Set up a listener for projects data
-            const projectsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/projects`);
-            onSnapshot(query(projectsCollectionRef), (snapshot) => {
-              projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              if (userId) renderContent();
-            }, (error) => console.error("Error listening to projects:", error));
-
             onAuthStateChanged(auth, async (user) => {
                 userId = user ? user.uid : null;
+                if (user) {
+                    setupFirestoreListeners(userId);
+                } else {
+                    // Clear data when user signs out
+                    clients = [];
+                    projects = [];
+                    userProfile = {};
+                }
                 renderApp(user);
             });
 
