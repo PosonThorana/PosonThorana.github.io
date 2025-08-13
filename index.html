@@ -470,8 +470,19 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase configuration provided by the user
+        const userFirebaseConfig = {
+            apiKey: "AIzaSyAdFr4gLREBC2K9G8GXzEBHpckCXax8M2A",
+            authDomain: "invoice-genaraor.firebaseapp.com",
+            projectId: "invoice-genaraor",
+            storageBucket: "invoice-genaraor.firebasestorage.app",
+            messagingSenderId: "691350547086",
+            appId: "1:691350547086:web:6490d19dc93fa636ee77df",
+            measurementId: "G-C2C7ELHC1F"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userFirebaseConfig;
+
         // Global variables provided by the environment
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
