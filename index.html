@@ -1,1259 +1,1093 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice Pro</title>
-    <!-- Use Inter font -->
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <!-- Tailwind CSS CDN -->
+    <title>Invoice App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s, color 0.3s;
+            background-color: #1a202c; /* Dark blue-gray background */
+            color: #e2e8f0; /* Light text color */
         }
-        body.light {
-            background-color: #f9fafb;
-            color: #111827;
+        .container {
+            max-width: 960px;
         }
-        body.dark {
-            background-color: #111827;
-            color: #f9fafb;
+        .bg-card {
+            background-color: #2d3748; /* Slightly lighter dark background for cards */
         }
-        .page-content {
-            display: none;
+        .invoice-item-row {
+            transition: all 0.3s ease;
+            background-color: #2d3748;
         }
-        .page-content.active {
-            display: block;
+        .invoice-item-row:hover {
+            transform: scale(1.01);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            background-color: #4a5568;
         }
-        .dialog-overlay, .confirm-dialog-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
+        input, select, textarea {
+            background-color: #4a5568;
+            color: #e2e8f0;
+            border-color: #4a5568;
+        }
+        input:focus, select:focus, textarea:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+        .form-label {
+            color: #cbd5e0;
+        }
+        /* Custom styles for the search dropdown */
+        .custom-select {
+            position: relative;
+        }
+        .custom-select-options {
+            position: absolute;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #4a5568;
+            background-color: #2d3748;
             width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+            border-radius: 0.375rem;
+            margin-top: 0.25rem;
         }
-        .dialog-content, .confirm-dialog-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            max-width: 500px;
-            width: 90%;
+        .custom-select-options div {
+            padding: 0.5rem;
+            cursor: pointer;
         }
-        body.dark .dialog-content, body.dark .confirm-dialog-content {
-            background-color: #1f2937;
-            color: #f9fafb;
-        }
-        .toast-container {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            z-index: 1100;
-        }
-        .toast {
-            background-color: #333;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            transform: translateX(100%);
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            max-width: 350px;
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(0);
+        .custom-select-options div:hover {
+            background-color: #4a5568;
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
-
-    <!-- Main App Layout -->
-    <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
-            <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-blue-600">Invoice Pro</h1>
-                <nav class="flex items-center space-x-2 md:space-x-4">
-                    <button class="nav-button bg-blue-600 text-white font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="dashboard">Dashboard</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="clients">Clients</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="projects">Projects</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="reports">Reports</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="profile">Profile</button>
-                    <button id="sign-out-btn" class="bg-red-500 text-white font-semibold py-2 px-3 md:px-4 rounded-full hover:bg-red-600 transition duration-300">Sign Out</button>
-                </nav>
+<body class="flex items-center justify-center min-h-screen p-4">
+    
+    <!-- Login/Authentication Screen -->
+    <div id="login-screen" class="container bg-card p-8 rounded-xl shadow-lg w-full border border-gray-700 flex flex-col items-center justify-center space-y-6">
+        <h1 class="text-4xl font-bold text-center text-indigo-400">Welcome to Invoice App</h1>
+        <p class="text-lg text-gray-400">Please log in to continue.</p>
+        
+        <!-- Email/Password Login Form -->
+        <div class="w-full max-w-sm space-y-4">
+            <div>
+                <label for="email-input" class="form-label block text-sm font-medium">Email Address</label>
+                <input type="email" id="email-input" class="mt-1 block w-full rounded-md shadow-sm p-2 border" placeholder="you@example.com">
             </div>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 container mx-auto px-4 py-8">
-            <!-- Dashboard Page -->
-            <div id="dashboard-page" class="page-content active">
-                <div class="p-4 md:p-8 space-y-8">
-                    <h1 class="text-3xl md:text-4xl font-bold">Create Invoice</h1>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 lg:col-span-2">
-                            <h2 class="text-2xl font-semibold mb-4">Invoice Details</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="invoice-number" class="block text-sm font-medium">Invoice #</label>
-                                    <input type="text" id="invoice-number" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-100 dark:bg-gray-700" readonly>
-                                </div>
-                                <div>
-                                    <label for="invoice-date" class="block text-sm font-medium">Invoice Date</label>
-                                    <input type="date" id="invoice-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                                </div>
-                                <div>
-                                    <label for="due-date" class="block text-sm font-medium">Due Date</label>
-                                    <input type="date" id="due-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                                </div>
-                                <div>
-                                    <label for="client-select" class="block text-sm font-medium">Client</label>
-                                    <select id="client-select" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900"></select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 lg:col-span-1">
-                            <h2 class="text-2xl font-semibold mb-4">Add Projects</h2>
-                            <select id="project-select" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900"></select>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <h2 class="text-2xl font-bold">Invoice Items</h2>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 rounded-xl overflow-hidden">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rate</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Qty</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="invoice-items-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                    <!-- Invoice items will be dynamically added here -->
-                                </tbody>
-                                <tfoot>
-                                    <tr class="bg-white dark:bg-gray-800">
-                                        <td colspan="4" class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-300">Subtotal</td>
-                                        <td id="subtotal-display" class="px-6 py-3 text-left font-semibold">$0.00</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr class="bg-white dark:bg-gray-800">
-                                        <td colspan="4" class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-300">
-                                            <div class="flex items-center justify-end space-x-2">
-                                                <span>Tax Rate (%)</span>
-                                                <input type="number" id="tax-rate-input" value="0" class="w-20 rounded-md border-gray-300 dark:border-gray-600 p-1 text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900">
-                                            </div>
-                                        </td>
-                                        <td id="tax-display" class="px-6 py-3 text-left font-semibold">$0.00</td>
-                                        <td></td>
-                                    </tr>
-                                    <tr class="bg-blue-600 text-white">
-                                        <td colspan="4" class="px-6 py-3 text-right text-lg font-bold">Total</td>
-                                        <td id="total-display" class="px-6 py-3 text-left text-lg font-bold">$0.00</td>
-                                        <td></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-4 mt-8">
-                        <button id="generate-invoice-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Generate & Save Invoice</button>
-                        <button id="download-invoice-btn" class="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">Download Invoice</button>
-                    </div>
-                </div>
+            <div>
+                <label for="password-input" class="form-label block text-sm font-medium">Password</label>
+                <input type="password" id="password-input" class="mt-1 block w-full rounded-md shadow-sm p-2 border" placeholder="********">
             </div>
-
-            <!-- Clients Page -->
-            <div id="clients-page" class="page-content">
-                <div class="p-4 md:p-8 space-y-8">
-                    <div class="flex justify-between items-center">
-                        <h1 class="text-3xl md:text-4xl font-bold">My Clients</h1>
-                        <button id="add-client-dialog-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Add Client</button>
-                    </div>
-                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="clients-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Clients will be dynamically added here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Projects Page -->
-            <div id="projects-page" class="page-content">
-                <div class="p-4 md:p-8 space-y-8">
-                    <div class="flex justify-between items-center">
-                        <h1 class="text-3xl md:text-4xl font-bold">My Projects/Services</h1>
-                        <button id="add-project-dialog-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Add Project</button>
-                    </div>
-                    <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="projects-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Projects will be dynamically added here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reports Page -->
-            <div id="reports-page" class="page-content">
-                <div class="p-4 md:p-8 space-y-8">
-                    <h1 class="text-3xl md:text-4xl font-bold">Monthly Reports</h1>
-                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6">
-                        <h2 class="text-2xl font-semibold mb-4">Generate Report</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="report-client-select" class="block text-sm font-medium">Select Client</label>
-                                <select id="report-client-select" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900"></select>
-                            </div>
-                            <div>
-                                <label for="report-start-date" class="block text-sm font-medium">Start Date</label>
-                                <input type="date" id="report-start-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                            <div>
-                                <label for="report-end-date" class="block text-sm font-medium">End Date</label>
-                                <input type="date" id="report-end-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                        </div>
-                        <div class="mt-4 flex justify-end">
-                            <button id="download-report-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Download Report</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Page -->
-            <div id="profile-page" class="page-content">
-                <div class="p-4 md:p-8 space-y-8">
-                    <div class="flex justify-between items-center">
-                        <h1 class="text-3xl md:text-4xl font-bold">My Profile</h1>
-                        <button id="dark-mode-toggle" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">
-                            <!-- Sun SVG -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden light-mode-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <!-- Moon SVG -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 dark-mode-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
-                        <h2 class="text-2xl font-semibold mb-4">Account Information</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="brand-name-input" class="block text-sm font-medium">Brand Name</label>
-                                <input type="text" id="brand-name-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                            <div>
-                                <label for="user-id-display" class="block text-sm font-medium">User ID</label>
-                                <input type="text" id="user-id-display" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-100 dark:bg-gray-700" readonly>
-                            </div>
-                        </div>
-                        <h2 class="text-xl font-semibold mt-4">Contact Information</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="contact-name-input" class="block text-sm font-medium">Name</label>
-                                <input type="text" id="contact-name-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                            <div>
-                                <label for="contact-email-input" class="block text-sm font-medium">Email</label>
-                                <input type="email" id="contact-email-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                            <div>
-                                <label for="contact-phone-input" class="block text-sm font-medium">Phone</label>
-                                <input type="tel" id="contact-phone-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                            <div>
-                                <label for="contact-address-input" class="block text-sm font-medium">Address</label>
-                                <input type="text" id="contact-address-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                            </div>
-                        </div>
-                        <h2 class="text-xl font-semibold mt-4">Payment Options</h2>
-                        <div id="payment-options-container" class="space-y-2">
-                            <!-- Payment options will be added here -->
-                        </div>
-                        <button id="add-payment-option-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">Add Payment Option</button>
-                        <div class="flex justify-end mt-4 gap-4">
-                            <button id="save-profile-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Save Changes</button>
-                            <button id="delete-profile-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition duration-300">Delete Account</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Client Dialog Modal -->
-    <div id="add-client-dialog" class="dialog-overlay">
-        <div class="dialog-content">
-            <h3 class="text-xl font-semibold mb-4">Add New Client</h3>
-            <div class="space-y-4">
-                <div>
-                    <label for="new-client-name" class="block text-sm font-medium">Name</label>
-                    <input type="text" id="new-client-name" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                </div>
-                <div>
-                    <label for="new-client-email" class="block text-sm font-medium">Email</label>
-                    <input type="email" id="new-client-email" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                </div>
-                <div>
-                    <label for="new-client-address" class="block text-sm font-medium">Address</label>
-                    <input type="text" id="new-client-address" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                </div>
-            </div>
-            <div class="flex justify-end mt-6 space-x-2">
-                <button id="cancel-add-client-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
-                <button id="save-client-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Save Client</button>
+            <div class="flex space-x-4">
+                <button id="email-signin-btn" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105">
+                    Sign In
+                </button>
+                <button id="email-signup-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105">
+                    Sign Up
+                </button>
             </div>
         </div>
-    </div>
 
-    <!-- Project Dialog Modal -->
-    <div id="add-project-dialog" class="dialog-overlay">
-        <div class="dialog-content">
-            <h3 class="text-xl font-semibold mb-4">Add New Project/Service</h3>
-            <div class="space-y-4">
-                <div>
-                    <label for="new-project-name" class="block text-sm font-medium">Name</label>
-                    <input type="text" id="new-project-name" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                </div>
-                <div>
-                    <label for="new-project-description" class="block text-sm font-medium">Description</label>
-                    <input type="text" id="new-project-description" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="new-project-rate" class="block text-sm font-medium">Rate</label>
-                        <input type="number" id="new-project-rate" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                    </div>
-                    <div>
-                        <label for="new-project-unit" class="block text-sm font-medium">Unit</label>
-                        <input type="text" id="new-project-unit" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
-                    </div>
-                </div>
-            </div>
-            <div class="flex justify-end mt-6 space-x-2">
-                <button id="cancel-add-project-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
-                <button id="save-project-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Save Project</button>
-            </div>
+        <!-- Separator -->
+        <div class="flex items-center w-full max-w-sm my-4">
+            <hr class="flex-grow border-gray-600">
+            <span class="px-3 text-gray-500 text-sm">OR</span>
+            <hr class="flex-grow border-gray-600">
         </div>
+
+        <!-- Google Login Button -->
+        <button id="google-login-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center justify-center space-x-2 w-full max-w-sm">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21.365 10.596h-9.365v3.407h5.361c-.26 1.488-1.272 3.522-5.361 3.522-3.215 0-5.834-2.67-5.834-5.96s2.619-5.96 5.834-5.96c1.761 0 2.923.753 3.606 1.393l2.672-2.585c-1.637-1.498-3.702-2.457-6.278-2.457-5.161 0-9.365 4.199-9.365 9.365s4.204 9.365 9.365 9.365c5.313 0 8.948-3.722 8.948-9.14 0-.841-.073-1.459-.168-2.072z"/>
+            </svg>
+            <span>Sign In with Google</span>
+        </button>
     </div>
 
-    <!-- Custom Confirmation Dialog -->
-    <div id="confirm-dialog" class="confirm-dialog-overlay">
-        <div class="confirm-dialog-content">
-            <h3 class="text-xl font-semibold mb-4" id="confirm-dialog-title">Confirm Action</h3>
-            <p id="confirm-dialog-message" class="mb-6">Are you sure you want to proceed?</p>
-            <div class="flex justify-end space-x-2">
-                <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
-                <button id="confirm-ok-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notifications -->
-    <div id="toast-container" class="toast-container"></div>
-
-    <!-- Hidden element for PDF generation -->
-    <div class="hidden">
-        <div id="invoice-to-pdf" class="p-8 bg-white text-gray-800 rounded-lg shadow-xl max-w-4xl mx-auto">
-            <header class="flex justify-between items-start mb-12 border-b-2 border-gray-200 pb-4">
-                <div>
-                    <h1 id="pdf-brand-name" class="text-4xl font-bold text-blue-600">Your Brand Name</h1>
-                    <p id="pdf-brand-address" class="text-sm mt-1">Your address</p>
-                    <p id="pdf-brand-email" class="text-sm">Your email</p>
-                    <p id="pdf-brand-phone" class="text-sm">Your phone</p>
-                </div>
+    <!-- Main Application Container -->
+    <div id="main-app" class="container bg-card p-8 rounded-xl shadow-lg w-full border border-gray-700 hidden">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+            <h1 class="text-4xl font-bold text-indigo-400">Invoice App</h1>
+            <!-- User Profile and Logout -->
+            <div id="profile-section" class="flex items-center space-x-4">
                 <div class="text-right">
-                    <h2 class="text-2xl font-semibold text-gray-600">INVOICE</h2>
-                    <p id="pdf-invoice-number" class="text-sm mt-1">Invoice #</p>
-                    <p id="pdf-invoice-date" class="text-sm">Date:</p>
-                    <p id="pdf-due-date" class="text-sm font-semibold text-red-500">Due:</p>
+                    <p class="text-gray-300">Logged in as: <span id="user-email" class="font-semibold text-indigo-400"></span></p>
+                    <p class="text-gray-500 text-xs">ID: <span id="user-id" class="font-mono"></span></p>
                 </div>
-            </header>
+                <button id="logout-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-4 rounded-full transition-transform transform hover:scale-105">
+                    Logout
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tabs for different sections -->
+        <div class="flex mb-6 space-x-2 border-b border-gray-700">
+            <button id="tab-invoice" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Invoice</button>
+            <button id="tab-templates" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Templates</button>
+            <button id="tab-clients" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Clients</button>
+            <button id="tab-reports" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Reports</button>
+        </div>
 
-            <section class="flex justify-between items-start mb-12">
+        <!-- Invoice Tab Content -->
+        <div id="content-invoice" class="tab-content">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Create New Invoice</h2>
+            <div class="space-y-4">
+                <!-- Client Dropdown -->
+                <div class="custom-select">
+                    <label for="clientName" class="form-label block text-sm font-medium">Client</label>
+                    <input type="text" id="clientNameInput" placeholder="Select or type client name" class="mt-1 block w-full rounded-md shadow-sm p-2 border" autocomplete="off">
+                    <div id="client-suggestions" class="custom-select-options hidden"></div>
+                    <input type="hidden" id="selectedClientId">
+                </div>
+                <!-- Template Dropdown -->
+                <div class="custom-select">
+                    <label for="templateSelect" class="form-label block text-sm font-medium">Project Template</label>
+                    <select id="templateSelect" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
+                        <option value="">Select a template</option>
+                    </select>
+                </div>
                 <div>
-                    <h3 class="font-bold text-lg text-gray-700 mb-2">BILL TO:</h3>
-                    <p id="pdf-client-name" class="font-semibold"></p>
-                    <p id="pdf-client-email" class="text-sm"></p>
-                    <p id="pdf-client-address" class="text-sm"></p>
+                    <label for="invoiceDate" class="form-label block text-sm font-medium">Invoice Date</label>
+                    <input type="date" id="invoiceDate" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
                 </div>
-            </section>
+            </div>
+            
+            <div id="invoice-items" class="mt-6 space-y-3">
+                <div class="flex space-x-2 items-center text-gray-400 font-medium pb-2 border-b border-gray-600">
+                    <div class="flex-1">Description</div>
+                    <div class="w-20 text-center">Qty</div>
+                    <div class="w-24 text-right">Price</div>
+                    <div class="w-24 text-right">Amount</div>
+                    <div class="w-10"></div>
+                </div>
+                <!-- Item rows will be appended here -->
+            </div>
+            
+            <button id="addItemBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                Add Item
+            </button>
+            
+            <div class="mt-6 p-4 bg-gray-700 rounded-lg">
+                <div class="flex justify-between font-bold text-lg text-gray-200">
+                    <span>Total:</span>
+                    <span id="totalAmount">Rs. 0.00</span>
+                </div>
+            </div>
+            
+            <div class="flex space-x-4 mt-6">
+                <button id="generateInvoiceBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                    Generate & Download Invoice
+                </button>
+                <button id="saveInvoiceBtn" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                    Save Invoice
+                </button>
+            </div>
+        </div>
 
-            <section class="mb-12">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">DESCRIPTION</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">RATE</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">QTY</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">TOTAL</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pdf-invoice-items" class="bg-white divide-y divide-gray-200">
-                        <!-- Invoice items for PDF will go here -->
-                    </tbody>
-                </table>
-            </section>
+        <!-- Templates Tab Content -->
+        <div id="content-templates" class="tab-content hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Manage Project Templates</h2>
+            <div id="templates-list" class="space-y-4">
+                <!-- Saved templates will be rendered here -->
+            </div>
+            <div class="mt-6 p-4 bg-gray-700 rounded-lg space-y-4">
+                <h3 class="text-xl font-semibold text-gray-200">Save Current as Template</h3>
+                <div>
+                    <label for="templateNameInput" class="form-label block text-sm font-medium">Template Name</label>
+                    <input type="text" id="templateNameInput" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
+                </div>
+                <button id="saveTemplateBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                    Save as Template
+                </button>
+            </div>
+        </div>
 
-            <footer class="flex justify-end">
-                <div class="w-full md:w-1/2">
-                    <table class="w-full">
-                        <tbody>
-                            <tr>
-                                <td class="font-semibold py-2">Subtotal</td>
-                                <td id="pdf-subtotal" class="text-right py-2">$0.00</td>
-                            </tr>
-                            <tr>
-                                <td class="font-semibold py-2">Tax (<span id="pdf-tax-rate">0</span>%)</td>
-                                <td id="pdf-tax" class="text-right py-2">$0.00</td>
-                            </tr>
-                            <tr class="bg-blue-600 text-white font-bold text-lg">
-                                <td class="py-2">Total Due</td>
-                                <td id="pdf-total" class="text-right py-2">$0.00</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div id="pdf-payment-options-container" class="mt-6 p-4 bg-gray-100 rounded-lg">
-                        <h4 class="font-bold mb-2">Payment Options:</h4>
-                        <ul id="pdf-payment-options-list" class="list-disc list-inside text-sm">
-                            <!-- Payment options for PDF will go here -->
-                        </ul>
+        <!-- Clients Tab Content -->
+        <div id="content-clients" class="tab-content hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Manage Clients</h2>
+            <div id="clients-list" class="space-y-4">
+                <!-- Saved clients will be rendered here -->
+            </div>
+            <div class="mt-6 p-4 bg-gray-700 rounded-lg space-y-4">
+                <h3 class="text-xl font-semibold text-gray-200">Add New Client</h3>
+                <div>
+                    <label for="newClientNameInput" class="form-label block text-sm font-medium">Client Name</label>
+                    <input type="text" id="newClientNameInput" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
+                </div>
+                <button id="saveClientBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                    Save Client
+                </button>
+            </div>
+        </div>
+        
+        <!-- Reports Tab Content -->
+        <div id="content-reports" class="tab-content hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Monthly Reports</h2>
+            <div class="space-y-4 p-4 bg-gray-700 rounded-lg">
+                <div class="custom-select">
+                    <label for="reportClientInput" class="form-label block text-sm font-medium">Select Client for Report</label>
+                    <input type="text" id="reportClientInput" placeholder="Search for a client" class="mt-1 block w-full rounded-md shadow-sm p-2 border" autocomplete="off">
+                    <div id="report-client-suggestions" class="custom-select-options hidden"></div>
+                    <input type="hidden" id="selectedReportClientId">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="reportStartDate" class="form-label block text-sm font-medium">Start Date</label>
+                        <input type="date" id="reportStartDate" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label for="reportEndDate" class="form-label block text-sm font-medium">End Date</label>
+                        <input type="date" id="reportEndDate" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
                     </div>
                 </div>
-            </footer>
+                <button id="generateReportBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                    Generate Report
+                </button>
+            </div>
         </div>
+
+        <!-- Saved Invoices Section -->
+        <div id="saved-invoices-section" class="mt-10 border-t-2 border-gray-700 pt-6">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-200">Saved Invoices</h2>
+            <div id="invoices-list" class="space-y-4">
+                <!-- Saved invoices will be rendered here -->
+            </div>
+        </div>
+
     </div>
 
-
+    <!-- The modal for displaying messages -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center p-4">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-xl max-w-sm w-full border border-gray-700">
+        <h3 id="modal-title" class="text-xl font-bold mb-4 text-gray-100">Message</h3>
+        <p id="modal-message" class="text-gray-300 mb-4">This is a message box.</p>
+        <button id="modal-close-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg">OK</button>
+      </div>
+    </div>
+    
+    <!-- Firebase script -->
     <script type="module">
-        // --- START: Firebase Configuration and Initialization ---
-        // Import the required Firebase services as modules
+        // Import the functions you need from the SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase configuration provided by the user
-        const userFirebaseConfig = {
-            apiKey: "AIzaSyAdFr4gLREBC2K9G8GXzEBHpckCXax8M2A",
-            authDomain: "invoice-genaraor.firebaseapp.com",
-            projectId: "invoice-genaraor",
-            storageBucket: "invoice-genaraor.firebasestorage.app",
-            messagingSenderId: "691350547086",
-            appId: "1:691350547086:web:6490d19dc93fa636ee77df",
-            measurementId: "G-C2C7ELHC1F"
-        };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userFirebaseConfig;
-
-        // Global variables provided by the environment
+        // Global variables provided by the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDQvGFLq6cHWf9n9UsR1OwCVwsyKYC7Rao",
+            authDomain: "invoice-bd8a1.firebaseapp.com",
+            projectId: "invoice-bd8a1",
+            storageBucket: "invoice-bd8a1.firebasestorage.app",
+            messagingSenderId: "804369018747",
+            appId: "1:804369018747:web:43ef3e1ac81a352b5097de",
+            measurementId: "G-QDRK0SBCVY"
+        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        let app, auth, db, userId;
-        let isAuthReady = false;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let userId = null;
+        let savedClients = [];
 
-        async function initFirebase() {
-            try {
-                // Initialize Firebase app with provided config
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+        // UI elements
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        const userEmailSpan = document.getElementById('user-email');
+        const userIdSpan = document.getElementById('user-id');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const savedInvoicesSection = document.getElementById('saved-invoices-section');
+        const invoicesList = document.getElementById('invoices-list');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const saveInvoiceBtn = document.getElementById('saveInvoiceBtn');
+        const generateInvoiceBtn = document.getElementById('generateInvoiceBtn');
+        const totalAmountSpan = document.getElementById('totalAmount');
+        const invoiceItemsContainer = document.getElementById('invoice-items');
+
+        // New elements for email/password login
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const emailSignInBtn = document.getElementById('email-signin-btn');
+        const emailSignUpBtn = document.getElementById('email-signup-btn');
+
+        // New elements for enhanced features
+        const tabInvoice = document.getElementById('tab-invoice');
+        const tabTemplates = document.getElementById('tab-templates');
+        const tabClients = document.getElementById('tab-clients');
+        const tabReports = document.getElementById('tab-reports');
+        const contentInvoice = document.getElementById('content-invoice');
+        const contentTemplates = document.getElementById('content-templates');
+        const contentClients = document.getElementById('content-clients');
+        const contentReports = document.getElementById('content-reports');
+        const templateSelect = document.getElementById('templateSelect');
+        const templatesList = document.getElementById('templates-list');
+        const saveTemplateBtn = document.getElementById('saveTemplateBtn');
+        const templateNameInput = document.getElementById('templateNameInput');
+        const clientsList = document.getElementById('clients-list');
+        const saveClientBtn = document.getElementById('saveClientBtn');
+        const newClientNameInput = document.getElementById('newClientNameInput');
+        const clientNameInput = document.getElementById('clientNameInput');
+        const clientSuggestions = document.getElementById('client-suggestions');
+        const selectedClientId = document.getElementById('selectedClientId');
+        const reportClientInput = document.getElementById('reportClientInput');
+        const reportClientSuggestions = document.getElementById('report-client-suggestions');
+        const selectedReportClientId = document.getElementById('selectedReportClientId');
+        const reportStartDate = document.getElementById('reportStartDate');
+        const reportEndDate = document.getElementById('reportEndDate');
+        const generateReportBtn = document.getElementById('generateReportBtn');
+
+        const messageModal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // Function to show a custom modal instead of alert
+        function showMessage(title, message) {
+          modalTitle.textContent = title;
+          modalMessage.textContent = message;
+          messageModal.classList.remove('hidden');
+          messageModal.classList.add('flex');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+          messageModal.classList.add('hidden');
+          messageModal.classList.remove('flex');
+        });
+        
+        // Firebase Auth State Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in.
+                userId = user.uid;
+                const email = user.email || "User";
+                loginScreen.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                userEmailSpan.textContent = email;
+                userIdSpan.textContent = userId;
                 
-                // Sign in the user. We use a custom token or anonymous auth.
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Start listening to the user's private data
+                listenForInvoices(userId);
+                listenForTemplates(userId);
+                listenForClients(userId);
 
-                // Listen for auth state changes to get the user ID.
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        isAuthReady = true;
-                        document.getElementById('user-id-display').value = userId;
-                        showToast("Signed in successfully.");
-                        startListeners(); // Start listening to database changes now that we have a user
-                        renderPage('dashboard');
+                // Set initial tab
+                switchTab('invoice');
+            } else {
+                // User is signed out.
+                userId = null;
+                loginScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+                invoicesList.innerHTML = '';
+                templatesList.innerHTML = '';
+                clientsList.innerHTML = '';
+                templateSelect.innerHTML = '<option value="">Select a template</option>';
+            }
+        });
+        
+        // Email Sign Up
+        emailSignUpBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            if (email && password) {
+                try {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showMessage("Success", "Account created successfully! You are now logged in.");
+                } catch (error) {
+                    console.error("Sign up failed:", error);
+                    showMessage("Sign Up Failed", error.message);
+                }
+            } else {
+                showMessage("Input Required", "Please enter a valid email and password.");
+            }
+        });
+
+        // Email Sign In
+        emailSignInBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            if (email && password) {
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showMessage("Success", "Signed in successfully!");
+                } catch (error) {
+                    console.error("Sign in failed:", error);
+                    showMessage("Sign In Failed", error.message);
+                }
+            } else {
+                showMessage("Input Required", "Please enter a valid email and password.");
+            }
+        });
+
+        // Google Login functionality
+        googleLoginBtn.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google login failed:", error);
+                showMessage("Login Failed", "There was an error signing in with Google.");
+            }
+        });
+
+        // Logout functionality
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                showMessage("Logged Out", "You have been logged out successfully.");
+            } catch (error) {
+                console.error("Logout failed:", error);
+                showMessage("Logout Failed", "There was an error logging out.");
+            }
+        });
+        
+        // Tab Switching Logic
+        const tabButtons = [tabInvoice, tabTemplates, tabClients, tabReports];
+        const tabContents = [contentInvoice, contentTemplates, contentClients, contentReports];
+        
+        function switchTab(tabId) {
+            tabButtons.forEach(btn => {
+                btn.classList.remove('border-indigo-400', 'text-indigo-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            tabContents.forEach(content => content.classList.add('hidden'));
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            const activeContent = document.getElementById(`content-${tabId}`);
+            
+            activeTab.classList.remove('border-transparent', 'text-gray-400');
+            activeTab.classList.add('border-indigo-400', 'text-indigo-400');
+            activeContent.classList.remove('hidden');
+        }
+        
+        tabInvoice.addEventListener('click', () => switchTab('invoice'));
+        tabTemplates.addEventListener('click', () => switchTab('templates'));
+        tabClients.addEventListener('click', () => switchTab('clients'));
+        tabReports.addEventListener('click', () => switchTab('reports'));
+
+        // Invoice form logic
+        function createItemRow(item = {}) {
+            const row = document.createElement('div');
+            row.className = 'invoice-item-row flex space-x-2 items-center p-2 rounded-lg shadow-sm';
+            row.innerHTML = `
+                <input type="text" value="${item.description || ''}" placeholder="Description" class="flex-1 rounded-md border-gray-600 p-1 border">
+                <input type="number" value="${item.quantity || 1}" min="1" class="w-20 text-center rounded-md border-gray-600 p-1 border">
+                <input type="number" value="${item.price || 0}" min="0" step="0.01" class="w-24 text-right rounded-md border-gray-600 p-1 border">
+                <span class="amount-cell w-24 text-right font-medium text-gray-300">Rs. 0.00</span>
+                <button class="remove-item-btn w-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full h-8 w-8 flex items-center justify-center transition-transform transform hover:scale-110">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+            
+            const [descriptionInput, quantityInput, priceInput] = row.querySelectorAll('input');
+            const amountCell = row.querySelector('.amount-cell');
+            const removeBtn = row.querySelector('.remove-item-btn');
+
+            const updateAmount = () => {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const amount = quantity * price;
+                amountCell.textContent = `Rs. ${amount.toFixed(2)}`;
+                updateTotal();
+            };
+
+            quantityInput.addEventListener('input', updateAmount);
+            priceInput.addEventListener('input', updateAmount);
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+                updateTotal();
+            });
+
+            updateAmount(); // Initial calculation
+            return row;
+        }
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll('.invoice-item-row').forEach(row => {
+                const quantity = parseFloat(row.querySelectorAll('input')[1].value) || 0;
+                const price = parseFloat(row.querySelectorAll('input')[2].value) || 0;
+                total += quantity * price;
+            });
+            totalAmountSpan.textContent = `Rs. ${total.toFixed(2)}`;
+        }
+
+        // Add initial item row
+        invoiceItemsContainer.appendChild(createItemRow());
+
+        addItemBtn.addEventListener('click', () => {
+            invoiceItemsContainer.appendChild(createItemRow());
+        });
+
+        // Client and Template Search Dropdown Logic
+        function setupSearchableDropdown(inputElement, suggestionsContainer, data, onSelectCallback) {
+            inputElement.addEventListener('input', () => {
+                const query = inputElement.value.toLowerCase();
+                suggestionsContainer.innerHTML = '';
+                if (query.length > 0) {
+                    const filteredData = data.filter(item => item.name.toLowerCase().includes(query));
+                    if (filteredData.length > 0) {
+                        filteredData.forEach(item => {
+                            const suggestionDiv = document.createElement('div');
+                            suggestionDiv.textContent = item.name;
+                            suggestionDiv.addEventListener('click', () => {
+                                onSelectCallback(item);
+                                suggestionsContainer.classList.add('hidden');
+                            });
+                            suggestionsContainer.appendChild(suggestionDiv);
+                        });
+                        suggestionsContainer.classList.remove('hidden');
                     } else {
-                        userId = null;
-                        isAuthReady = false;
-                        document.getElementById('user-id-display').value = 'Not signed in';
+                        suggestionsContainer.classList.add('hidden');
                     }
-                });
-            } catch (error) {
-                console.error("Error during Firebase initialization:", error);
-                showToast("Firebase initialization failed: " + error.message, 'error');
-            }
-        }
-        // --- END: Firebase Configuration and Initialization ---
-
-
-        // --- START: Data and State Management ---
-        let state = {
-            clients: [],
-            projects: [],
-            invoices: [],
-            userProfile: {},
-            invoiceDetails: {
-                invoiceNumber: 'INV-' + Math.floor(Math.random() * 10000),
-                invoiceDate: new Date().toISOString().split('T')[0],
-                dueDate: new Date().toISOString().split('T')[0],
-                client: null,
-                items: [],
-                subtotal: 0,
-                taxRate: 0,
-                total: 0,
-                notes: '',
-            }
-        };
-
-        function startListeners() {
-            if (!isAuthReady) return;
-
-            // Profile Listener - Fetches and updates user profile in real-time
-            const profileDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
-            onSnapshot(profileDocRef, (doc) => {
-                if (doc.exists()) {
-                    state.userProfile = doc.data();
-                    renderProfilePage();
-                    renderInvoicePreview();
                 } else {
-                    // Create a default profile if one doesn't exist
-                    setDoc(profileDocRef, {
-                        brandName: 'My Brand',
-                        contactInfo: { name: '', email: '', phone: '', address: '' },
-                        paymentOptions: []
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+            
+            inputElement.addEventListener('focus', () => {
+                if (inputElement.value.length === 0 && data.length > 0) {
+                    suggestionsContainer.innerHTML = '';
+                    data.forEach(item => {
+                        const suggestionDiv = document.createElement('div');
+                        suggestionDiv.textContent = item.name;
+                        suggestionDiv.addEventListener('click', () => {
+                            onSelectCallback(item);
+                            suggestionsContainer.classList.add('hidden');
+                        });
+                        suggestionsContainer.appendChild(suggestionDiv);
                     });
-                }
-            }, (err) => {
-                console.error("Error fetching profile:", err);
-                showToast("Error fetching profile data.", 'error');
-            });
-
-            // Clients Listener - Fetches and updates clients in real-time
-            const clientsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'clients');
-            onSnapshot(clientsCollectionRef, (snapshot) => {
-                state.clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderClientsPage();
-                renderClientsSelect();
-            }, (err) => {
-                console.error("Error fetching clients:", err);
-                showToast("Error fetching clients data.", 'error');
-            });
-
-            // Projects Listener - Fetches and updates projects in real-time
-            const projectsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'projects');
-            onSnapshot(projectsCollectionRef, (snapshot) => {
-                state.projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderProjectsPage();
-                renderProjectsSelect();
-            }, (err) => {
-                console.error("Error fetching projects:", err);
-                showToast("Error fetching projects data.", 'error');
-            });
-
-            // Invoices Listener - Fetches and updates invoices in real-time for reports
-            const invoicesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'invoices');
-            onSnapshot(invoicesCollectionRef, (snapshot) => {
-                state.invoices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            }, (err) => {
-                console.error("Error fetching invoices:", err);
-                showToast("Error fetching invoices data.", 'error');
-            });
-        }
-        // --- END: Data and State Management ---
-
-
-        // --- START: UI Rendering Functions ---
-        function renderPage(pageId) {
-            document.querySelectorAll('.page-content').forEach(page => {
-                page.classList.remove('active');
-            });
-            document.getElementById(pageId + '-page').classList.add('active');
-
-            // Update nav buttons
-            document.querySelectorAll('.nav-button').forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
-                if (btn.dataset.page === pageId) {
-                    btn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                    btn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
+                    suggestionsContainer.classList.remove('hidden');
                 }
             });
-            
-            // Re-render the specific page's content
-            if (pageId === 'profile') renderProfilePage();
-            if (pageId === 'clients') renderClientsPage();
-            if (pageId === 'projects') renderProjectsPage();
-            if (pageId === 'reports') renderReportsPage();
-        }
 
-        function renderClientsSelect() {
-            const clientSelect = document.getElementById('client-select');
-            const reportClientSelect = document.getElementById('report-client-select');
-            
-            // Retain selected value if it exists, otherwise use a placeholder
-            const selectedClientId = clientSelect.value;
-            
-            clientSelect.innerHTML = '<option value="" disabled selected>Select a client</option>';
-            reportClientSelect.innerHTML = '<option value="" disabled selected>Select a client</option>';
-            
-            state.clients.forEach(client => {
-                const option = document.createElement('option');
-                option.value = client.id;
-                option.textContent = client.name;
-                if (client.id === selectedClientId) {
-                    option.selected = true;
+            document.addEventListener('click', (e) => {
+                if (!inputElement.parentElement.contains(e.target)) {
+                    suggestionsContainer.classList.add('hidden');
                 }
-                clientSelect.appendChild(option);
-                
-                const reportOption = document.createElement('option');
-                reportOption.value = client.id;
-                reportOption.textContent = client.name;
-                if (client.id === selectedClientId) {
-                    reportOption.selected = true;
-                }
-                reportClientSelect.appendChild(reportOption);
             });
         }
+        
+        // Invoice functionality
+        function getInvoiceData() {
+            const clientName = clientNameInput.value.trim();
+            const invoiceDate = invoiceDate.value;
 
-        function renderProjectsSelect() {
-            const projectSelect = document.getElementById('project-select');
-            projectSelect.innerHTML = '<option value="" disabled selected>Search or select a project</option>';
-            state.projects.forEach(project => {
-                const option = document.createElement('option');
-                option.value = project.id;
-                option.textContent = project.name;
-                projectSelect.appendChild(option);
-            });
-        }
-
-        function renderClientsPage() {
-            const clientsTableBody = document.getElementById('clients-table-body');
-            clientsTableBody.innerHTML = '';
-            state.clients.forEach(client => {
-                const row = document.createElement('tr');
-                row.className = 'bg-white dark:bg-gray-800';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${client.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">${client.email}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">${client.address}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-red-600 hover:text-red-900" onclick="showConfirmDialog('Delete Client', 'Are you sure you want to delete this client?', () => deleteClient('${client.id}'))">Delete</button>
-                    </td>
-                `;
-                clientsTableBody.appendChild(row);
-            });
-        }
-
-        function renderProjectsPage() {
-            const projectsTableBody = document.getElementById('projects-table-body');
-            projectsTableBody.innerHTML = '';
-            state.projects.forEach(project => {
-                const row = document.createElement('tr');
-                row.className = 'bg-white dark:bg-gray-800';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${project.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">${project.description}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">$${parseFloat(project.rate).toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">${project.unit}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-red-600 hover:text-red-900" onclick="showConfirmDialog('Delete Project', 'Are you sure you want to delete this project?', () => deleteProject('${project.id}'))">Delete</button>
-                    </td>
-                `;
-                projectsTableBody.appendChild(row);
-            });
-        }
-
-        function renderProfilePage() {
-            if (!state.userProfile) return;
-
-            document.getElementById('brand-name-input').value = state.userProfile.brandName || '';
-            document.getElementById('contact-name-input').value = state.userProfile.contactInfo?.name || '';
-            document.getElementById('contact-email-input').value = state.userProfile.contactInfo?.email || '';
-            document.getElementById('contact-phone-input').value = state.userProfile.contactInfo?.phone || '';
-            document.getElementById('contact-address-input').value = state.userProfile.contactInfo?.address || '';
-
-            const paymentOptionsContainer = document.getElementById('payment-options-container');
-            paymentOptionsContainer.innerHTML = '';
-            state.userProfile.paymentOptions?.forEach((option, index) => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center space-x-2';
-                div.innerHTML = `
-                    <input type="text" value="${option}" class="flex-grow rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900" onchange="updatePaymentOption(${index}, this.value)">
-                    <button onclick="removePaymentOption(${index})" class="text-red-600 hover:text-red-900">&times;</button>
-                `;
-                paymentOptionsContainer.appendChild(div);
-            });
-        }
-
-        function renderInvoiceItems() {
-            const invoiceItemsBody = document.getElementById('invoice-items-body');
-            invoiceItemsBody.innerHTML = '';
-            state.invoiceDetails.items.forEach((item, index) => {
-                const row = document.createElement('tr');
-                row.className = 'bg-white dark:bg-gray-800';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.description}" class="w-full bg-transparent border-none p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'description', this.value)"></td>
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.rate}" class="w-24 bg-transparent border-none text-right p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'rate', parseFloat(this.value))"></td>
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.quantity}" class="w-24 bg-transparent border-none text-right p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'quantity', parseFloat(this.value))"></td>
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.unit}" class="w-24 bg-transparent border-none p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'unit', this.value)"></td>
-                    <td class="px-6 py-4 whitespace-nowrap font-semibold">$${item.total.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <button class="text-red-600 hover:text-red-900" onclick="removeInvoiceItem(${index})">&times;</button>
-                    </td>
-                `;
-                invoiceItemsBody.appendChild(row);
-            });
-        }
-
-        function updateInvoiceTotals() {
-            const subtotal = state.invoiceDetails.items.reduce((sum, item) => sum + item.total, 0);
-            const taxAmount = subtotal * (state.invoiceDetails.taxRate / 100);
-            const total = subtotal + taxAmount;
-
-            state.invoiceDetails.subtotal = subtotal;
-            state.invoiceDetails.total = total;
-
-            document.getElementById('subtotal-display').textContent = `$${subtotal.toFixed(2)}`;
-            document.getElementById('tax-display').textContent = `$${taxAmount.toFixed(2)}`;
-            document.getElementById('total-display').textContent = `$${total.toFixed(2)}`;
-        }
-
-        function renderInvoicePreview() {
-             const data = state.invoiceDetails;
-             const profile = state.userProfile;
-
-             document.getElementById('pdf-brand-name').textContent = profile.brandName || 'Your Brand Name';
-             document.getElementById('pdf-brand-address').textContent = profile.contactInfo?.address || 'Your address';
-             document.getElementById('pdf-brand-email').textContent = profile.contactInfo?.email || 'Your email';
-             document.getElementById('pdf-brand-phone').textContent = profile.contactInfo?.phone || 'Your phone';
-             
-             document.getElementById('pdf-invoice-number').textContent = `Invoice #${data.invoiceNumber}`;
-             document.getElementById('pdf-invoice-date').textContent = `Date: ${data.invoiceDate ? dateFns.format(new Date(data.invoiceDate), 'PPP') : ''}`;
-             document.getElementById('pdf-due-date').textContent = `Due: ${data.dueDate ? dateFns.format(new Date(data.dueDate), 'PPP') : ''}`;
-             
-             if (data.client) {
-                 document.getElementById('pdf-client-name').textContent = data.client.name;
-                 document.getElementById('pdf-client-email').textContent = data.client.email;
-                 document.getElementById('pdf-client-address').textContent = data.client.address;
-             } else {
-                document.getElementById('pdf-client-name').textContent = 'No client selected';
-                document.getElementById('pdf-client-email').textContent = '';
-                document.getElementById('pdf-client-address').textContent = '';
-             }
-
-             const pdfItemsBody = document.getElementById('pdf-invoice-items');
-             pdfItemsBody.innerHTML = '';
-             data.items.forEach(item => {
-                 const row = document.createElement('tr');
-                 row.className = 'border-gray-200';
-                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">${item.description}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right">$${parseFloat(item.rate).toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right">${item.quantity} ${item.unit}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right font-semibold">$${parseFloat(item.total).toFixed(2)}</td>
-                 `;
-                 pdfItemsBody.appendChild(row);
-             });
-
-             document.getElementById('pdf-subtotal').textContent = `$${data.subtotal.toFixed(2)}`;
-             document.getElementById('pdf-tax-rate').textContent = data.taxRate;
-             document.getElementById('pdf-tax').textContent = `$${(data.subtotal * (data.taxRate / 100)).toFixed(2)}`;
-             document.getElementById('pdf-total').textContent = `$${data.total.toFixed(2)}`;
-
-             const pdfPaymentOptions = document.getElementById('pdf-payment-options-list');
-             pdfPaymentOptions.innerHTML = '';
-             if (profile.paymentOptions && profile.paymentOptions.length > 0) {
-                 document.getElementById('pdf-payment-options-container').classList.remove('hidden');
-                 profile.paymentOptions.forEach(option => {
-                     const li = document.createElement('li');
-                     li.textContent = option;
-                     pdfPaymentOptions.appendChild(li);
-                 });
-             } else {
-                 document.getElementById('pdf-payment-options-container').classList.add('hidden');
-             }
-        }
-        // --- END: UI Rendering Functions ---
-
-
-        // --- START: Utility & Dialog Functions ---
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast show';
-            if (type === 'error') {
-                toast.style.backgroundColor = '#dc2626';
-            } else if (type === 'success') {
-                 toast.style.backgroundColor = '#16a34a';
+            if (!clientName || !invoiceDate) {
+                showMessage("Missing Information", "Please enter a client name and invoice date.");
+                return null;
             }
-            toast.textContent = message;
-            toastContainer.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
 
-        // Custom confirmation dialog
-        function showConfirmDialog(title, message, onConfirm) {
-            const dialog = document.getElementById('confirm-dialog');
-            document.getElementById('confirm-dialog-title').textContent = title;
-            document.getElementById('confirm-dialog-message').textContent = message;
-            
-            const confirmBtn = document.getElementById('confirm-ok-btn');
-            const cancelBtn = document.getElementById('confirm-cancel-btn');
-            
-            const handleConfirm = () => {
-                onConfirm();
-                dialog.style.display = 'none';
-                confirmBtn.removeEventListener('click', handleConfirm);
-            };
-            const handleCancel = () => {
-                dialog.style.display = 'none';
-                confirmBtn.removeEventListener('click', handleConfirm);
-            };
+            const items = [];
+            document.querySelectorAll('.invoice-item-row').forEach(row => {
+                const [descriptionInput, quantityInput, priceInput] = row.querySelectorAll('input');
+                const description = descriptionInput.value.trim();
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                if (description && quantity > 0 && price >= 0) {
+                    items.push({ description, quantity, price, amount: quantity * price });
+                }
+            });
 
-            confirmBtn.addEventListener('click', handleConfirm);
-            cancelBtn.addEventListener('click', handleCancel);
-            
-            dialog.style.display = 'flex';
-        }
-
-        // Dark mode toggle
-        function toggleDarkMode() {
-            const body = document.body;
-            body.classList.toggle('dark');
-            body.classList.toggle('light');
-
-            const isDarkMode = body.classList.contains('dark');
-            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-
-            const lightIcon = document.querySelector('.light-mode-icon');
-            const darkIcon = document.querySelector('.dark-mode-icon');
-            if (isDarkMode) {
-                lightIcon.classList.remove('hidden');
-                darkIcon.classList.add('hidden');
-            } else {
-                lightIcon.classList.add('hidden');
-                darkIcon.classList.remove('hidden');
+            if (items.length === 0) {
+                showMessage("No Items", "Please add at least one valid item to the invoice.");
+                return null;
             }
+
+            const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+
+            return { clientName, invoiceDate, items, totalAmount, createdAt: new Date() };
         }
 
-        // Set initial theme based on local storage or system preference
-        function setInitialTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const isDarkMode = savedTheme === 'dark' || (!savedTheme && prefersDark);
-            
-            const body = document.body;
-            if (isDarkMode) {
-                body.classList.add('dark');
-                body.classList.remove('light');
-                document.querySelector('.light-mode-icon').classList.remove('hidden');
-                document.querySelector('.dark-mode-icon').classList.add('hidden');
-            } else {
-                body.classList.add('light');
-                body.classList.remove('dark');
-                document.querySelector('.light-mode-icon').classList.add('hidden');
-                document.querySelector('.dark-mode-icon').classList.remove('hidden');
+        function clearInvoiceForm() {
+            clientNameInput.value = '';
+            invoiceDate.value = '';
+            invoiceItemsContainer.innerHTML = '';
+            invoiceItemsContainer.appendChild(createItemRow());
+            updateTotal();
+        }
+
+        // Save invoice to Firestore
+        saveInvoiceBtn.addEventListener('click', async () => {
+            if (!userId) {
+                showMessage("Login Required", "Please log in to save your invoice.");
+                return;
             }
-        }
-        // --- END: Utility & Dialog Functions ---
-
-
-        // --- START: Event Handlers and Firebase Logic ---
-        async function handleSignOut() {
+            const newInvoice = getInvoiceData();
+            if (!newInvoice) return;
             try {
-                await auth.signOut();
-                showToast("Signed out successfully.");
-            } catch (error) {
-                console.error("Error signing out:", error);
-                showToast("Error signing out.", 'error');
+                const invoiceCollection = collection(db, `artifacts/${appId}/users/${userId}/invoices`);
+                await addDoc(invoiceCollection, newInvoice);
+                showMessage("Success", "Invoice saved successfully!");
+                clearInvoiceForm();
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("Error", "Failed to save the invoice. Please try again.");
             }
-        }
+        });
 
-        async function handleSaveClient() {
-            const name = document.getElementById('new-client-name').value;
-            const email = document.getElementById('new-client-email').value;
-            const address = document.getElementById('new-client-address').value;
-            if (!userId || !name.trim()) {
-                showToast("Client name is required.", 'error');
+        // Generate and Download Invoice
+        generateInvoiceBtn.addEventListener('click', async () => {
+            const invoiceData = getInvoiceData();
+            if (!invoiceData) return;
+
+            // Save the invoice to Firestore first
+            if (userId) {
+                try {
+                    const invoiceCollection = collection(db, `artifacts/${appId}/users/${userId}/invoices`);
+                    await addDoc(invoiceCollection, invoiceData);
+                } catch (e) {
+                    console.error("Error saving invoice on generate: ", e);
+                }
+            }
+
+            // Create the HTML for the downloadable invoice
+            const invoiceHtml = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Invoice for ${invoiceData.clientName}</title>
+                    <style>
+                        body { font-family: sans-serif; margin: 2rem; color: #333; }
+                        .invoice-container { max-width: 800px; margin: auto; padding: 20px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                        .header { text-align: center; margin-bottom: 20px; }
+                        .header h1 { color: #3b82f6; }
+                        .details { display: flex; justify-content: space-between; margin-bottom: 20px; }
+                        .details div { width: 48%; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .total { text-align: right; margin-top: 20px; font-size: 1.2rem; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="invoice-container">
+                        <div class="header">
+                            <h1>Invoice</h1>
+                            <p>Invoice Date: ${invoiceData.invoiceDate}</p>
+                        </div>
+                        <div class="details">
+                            <div>
+                                <strong>Bill To:</strong>
+                                <p>${invoiceData.clientName}</p>
+                            </div>
+                            <div>
+                                <strong>From:</strong>
+                                <p>Your Company Name</p>
+                            </div>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${invoiceData.items.map(item => `
+                                    <tr>
+                                        <td>${item.description}</td>
+                                        <td>${item.quantity}</td>
+                                        <td>Rs. ${item.price.toFixed(2)}</td>
+                                        <td>Rs. ${item.amount.toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <div class="total">
+                            Total: Rs. ${invoiceData.totalAmount.toFixed(2)}
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Create and download the HTML file
+            const blob = new Blob([invoiceHtml], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `invoice-${invoiceData.clientName}-${invoiceData.invoiceDate}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showMessage("Invoice Generated", `Invoice for ${invoiceData.clientName} has been generated and downloaded. It has also been saved to your account.`);
+            clearInvoiceForm();
+        });
+
+
+        // Listen for real-time updates to invoices
+        function listenForInvoices(uid) {
+            const invoicesRef = collection(db, `artifacts/${appId}/users/${uid}/invoices`);
+            onSnapshot(invoicesRef, (querySnapshot) => {
+                invoicesList.innerHTML = ''; // Clear previous list
+                if (querySnapshot.empty) {
+                    invoicesList.innerHTML = '<p class="text-gray-400">No invoices saved yet.</p>';
+                    return;
+                }
+                
+                querySnapshot.forEach((doc) => {
+                    const invoiceData = doc.data();
+                    const invoiceId = doc.id;
+                    const invoiceElement = createInvoiceDisplay(invoiceData, invoiceId);
+                    invoicesList.appendChild(invoiceElement);
+                });
+            });
+        }
+        
+        // Function to delete an invoice
+        async function deleteInvoice(invoiceId) {
+            if (!userId) {
+                showMessage("Error", "You must be logged in to delete invoices.");
                 return;
             }
             try {
-                const clientsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'clients');
-                await addDoc(clientsCollectionRef, { name, email, address });
-                document.getElementById('add-client-dialog').style.display = 'none';
-                showToast("Client saved successfully.");
-            } catch (error) {
-                console.error("Error saving client:", error);
-                showToast("Could not save client.", 'error');
+                const invoiceRef = doc(db, `artifacts/${appId}/users/${userId}/invoices`, invoiceId);
+                await deleteDoc(invoiceRef);
+                showMessage("Deleted", "Invoice deleted successfully.");
+            } catch (e) {
+                console.error("Error removing document: ", e);
+                showMessage("Error", "Failed to delete the invoice.");
             }
+        }
+
+        // Create HTML element for a saved invoice
+        function createInvoiceDisplay(invoiceData, invoiceId) {
+            const element = document.createElement('div');
+            element.className = 'bg-gray-700 p-4 rounded-lg shadow-sm border border-gray-600 hover:shadow-md transition-shadow';
+            
+            const date = new Date(invoiceData.invoiceDate);
+            const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            element.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold text-lg text-gray-200">${invoiceData.clientName}</h4>
+                    <span class="text-sm text-gray-400">${formattedDate}</span>
+                </div>
+                <p class="text-sm text-gray-400 mb-2">Items: ${invoiceData.items.length}</p>
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-xl text-indigo-400">Total: Rs. ${invoiceData.totalAmount.toFixed(2)}</span>
+                    <button class="delete-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-full transition-transform transform hover:scale-105">Delete</button>
+                </div>
+            `;
+            
+            const deleteBtn = element.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteInvoice(invoiceId);
+            });
+            
+            return element;
+        }
+
+        // =================================================================================================
+        // New Features Logic: Templates, Clients, and Reports
+        // =================================================================================================
+
+        // Templates Logic
+        function listenForTemplates(uid) {
+            const templatesRef = collection(db, `artifacts/${appId}/users/${uid}/templates`);
+            onSnapshot(templatesRef, (querySnapshot) => {
+                templatesList.innerHTML = '';
+                templateSelect.innerHTML = '<option value="">Select a template</option>';
+                querySnapshot.forEach((doc) => {
+                    const templateData = doc.data();
+                    const templateId = doc.id;
+                    // Populate the Templates tab
+                    const templateElement = createTemplateDisplay(templateData, templateId);
+                    templatesList.appendChild(templateElement);
+                    // Populate the dropdown in the invoice form
+                    const option = document.createElement('option');
+                    option.value = templateId;
+                    option.textContent = templateData.templateName;
+                    templateSelect.appendChild(option);
+                });
+            });
+        }
+        
+        function createTemplateDisplay(templateData, templateId) {
+            const element = document.createElement('div');
+            element.className = 'bg-gray-700 p-4 rounded-lg shadow-sm border border-gray-600 flex justify-between items-center hover:shadow-md transition-shadow';
+            element.innerHTML = `
+                <h4 class="font-bold text-lg text-gray-200">${templateData.templateName}</h4>
+                <div class="space-x-2">
+                    <button class="delete-template-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-full transition-transform transform hover:scale-105">Delete</button>
+                </div>
+            `;
+            element.querySelector('.delete-template-btn').addEventListener('click', () => {
+                deleteTemplate(templateId);
+            });
+            return element;
+        }
+
+        async function deleteTemplate(templateId) {
+            if (!userId) return;
+            try {
+                const templateRef = doc(db, `artifacts/${appId}/users/${userId}/templates`, templateId);
+                await deleteDoc(templateRef);
+                showMessage("Deleted", "Template deleted successfully.");
+            } catch (e) {
+                console.error("Error deleting template: ", e);
+                showMessage("Error", "Failed to delete template.");
+            }
+        }
+
+        saveTemplateBtn.addEventListener('click', async () => {
+            if (!userId) {
+                showMessage("Login Required", "Please log in to save templates.");
+                return;
+            }
+            const templateName = templateNameInput.value.trim();
+            if (!templateName) {
+                showMessage("Missing Information", "Please enter a template name.");
+                return;
+            }
+            const items = [];
+            document.querySelectorAll('.invoice-item-row').forEach(row => {
+                const [descriptionInput, quantityInput, priceInput] = row.querySelectorAll('input');
+                const description = descriptionInput.value.trim();
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                if (description && quantity > 0 && price >= 0) {
+                    items.push({ description, quantity, price });
+                }
+            });
+            if (items.length === 0) {
+                showMessage("No Items", "Please add at least one item to save as a template.");
+                return;
+            }
+            try {
+                const templatesCollection = collection(db, `artifacts/${appId}/users/${userId}/templates`);
+                await addDoc(templatesCollection, { templateName, items });
+                showMessage("Success", "Template saved successfully!");
+                templateNameInput.value = '';
+            } catch (e) {
+                console.error("Error saving template: ", e);
+                showMessage("Error", "Failed to save template.");
+            }
+        });
+
+        // Load template items into the form
+        templateSelect.addEventListener('change', async () => {
+            const templateId = templateSelect.value;
+            if (!templateId || !userId) {
+                invoiceItemsContainer.innerHTML = '';
+                invoiceItemsContainer.appendChild(createItemRow());
+                return;
+            }
+            try {
+                const templateRef = doc(db, `artifacts/${appId}/users/${userId}/templates`, templateId);
+                const templateSnap = await getDoc(templateRef);
+                if (templateSnap.exists()) {
+                    const templateData = templateSnap.data();
+                    invoiceItemsContainer.innerHTML = ''; // Clear existing items
+                    templateData.items.forEach(item => {
+                        invoiceItemsContainer.appendChild(createItemRow(item));
+                    });
+                    updateTotal();
+                }
+            } catch (e) {
+                console.error("Error loading template: ", e);
+                showMessage("Error", "Failed to load template.");
+            }
+        });
+
+        // Clients Logic
+        function listenForClients(uid) {
+            const clientsRef = collection(db, `artifacts/${appId}/users/${uid}/clients`);
+            onSnapshot(clientsRef, (querySnapshot) => {
+                clientsList.innerHTML = '';
+                savedClients = [];
+                querySnapshot.forEach((doc) => {
+                    const clientData = doc.data();
+                    const clientId = doc.id;
+                    savedClients.push({ id: clientId, name: clientData.clientName });
+                    // Populate the Clients tab
+                    const clientElement = createClientDisplay(clientData, clientId);
+                    clientsList.appendChild(clientElement);
+                });
+                // Re-setup the client search dropdowns with the new data
+                setupSearchableDropdown(clientNameInput, clientSuggestions, savedClients, (client) => {
+                    clientNameInput.value = client.name;
+                    selectedClientId.value = client.id;
+                });
+                setupSearchableDropdown(reportClientInput, reportClientSuggestions, savedClients, (client) => {
+                    reportClientInput.value = client.name;
+                    selectedReportClientId.value = client.id;
+                });
+            });
+        }
+        
+        function createClientDisplay(clientData, clientId) {
+            const element = document.createElement('div');
+            element.className = 'bg-gray-700 p-4 rounded-lg shadow-sm border border-gray-600 flex justify-between items-center hover:shadow-md transition-shadow';
+            element.innerHTML = `
+                <h4 class="font-bold text-lg text-gray-200">${clientData.clientName}</h4>
+                <div class="space-x-2">
+                    <button class="delete-client-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-full transition-transform transform hover:scale-105">Delete</button>
+                </div>
+            `;
+            element.querySelector('.delete-client-btn').addEventListener('click', () => {
+                deleteClient(clientId);
+            });
+            return element;
         }
 
         async function deleteClient(clientId) {
+            if (!userId) return;
             try {
-                const clientDocRef = doc(db, 'artifacts', appId, 'users', userId, 'clients', clientId);
-                await deleteDoc(clientDocRef);
-                showToast("Client deleted successfully.");
-            } catch (error) {
-                console.error("Error deleting client:", error);
-                showToast("Could not delete client.", 'error');
+                const clientRef = doc(db, `artifacts/${appId}/users/${userId}/clients`, clientId);
+                await deleteDoc(clientRef);
+                showMessage("Deleted", "Client deleted successfully.");
+            } catch (e) {
+                console.error("Error deleting client: ", e);
+                showMessage("Error", "Failed to delete client.");
             }
         }
-        
-        async function handleSaveProject() {
-            const name = document.getElementById('new-project-name').value;
-            const description = document.getElementById('new-project-description').value;
-            const rate = parseFloat(document.getElementById('new-project-rate').value);
-            const unit = document.getElementById('new-project-unit').value;
 
-            if (!userId || !name.trim() || isNaN(rate)) {
-                showToast("Project name and a valid rate are required.", 'error');
+        saveClientBtn.addEventListener('click', async () => {
+            if (!userId) {
+                showMessage("Login Required", "Please log in to save clients.");
+                return;
+            }
+            const clientName = newClientNameInput.value.trim();
+            if (!clientName) {
+                showMessage("Missing Information", "Please enter a client name.");
                 return;
             }
             try {
-                const projectsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'projects');
-                await addDoc(projectsCollectionRef, { name, description, rate, unit });
-                document.getElementById('add-project-dialog').style.display = 'none';
-                showToast("Project saved successfully.");
-            } catch (error) {
-                console.error("Error saving project:", error);
-                showToast("Could not save project.", 'error');
+                const clientsCollection = collection(db, `artifacts/${appId}/users/${userId}/clients`);
+                await addDoc(clientsCollection, { clientName });
+                showMessage("Success", "Client saved successfully!");
+                newClientNameInput.value = '';
+            } catch (e) {
+                console.error("Error saving client: ", e);
+                showMessage("Error", "Failed to save client.");
             }
-        }
+        });
 
-        async function deleteProject(projectId) {
-            try {
-                const projectDocRef = doc(db, 'artifacts', appId, 'users', userId, 'projects', projectId);
-                await deleteDoc(projectDocRef);
-                showToast("Project deleted successfully.");
-            } catch (error) {
-                console.error("Error deleting project:", error);
-                showToast("Could not delete project.", 'error');
-            }
-        }
-        
-        function addInvoiceItemFromProject() {
-            const projectId = document.getElementById('project-select').value;
-            const project = state.projects.find(p => p.id === projectId);
-            if (!project) return;
-            state.invoiceDetails.items.push({
-                description: project.description,
-                rate: project.rate,
-                quantity: 1,
-                unit: project.unit,
-                total: project.rate * 1,
-            });
-            renderInvoiceItems();
-            updateInvoiceTotals();
-            renderInvoicePreview();
-        }
-
-        function updateInvoiceItem(index, field, value) {
-            state.invoiceDetails.items[index][field] = value;
-            const item = state.invoiceDetails.items[index];
-            item.total = item.rate * item.quantity;
-            renderInvoiceItems(); // Re-render the items to show the updated total
-            updateInvoiceTotals();
-            renderInvoicePreview();
-        }
-
-        function removeInvoiceItem(index) {
-            state.invoiceDetails.items.splice(index, 1);
-            renderInvoiceItems();
-            updateInvoiceTotals();
-            renderInvoicePreview();
-        }
-        
-        async function handleGenerateInvoice() {
-            const clientSelect = document.getElementById('client-select');
-            const clientId = clientSelect.value;
-            const client = state.clients.find(c => c.id === clientId);
-            
-            if (!client) {
-                showToast("Please select a client.", 'error');
+        // Reports Logic
+        generateReportBtn.addEventListener('click', async () => {
+            if (!userId) {
+                showMessage("Login Required", "Please log in to generate reports.");
                 return;
             }
-            if (state.invoiceDetails.items.length === 0) {
-                 showToast("Please add at least one item to the invoice.", 'error');
-                 return;
-            }
-
-            // Update state with form values
-            state.invoiceDetails.client = {
-                id: client.id,
-                name: client.name,
-                email: client.email,
-                address: client.address
-            };
-            state.invoiceDetails.invoiceDate = document.getElementById('invoice-date').value;
-            state.invoiceDetails.dueDate = document.getElementById('due-date').value;
-            state.invoiceDetails.invoiceNumber = document.getElementById('invoice-number').value;
-
-            try {
-                const invoicesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'invoices');
-                await addDoc(invoicesCollectionRef, {
-                    ...state.invoiceDetails,
-                    createdAt: new Date(),
-                    invoiceDate: new Date(state.invoiceDetails.invoiceDate),
-                    dueDate: new Date(state.invoiceDetails.dueDate),
-                });
-                showToast("Invoice saved successfully.");
-                handleDownloadInvoice();
-            } catch (error) {
-                console.error("Error saving invoice:", error);
-                showToast("Could not save invoice.", 'error');
-            }
-        }
-        
-        async function handleDownloadInvoice() {
-             renderInvoicePreview();
-             const invoiceEl = document.getElementById('invoice-to-pdf');
-             if (!invoiceEl) {
-                 showToast("PDF element not found.", 'error');
-                 return;
-             }
-             
-             try {
-                const dataUrl = await htmlToImage.toPng(invoiceEl);
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgProps = pdf.getImageProperties(dataUrl);
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`${state.invoiceDetails.invoiceNumber}_${state.invoiceDetails.invoiceDate}.pdf`);
-                showToast("Invoice downloaded.");
-             } catch (error) {
-                console.error('Error generating PDF:', error);
-                showToast("Could not download invoice.", 'error');
-             }
-        }
-        
-        async function handleGenerateReport() {
-            const clientId = document.getElementById('report-client-select').value;
-            const startDate = document.getElementById('report-start-date').value;
-            const endDate = document.getElementById('report-end-date').value;
+            const clientId = selectedReportClientId.value;
+            const clientName = reportClientInput.value;
+            const startDate = reportStartDate.value;
+            const endDate = reportEndDate.value;
 
             if (!clientId || !startDate || !endDate) {
-                showToast("Please select a client and a date range.", 'error');
+                showMessage("Missing Information", "Please select a client and a date range.");
                 return;
             }
 
-            const selectedClient = state.clients.find(c => c.id === clientId);
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999);
+            try {
+                // Fetch invoices for the selected client and date range
+                const invoicesRef = collection(db, `artifacts/${appId}/users/${userId}/invoices`);
+                const q = query(
+                    invoicesRef,
+                    where("clientName", "==", clientName),
+                );
+                const querySnapshot = await getDocs(q);
 
-            const filteredInvoices = state.invoices.filter(inv => {
-                const invoiceDate = inv.createdAt.toDate();
-                return inv.client.id === clientId && invoiceDate >= start && invoiceDate <= end;
-            });
-
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-            let y = 10;
-            pdf.setFontSize(18);
-            pdf.text(`Monthly Report for ${selectedClient.name}`, 10, y);
-            y += 10;
-            pdf.setFontSize(12);
-            pdf.text(`Date Range: ${dateFns.format(start, 'MM/dd/yyyy')} - ${dateFns.format(end, 'MM/dd/yyyy')}`, 10, y);
-            y += 15;
-
-            if (filteredInvoices.length === 0) {
-                pdf.text("No invoices found for this period.", 15, y);
-            } else {
-                filteredInvoices.forEach(inv => {
-                    pdf.text(`Invoice #${inv.invoiceNumber} | Date: ${dateFns.format(inv.createdAt.toDate(), 'MM/dd/yyyy')} | Total: $${inv.total.toFixed(2)}`, 15, y);
-                    y += 7;
+                const invoices = [];
+                querySnapshot.forEach(doc => {
+                    const invoice = doc.data();
+                    const invoiceDate = new Date(invoice.invoiceDate);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    if (invoiceDate >= start && invoiceDate <= end) {
+                        invoices.push(invoice);
+                    }
                 });
-            }
 
-            pdf.save(`Report_${selectedClient.name}_${dateFns.format(start, 'yyyyMM')}.pdf`);
-            showToast("Report downloaded successfully.");
-        }
-        
-        async function handleSaveProfile() {
-            const profileData = {
-                brandName: document.getElementById('brand-name-input').value,
-                contactInfo: {
-                    name: document.getElementById('contact-name-input').value,
-                    email: document.getElementById('contact-email-input').value,
-                    phone: document.getElementById('contact-phone-input').value,
-                    address: document.getElementById('contact-address-input').value,
-                },
-                paymentOptions: state.userProfile.paymentOptions || [],
-            };
-            try {
-                const profileDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
-                await setDoc(profileDocRef, profileData, { merge: true }); // Use merge: true to avoid overwriting the whole doc
-                showToast("Profile saved successfully.");
-                renderProfilePage(); // Re-render to show updated state
-            } catch (error) {
-                console.error("Error saving profile:", error);
-                showToast("Could not save profile.", 'error');
-            }
-        }
-
-        function updatePaymentOption(index, value) {
-            state.userProfile.paymentOptions[index] = value;
-        }
-
-        function addPaymentOption() {
-            const newOptions = state.userProfile.paymentOptions ? [...state.userProfile.paymentOptions, ''] : [''];
-            state.userProfile.paymentOptions = newOptions;
-            renderProfilePage();
-        }
-
-        async function removePaymentOption(index) {
-            state.userProfile.paymentOptions.splice(index, 1);
-            await handleSaveProfile(); // Save changes immediately after removal
-        }
-
-        async function handleDeleteAccount() {
-            try {
-                const userRef = doc(db, 'artifacts', appId, 'users', userId);
-                const collectionsToDelete = ['clients', 'projects', 'invoices'];
-                for (const collectionName of collectionsToDelete) {
-                    const snapshot = await getDocs(collection(userRef, collectionName));
-                    const batch = writeBatch(db);
-                    snapshot.docs.forEach(d => {
-                        batch.delete(d.ref);
-                    });
-                    await batch.commit();
+                if (invoices.length === 0) {
+                    showMessage("No Invoices Found", "No invoices found for this client in the selected date range.");
+                    return;
                 }
-                const profileDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
-                await deleteDoc(profileDocRef);
 
-                await auth.signOut();
-                showToast("Account and data have been deleted. You are now signed out.", 'error');
-            } catch (error) {
-                console.error("Error deleting account:", error);
-                showToast("Could not delete account. Please try again.", 'error');
+                // Generate the report HTML
+                const reportHtml = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Report for ${clientName}</title>
+                        <style>
+                            body { font-family: sans-serif; margin: 2rem; color: #333; }
+                            .report-container { max-width: 900px; margin: auto; padding: 20px; border: 1px solid #ddd; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                            .header { text-align: center; margin-bottom: 20px; }
+                            .header h1 { color: #3b82f6; }
+                            h2 { margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                            .total-row td { font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="report-container">
+                            <div class="header">
+                                <h1>Monthly Report</h1>
+                                <p>Client: <strong>${clientName}</strong></p>
+                                <p>Period: ${startDate} to ${endDate}</p>
+                            </div>
+                            ${invoices.map(invoice => `
+                                <h2>Invoice Date: ${invoice.invoiceDate} (Total: Rs. ${invoice.totalAmount.toFixed(2)})</h2>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Description</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${invoice.items.map(item => `
+                                            <tr>
+                                                <td>${item.description}</td>
+                                                <td>${item.quantity}</td>
+                                                <td>Rs. ${item.price.toFixed(2)}</td>
+                                                <td>Rs. ${item.amount.toFixed(2)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `).join('')}
+                            <div style="text-align: right; font-size: 1.5rem; font-weight: bold; margin-top: 2rem; color: #3b82f6;">
+                                Grand Total: Rs. ${invoices.reduce((sum, inv) => sum + inv.totalAmount, 0).toFixed(2)}
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                // Create and download the HTML file
+                const blob = new Blob([reportHtml], { type: 'text/html' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `report-${clientName}-${startDate}-to-${endDate}.html`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                showMessage("Report Generated", `Monthly report for ${clientName} from ${startDate} to ${endDate} has been generated and downloaded.`);
+            } catch (e) {
+                console.error("Error generating report: ", e);
+                showMessage("Error", "Failed to generate report. Please try again.");
             }
-        }
+        });
 
-        // --- END: Event Handlers and Firebase Logic ---
-
-
-        // --- START: Event Listeners and Initial Setup ---
-        window.onload = async () => {
-            setInitialTheme(); // Set initial theme on load
-            initFirebase();
-
-            // PDF Generation Libraries
-            const script1 = document.createElement('script');
-            script1.src = "https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.0/html-to-image.min.js";
-            document.head.appendChild(script1);
-
-            const script2 = document.createElement('script');
-            script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-            document.head.appendChild(script2);
-
-            const script3 = document.createElement('script');
-            script3.src = "https://cdn.jsdelivr.net/npm/date-fns@2.28.0/dist/date-fns.min.js";
-            document.head.appendChild(script3);
-        
-            // Navigation
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.addEventListener('click', () => renderPage(button.dataset.page));
-            });
-            document.getElementById('sign-out-btn').addEventListener('click', () => {
-                showConfirmDialog('Sign Out', 'Are you sure you want to sign out?', handleSignOut);
-            });
-            document.getElementById('dark-mode-toggle').addEventListener('click', toggleDarkMode);
-
-            // Dashboard
-            document.getElementById('invoice-date').value = state.invoiceDetails.invoiceDate;
-            document.getElementById('due-date').value = state.invoiceDetails.dueDate;
-            document.getElementById('invoice-number').value = state.invoiceDetails.invoiceNumber;
-            document.getElementById('project-select').addEventListener('change', addInvoiceItemFromProject);
-            document.getElementById('tax-rate-input').addEventListener('input', (e) => {
-                state.invoiceDetails.taxRate = parseFloat(e.target.value) || 0;
-                updateInvoiceTotals();
-                renderInvoicePreview();
-            });
-            document.getElementById('client-select').addEventListener('change', (e) => {
-                const client = state.clients.find(c => c.id === e.target.value);
-                state.invoiceDetails.client = client;
-                renderInvoicePreview();
-            });
-            document.getElementById('generate-invoice-btn').addEventListener('click', handleGenerateInvoice);
-            document.getElementById('download-invoice-btn').addEventListener('click', handleDownloadInvoice);
-            
-            // Clients
-            document.getElementById('add-client-dialog-btn').addEventListener('click', () => {
-                document.getElementById('add-client-dialog').style.display = 'flex';
-                document.getElementById('new-client-name').value = '';
-                document.getElementById('new-client-email').value = '';
-                document.getElementById('new-client-address').value = '';
-            });
-            document.getElementById('cancel-add-client-btn').addEventListener('click', () => document.getElementById('add-client-dialog').style.display = 'none');
-            document.getElementById('save-client-btn').addEventListener('click', handleSaveClient);
-
-            // Projects
-            document.getElementById('add-project-dialog-btn').addEventListener('click', () => {
-                document.getElementById('add-project-dialog').style.display = 'flex';
-                document.getElementById('new-project-name').value = '';
-                document.getElementById('new-project-description').value = '';
-                document.getElementById('new-project-rate').value = 0;
-                document.getElementById('new-project-unit').value = '';
-            });
-            document.getElementById('cancel-add-project-btn').addEventListener('click', () => document.getElementById('add-project-dialog').style.display = 'none');
-            document.getElementById('save-project-btn').addEventListener('click', handleSaveProject);
-            
-            // Reports
-            document.getElementById('download-report-btn').addEventListener('click', handleGenerateReport);
-
-            // Profile
-            document.getElementById('save-profile-btn').addEventListener('click', handleSaveProfile);
-            document.getElementById('add-payment-option-btn').addEventListener('click', addPaymentOption);
-            document.getElementById('delete-profile-btn').addEventListener('click', () => {
-                showConfirmDialog('Delete Account', 'This will permanently delete your account and all associated data. Are you absolutely sure?', handleDeleteAccount);
-            });
-        };
-        // --- END: Event Listeners and Initial Setup ---
     </script>
 </body>
 </html>
