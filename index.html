@@ -11,12 +11,69 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.light {
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        body.dark {
+            background-color: #111827;
+            color: #f9fafb;
         }
         .page-content {
             display: none;
         }
         .page-content.active {
             display: block;
+        }
+        .dialog-overlay, .confirm-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .dialog-content, .confirm-dialog-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 500px;
+            width: 90%;
+        }
+        body.dark .dialog-content, body.dark .confirm-dialog-content {
+            background-color: #1f2937;
+            color: #f9fafb;
+        }
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 1100;
+        }
+        .toast {
+            background-color: #333;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            max-width: 350px;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
         }
     </style>
 </head>
@@ -31,65 +88,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Date Formatting -->
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2.28.0/dist/date-fns.min.js"></script>
-    <!-- Toast & Dialog Libraries (simplified inline versions) -->
-    <style>
-        .toast-container {
-            position: fixed;
-            bottom: 1rem;
-            right: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            z-index: 1000;
-        }
-        .toast {
-            background-color: #333;
-            color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            max-width: 300px;
-        }
-        .toast.show {
-            opacity: 1;
-        }
-        .dialog-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
-        .dialog-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            max-width: 500px;
-            width: 90%;
-        }
-    </style>
-
+    
     <!-- Main App Layout -->
     <div class="min-h-screen flex flex-col">
         <!-- Header -->
         <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
             <div class="container mx-auto px-4 py-4 flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-blue-600">Invoice Pro</h1>
-                <nav class="flex items-center space-x-4">
-                    <button class="nav-button bg-blue-600 text-white font-semibold py-2 px-4 rounded-full hover:bg-blue-700 transition duration-300" data-page="dashboard">Dashboard</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="clients">Clients</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="projects">Projects</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="reports">Reports</button>
-                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full hover:bg-gray-300 transition duration-300" data-page="profile">Profile</button>
-                    <button id="sign-out-btn" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-full hover:bg-red-600 transition duration-300">Sign Out</button>
+                <nav class="flex items-center space-x-2 md:space-x-4">
+                    <button class="nav-button bg-blue-600 text-white font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="dashboard">Dashboard</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="clients">Clients</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="projects">Projects</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="reports">Reports</button>
+                    <button class="nav-button bg-gray-200 text-gray-800 font-semibold py-2 px-3 md:px-4 rounded-full transition duration-300" data-page="profile">Profile</button>
+                    <button id="sign-out-btn" class="bg-red-500 text-white font-semibold py-2 px-3 md:px-4 rounded-full hover:bg-red-600 transition duration-300">Sign Out</button>
                 </nav>
             </div>
         </header>
@@ -98,39 +110,39 @@
         <main class="flex-1 container mx-auto px-4 py-8">
             <!-- Dashboard Page -->
             <div id="dashboard-page" class="page-content active">
-                <div class="p-8 space-y-8">
-                    <h1 class="text-4xl font-bold">Create Invoice</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 col-span-1 md:col-span-2">
+                <div class="p-4 md:p-8 space-y-8">
+                    <h1 class="text-3xl md:text-4xl font-bold">Create Invoice</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 lg:col-span-2">
                             <h2 class="text-2xl font-semibold mb-4">Invoice Details</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="invoice-number" class="block text-sm font-medium">Invoice #</label>
-                                    <input type="text" id="invoice-number" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" readonly>
+                                    <input type="text" id="invoice-number" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-100 dark:bg-gray-700" readonly>
                                 </div>
                                 <div>
                                     <label for="invoice-date" class="block text-sm font-medium">Invoice Date</label>
-                                    <input type="date" id="invoice-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                    <input type="date" id="invoice-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                                 </div>
                                 <div>
                                     <label for="due-date" class="block text-sm font-medium">Due Date</label>
-                                    <input type="date" id="due-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                    <input type="date" id="due-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                                 </div>
                                 <div>
                                     <label for="client-select" class="block text-sm font-medium">Client</label>
-                                    <select id="client-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                                    <select id="client-select" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900"></select>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 col-span-1 lg:col-span-1">
+                        <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 lg:col-span-1">
                             <h2 class="text-2xl font-semibold mb-4">Add Projects</h2>
-                            <select id="project-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                            <select id="project-select" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900"></select>
                         </div>
                     </div>
                     <div class="space-y-4">
                         <h2 class="text-2xl font-bold">Invoice Items</h2>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 rounded-xl overflow-hidden">
                                 <thead class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
@@ -154,7 +166,7 @@
                                         <td colspan="4" class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-300">
                                             <div class="flex items-center justify-end space-x-2">
                                                 <span>Tax Rate (%)</span>
-                                                <input type="number" id="tax-rate-input" value="0" class="w-20 rounded-md border-gray-300 p-1 text-gray-900">
+                                                <input type="number" id="tax-rate-input" value="0" class="w-20 rounded-md border-gray-300 dark:border-gray-600 p-1 text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900">
                                             </div>
                                         </td>
                                         <td id="tax-display" class="px-6 py-3 text-left font-semibold">$0.00</td>
@@ -171,16 +183,16 @@
                     </div>
                     <div class="flex justify-end gap-4 mt-8">
                         <button id="generate-invoice-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Generate & Save Invoice</button>
-                        <button id="download-invoice-btn" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition duration-300">Download Invoice</button>
+                        <button id="download-invoice-btn" class="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">Download Invoice</button>
                     </div>
                 </div>
             </div>
 
             <!-- Clients Page -->
             <div id="clients-page" class="page-content">
-                <div class="p-8 space-y-8">
+                <div class="p-4 md:p-8 space-y-8">
                     <div class="flex justify-between items-center">
-                        <h1 class="text-4xl font-bold">My Clients</h1>
+                        <h1 class="text-3xl md:text-4xl font-bold">My Clients</h1>
                         <button id="add-client-dialog-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Add Client</button>
                     </div>
                     <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
@@ -193,7 +205,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="clients-table-body" class="bg-white divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="clients-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Clients will be dynamically added here -->
                             </tbody>
                         </table>
@@ -203,9 +215,9 @@
 
             <!-- Projects Page -->
             <div id="projects-page" class="page-content">
-                <div class="p-8 space-y-8">
+                <div class="p-4 md:p-8 space-y-8">
                     <div class="flex justify-between items-center">
-                        <h1 class="text-4xl font-bold">My Projects/Services</h1>
+                        <h1 class="text-3xl md:text-4xl font-bold">My Projects/Services</h1>
                         <button id="add-project-dialog-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Add Project</button>
                     </div>
                     <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
@@ -219,7 +231,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="projects-table-body" class="bg-white divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="projects-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Projects will be dynamically added here -->
                             </tbody>
                         </table>
@@ -229,22 +241,22 @@
 
             <!-- Reports Page -->
             <div id="reports-page" class="page-content">
-                <div class="p-8 space-y-8">
-                    <h1 class="text-4xl font-bold">Monthly Reports</h1>
+                <div class="p-4 md:p-8 space-y-8">
+                    <h1 class="text-3xl md:text-4xl font-bold">Monthly Reports</h1>
                     <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6">
                         <h2 class="text-2xl font-semibold mb-4">Generate Report</h2>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label for="report-client-select" class="block text-sm font-medium">Select Client</label>
-                                <select id="report-client-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></select>
+                                <select id="report-client-select" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900"></select>
                             </div>
                             <div>
                                 <label for="report-start-date" class="block text-sm font-medium">Start Date</label>
-                                <input type="date" id="report-start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="date" id="report-start-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                             <div>
                                 <label for="report-end-date" class="block text-sm font-medium">End Date</label>
-                                <input type="date" id="report-end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="date" id="report-end-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                         </div>
                         <div class="mt-4 flex justify-end">
@@ -256,44 +268,57 @@
 
             <!-- Profile Page -->
             <div id="profile-page" class="page-content">
-                <div class="p-8 space-y-8">
-                    <h1 class="text-4xl font-bold">My Profile</h1>
+                <div class="p-4 md:p-8 space-y-8">
+                    <div class="flex justify-between items-center">
+                        <h1 class="text-3xl md:text-4xl font-bold">My Profile</h1>
+                        <button id="dark-mode-toggle" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">
+                            <!-- Sun SVG -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden light-mode-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <!-- Moon SVG -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 dark-mode-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
                     <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 space-y-4">
                         <h2 class="text-2xl font-semibold mb-4">Account Information</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="brand-name-input" class="block text-sm font-medium">Brand Name</label>
-                                <input type="text" id="brand-name-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="text" id="brand-name-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                             <div>
                                 <label for="user-id-display" class="block text-sm font-medium">User ID</label>
-                                <input type="text" id="user-id-display" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" readonly>
+                                <input type="text" id="user-id-display" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-100 dark:bg-gray-700" readonly>
                             </div>
                         </div>
                         <h2 class="text-xl font-semibold mt-4">Contact Information</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label for="contact-name-input" class="block text-sm font-medium">Name</label>
-                                <input type="text" id="contact-name-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="text" id="contact-name-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                             <div>
                                 <label for="contact-email-input" class="block text-sm font-medium">Email</label>
-                                <input type="email" id="contact-email-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="email" id="contact-email-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                             <div>
                                 <label for="contact-phone-input" class="block text-sm font-medium">Phone</label>
-                                <input type="tel" id="contact-phone-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="tel" id="contact-phone-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                             <div>
                                 <label for="contact-address-input" class="block text-sm font-medium">Address</label>
-                                <input type="text" id="contact-address-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                                <input type="text" id="contact-address-input" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                             </div>
                         </div>
                         <h2 class="text-xl font-semibold mt-4">Payment Options</h2>
                         <div id="payment-options-container" class="space-y-2">
                             <!-- Payment options will be added here -->
                         </div>
-                        <button id="add-payment-option-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition duration-300">Add Payment Option</button>
+                        <button id="add-payment-option-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-300">Add Payment Option</button>
                         <div class="flex justify-end mt-4 gap-4">
                             <button id="save-profile-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">Save Changes</button>
                             <button id="delete-profile-btn" class="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition duration-300">Delete Account</button>
@@ -311,19 +336,19 @@
             <div class="space-y-4">
                 <div>
                     <label for="new-client-name" class="block text-sm font-medium">Name</label>
-                    <input type="text" id="new-client-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    <input type="text" id="new-client-name" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                 </div>
                 <div>
                     <label for="new-client-email" class="block text-sm font-medium">Email</label>
-                    <input type="email" id="new-client-email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    <input type="email" id="new-client-email" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                 </div>
                 <div>
                     <label for="new-client-address" class="block text-sm font-medium">Address</label>
-                    <input type="text" id="new-client-address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    <input type="text" id="new-client-address" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                 </div>
             </div>
             <div class="flex justify-end mt-6 space-x-2">
-                <button id="cancel-add-client-btn" class="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
+                <button id="cancel-add-client-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
                 <button id="save-client-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Save Client</button>
             </div>
         </div>
@@ -336,26 +361,38 @@
             <div class="space-y-4">
                 <div>
                     <label for="new-project-name" class="block text-sm font-medium">Name</label>
-                    <input type="text" id="new-project-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    <input type="text" id="new-project-name" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                 </div>
                 <div>
                     <label for="new-project-description" class="block text-sm font-medium">Description</label>
-                    <input type="text" id="new-project-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    <input type="text" id="new-project-description" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="new-project-rate" class="block text-sm font-medium">Rate</label>
-                        <input type="number" id="new-project-rate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        <input type="number" id="new-project-rate" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                     </div>
                     <div>
                         <label for="new-project-unit" class="block text-sm font-medium">Unit</label>
-                        <input type="text" id="new-project-unit" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        <input type="text" id="new-project-unit" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900">
                     </div>
                 </div>
             </div>
             <div class="flex justify-end mt-6 space-x-2">
-                <button id="cancel-add-project-btn" class="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
+                <button id="cancel-add-project-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
                 <button id="save-project-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Save Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Dialog -->
+    <div id="confirm-dialog" class="confirm-dialog-overlay">
+        <div class="confirm-dialog-content">
+            <h3 class="text-xl font-semibold mb-4" id="confirm-dialog-title">Confirm Action</h3>
+            <p id="confirm-dialog-message" class="mb-6">Are you sure you want to proceed?</p>
+            <div class="flex justify-end space-x-2">
+                <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+                <button id="confirm-ok-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">Confirm</button>
             </div>
         </div>
     </div>
@@ -455,29 +492,33 @@
 
         async function initFirebase() {
             try {
+                // Initialize Firebase app with provided config
                 app = firebase.initializeApp(firebaseConfig);
                 auth = firebase.auth();
                 db = firebase.firestore();
 
+                // Sign in the user. We'll use a custom token or anonymous auth.
+                // The custom token is automatically provided in the canvas environment.
                 if (initialAuthToken) {
                     await auth.signInWithCustomToken(initialAuthToken);
                 } else {
                     await auth.signInAnonymously();
                 }
 
+                // Listen for auth state changes to get the user ID.
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         userId = user.uid;
                         isAuthReady = true;
                         document.getElementById('user-id-display').value = userId;
                         showToast("Signed in successfully.");
-                        startListeners();
+                        startListeners(); // Start listening to database changes
                         renderPage('dashboard');
                     } else {
                         userId = null;
                         isAuthReady = false;
                         document.getElementById('user-id-display').value = 'Not signed in';
-                        // Handle signed out state
+                        // Handle signed out state, e.g., redirect to a login page
                     }
                 });
             } catch (error) {
@@ -510,7 +551,7 @@
         function startListeners() {
             if (!isAuthReady) return;
 
-            // Profile Listener
+            // Profile Listener - Fetches and updates user profile in real-time
             const profileDocRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('profile').doc('data');
             profileDocRef.onSnapshot(doc => {
                 if (doc.exists) {
@@ -518,36 +559,47 @@
                     renderProfilePage();
                     renderInvoicePreview();
                 } else {
-                    // Create default profile
+                    // Create a default profile if one doesn't exist
                     profileDocRef.set({
                         brandName: 'My Brand',
                         contactInfo: { name: '', email: '', phone: '', address: '' },
                         paymentOptions: []
                     });
                 }
+            }, err => {
+                console.error("Error fetching profile:", err);
+                showToast("Error fetching profile data.", 'error');
             });
 
-            // Clients Listener
+            // Clients Listener - Fetches and updates clients in real-time
             db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients')
                 .onSnapshot(snapshot => {
                     state.clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderClientsPage();
                     renderClientsSelect();
+                }, err => {
+                    console.error("Error fetching clients:", err);
+                    showToast("Error fetching clients data.", 'error');
                 });
 
-            // Projects Listener
+            // Projects Listener - Fetches and updates projects in real-time
             db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects')
                 .onSnapshot(snapshot => {
                     state.projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderProjectsPage();
                     renderProjectsSelect();
+                }, err => {
+                    console.error("Error fetching projects:", err);
+                    showToast("Error fetching projects data.", 'error');
                 });
 
-            // Invoices Listener
+            // Invoices Listener - Fetches and updates invoices in real-time for reports
             db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('invoices')
                 .onSnapshot(snapshot => {
                     state.invoices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // Invoices are used for reports page, no need to re-render other pages here
+                }, err => {
+                    console.error("Error fetching invoices:", err);
+                    showToast("Error fetching invoices data.", 'error');
                 });
         }
         // --- END: Data and State Management ---
@@ -563,10 +615,10 @@
             // Update nav buttons
             document.querySelectorAll('.nav-button').forEach(btn => {
                 btn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                btn.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                btn.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
                 if (btn.dataset.page === pageId) {
                     btn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                    btn.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                    btn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-white', 'hover:bg-gray-300', 'dark:hover:bg-gray-600');
                 }
             });
             
@@ -580,17 +632,28 @@
         function renderClientsSelect() {
             const clientSelect = document.getElementById('client-select');
             const reportClientSelect = document.getElementById('report-client-select');
+            
+            // Retain selected value if it exists, otherwise use a placeholder
+            const selectedClientId = clientSelect.value;
+            
             clientSelect.innerHTML = '<option value="" disabled selected>Select a client</option>';
             reportClientSelect.innerHTML = '<option value="" disabled selected>Select a client</option>';
+            
             state.clients.forEach(client => {
                 const option = document.createElement('option');
                 option.value = client.id;
                 option.textContent = client.name;
+                if (client.id === selectedClientId) {
+                    option.selected = true;
+                }
                 clientSelect.appendChild(option);
                 
                 const reportOption = document.createElement('option');
                 reportOption.value = client.id;
                 reportOption.textContent = client.name;
+                if (client.id === selectedClientId) {
+                    reportOption.selected = true;
+                }
                 reportClientSelect.appendChild(reportOption);
             });
         }
@@ -617,7 +680,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm">${client.email}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">${client.address}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-red-600 hover:text-red-900" onclick="deleteClient('${client.id}')">Delete</button>
+                        <button class="text-red-600 hover:text-red-900" onclick="showConfirmDialog('Delete Client', 'Are you sure you want to delete this client?', () => deleteClient('${client.id}'))">Delete</button>
                     </td>
                 `;
                 clientsTableBody.appendChild(row);
@@ -636,7 +699,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm">$${parseFloat(project.rate).toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">${project.unit}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-red-600 hover:text-red-900" onclick="deleteProject('${project.id}')">Delete</button>
+                        <button class="text-red-600 hover:text-red-900" onclick="showConfirmDialog('Delete Project', 'Are you sure you want to delete this project?', () => deleteProject('${project.id}'))">Delete</button>
                     </td>
                 `;
                 projectsTableBody.appendChild(row);
@@ -644,7 +707,7 @@
         }
 
         function renderProfilePage() {
-            if (!state.userProfile.brandName) return;
+            if (!state.userProfile) return;
 
             document.getElementById('brand-name-input').value = state.userProfile.brandName || '';
             document.getElementById('contact-name-input').value = state.userProfile.contactInfo?.name || '';
@@ -658,7 +721,7 @@
                 const div = document.createElement('div');
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
-                    <input type="text" value="${option}" class="flex-grow rounded-md border-gray-300 shadow-sm p-2" onchange="updatePaymentOption(${index}, this.value)">
+                    <input type="text" value="${option}" class="flex-grow rounded-md border-gray-300 dark:border-gray-600 shadow-sm p-2 bg-gray-50 dark:bg-gray-900" onchange="updatePaymentOption(${index}, this.value)">
                     <button onclick="removePaymentOption(${index})" class="text-red-600 hover:text-red-900">&times;</button>
                 `;
                 paymentOptionsContainer.appendChild(div);
@@ -672,10 +735,10 @@
                 const row = document.createElement('tr');
                 row.className = 'bg-white dark:bg-gray-800';
                 row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.description}" class="w-full bg-transparent border-none" onchange="updateInvoiceItem(${index}, 'description', this.value)"></td>
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.rate}" class="w-24 bg-transparent border-none text-right" onchange="updateInvoiceItem(${index}, 'rate', parseFloat(this.value))"></td>
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.quantity}" class="w-24 bg-transparent border-none text-right" onchange="updateInvoiceItem(${index}, 'quantity', parseFloat(this.value))"></td>
-                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.unit}" class="w-24 bg-transparent border-none" onchange="updateInvoiceItem(${index}, 'unit', this.value)"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.description}" class="w-full bg-transparent border-none p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'description', this.value)"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.rate}" class="w-24 bg-transparent border-none text-right p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'rate', parseFloat(this.value))"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="number" value="${item.quantity}" class="w-24 bg-transparent border-none text-right p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'quantity', parseFloat(this.value))"></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><input type="text" value="${item.unit}" class="w-24 bg-transparent border-none p-0 focus:outline-none" onchange="updateInvoiceItem(${index}, 'unit', this.value)"></td>
                     <td class="px-6 py-4 whitespace-nowrap font-semibold">$${item.total.toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <button class="text-red-600 hover:text-red-900" onclick="removeInvoiceItem(${index})">&times;</button>
@@ -756,13 +819,15 @@
         // --- END: UI Rendering Functions ---
 
 
-        // --- START: Event Handlers and Logic ---
+        // --- START: Utility & Dialog Functions ---
         function showToast(message, type = 'success') {
             const toastContainer = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = 'toast show';
             if (type === 'error') {
                 toast.style.backgroundColor = '#dc2626';
+            } else if (type === 'success') {
+                 toast.style.backgroundColor = '#16a34a';
             }
             toast.textContent = message;
             toastContainer.appendChild(toast);
@@ -772,6 +837,74 @@
             }, 3000);
         }
 
+        // Custom confirmation dialog
+        function showConfirmDialog(title, message, onConfirm) {
+            const dialog = document.getElementById('confirm-dialog');
+            document.getElementById('confirm-dialog-title').textContent = title;
+            document.getElementById('confirm-dialog-message').textContent = message;
+            
+            const confirmBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            
+            const handleConfirm = () => {
+                onConfirm();
+                dialog.style.display = 'none';
+                confirmBtn.removeEventListener('click', handleConfirm);
+            };
+            const handleCancel = () => {
+                dialog.style.display = 'none';
+                confirmBtn.removeEventListener('click', handleConfirm);
+            };
+
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            dialog.style.display = 'flex';
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark');
+            body.classList.toggle('light');
+
+            const isDarkMode = body.classList.contains('dark');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+
+            const lightIcon = document.querySelector('.light-mode-icon');
+            const darkIcon = document.querySelector('.dark-mode-icon');
+            if (isDarkMode) {
+                lightIcon.classList.remove('hidden');
+                darkIcon.classList.add('hidden');
+            } else {
+                lightIcon.classList.add('hidden');
+                darkIcon.classList.remove('hidden');
+            }
+        }
+
+        // Set initial theme based on local storage or system preference
+        function setInitialTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDarkMode = savedTheme === 'dark' || (!savedTheme && prefersDark);
+            
+            const body = document.body;
+            if (isDarkMode) {
+                body.classList.add('dark');
+                body.classList.remove('light');
+                document.querySelector('.light-mode-icon').classList.remove('hidden');
+                document.querySelector('.dark-mode-icon').classList.add('hidden');
+            } else {
+                body.classList.add('light');
+                body.classList.remove('dark');
+                document.querySelector('.light-mode-icon').classList.add('hidden');
+                document.querySelector('.dark-mode-icon').classList.remove('hidden');
+            }
+        }
+        // --- END: Utility & Dialog Functions ---
+
+
+        // --- START: Event Handlers and Firebase Logic ---
         async function handleSignOut() {
             try {
                 await auth.signOut();
@@ -786,7 +919,7 @@
             const name = document.getElementById('new-client-name').value;
             const email = document.getElementById('new-client-email').value;
             const address = document.getElementById('new-client-address').value;
-            if (!userId || !name) {
+            if (!userId || !name.trim()) {
                 showToast("Client name is required.", 'error');
                 return;
             }
@@ -813,14 +946,15 @@
         async function handleSaveProject() {
             const name = document.getElementById('new-project-name').value;
             const description = document.getElementById('new-project-description').value;
-            const rate = document.getElementById('new-project-rate').value;
+            const rate = parseFloat(document.getElementById('new-project-rate').value);
             const unit = document.getElementById('new-project-unit').value;
-            if (!userId || !name) {
-                showToast("Project name is required.", 'error');
+
+            if (!userId || !name.trim() || isNaN(rate)) {
+                showToast("Project name and a valid rate are required.", 'error');
                 return;
             }
             try {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects').add({ name, description, rate: parseFloat(rate), unit });
+                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects').add({ name, description, rate, unit });
                 document.getElementById('add-project-dialog').style.display = 'none';
                 showToast("Project saved successfully.");
             } catch (error) {
@@ -859,6 +993,7 @@
             state.invoiceDetails.items[index][field] = value;
             const item = state.invoiceDetails.items[index];
             item.total = item.rate * item.quantity;
+            renderInvoiceItems(); // Re-render the items to show the updated total
             updateInvoiceTotals();
             renderInvoicePreview();
         }
@@ -874,11 +1009,23 @@
             const clientSelect = document.getElementById('client-select');
             const clientId = clientSelect.value;
             const client = state.clients.find(c => c.id === clientId);
+            
             if (!client) {
                 showToast("Please select a client.", 'error');
                 return;
             }
-            state.invoiceDetails.client = client;
+            if (state.invoiceDetails.items.length === 0) {
+                 showToast("Please add at least one item to the invoice.", 'error');
+                 return;
+            }
+
+            // Update state with form values
+            state.invoiceDetails.client = {
+                id: client.id,
+                name: client.name,
+                email: client.email,
+                address: client.address
+            };
             state.invoiceDetails.invoiceDate = document.getElementById('invoice-date').value;
             state.invoiceDetails.dueDate = document.getElementById('due-date').value;
             state.invoiceDetails.invoiceNumber = document.getElementById('invoice-number').value;
@@ -886,11 +1033,6 @@
             try {
                 await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('invoices').add({
                     ...state.invoiceDetails,
-                    client: {
-                        id: client.id,
-                        name: client.name,
-                        email: client.email,
-                    },
                     createdAt: new Date(),
                     invoiceDate: new Date(state.invoiceDetails.invoiceDate),
                     dueDate: new Date(state.invoiceDetails.dueDate),
@@ -906,23 +1048,25 @@
         async function handleDownloadInvoice() {
              renderInvoicePreview();
              const invoiceEl = document.getElementById('invoice-to-pdf');
-             if (!invoiceEl) return;
+             if (!invoiceEl) {
+                 showToast("PDF element not found.", 'error');
+                 return;
+             }
              
-             htmlToImage.toPng(invoiceEl)
-                 .then(function (dataUrl) {
-                     const { jsPDF } = window.jspdf;
-                     const pdf = new jsPDF('p', 'mm', 'a4');
-                     const imgProps = pdf.getImageProperties(dataUrl);
-                     const pdfWidth = pdf.internal.pageSize.getWidth();
-                     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                     pdf.save(`${state.invoiceDetails.invoiceNumber}_${state.invoiceDetails.invoiceDate}.pdf`);
-                     showToast("Invoice downloaded.");
-                 })
-                 .catch(function (error) {
-                     console.error('oops, something went wrong!', error);
-                     showToast("Could not download invoice.", 'error');
-                 });
+             try {
+                const dataUrl = await htmlToImage.toPng(invoiceEl);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgProps = pdf.getImageProperties(dataUrl);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`${state.invoiceDetails.invoiceNumber}_${state.invoiceDetails.invoiceDate}.pdf`);
+                showToast("Invoice downloaded.");
+             } catch (error) {
+                console.error('Error generating PDF:', error);
+                showToast("Could not download invoice.", 'error');
+             }
         }
         
         async function handleGenerateReport() {
@@ -955,10 +1099,14 @@
             pdf.text(`Date Range: ${dateFns.format(start, 'MM/dd/yyyy')} - ${dateFns.format(end, 'MM/dd/yyyy')}`, 10, y);
             y += 15;
 
-            filteredInvoices.forEach(inv => {
-                pdf.text(`Invoice #${inv.invoiceNumber} | Date: ${dateFns.format(inv.createdAt.toDate(), 'MM/dd/yyyy')} | Total: $${inv.total.toFixed(2)}`, 15, y);
-                y += 7;
-            });
+            if (filteredInvoices.length === 0) {
+                pdf.text("No invoices found for this period.", 15, y);
+            } else {
+                filteredInvoices.forEach(inv => {
+                    pdf.text(`Invoice #${inv.invoiceNumber} | Date: ${dateFns.format(inv.createdAt.toDate(), 'MM/dd/yyyy')} | Total: $${inv.total.toFixed(2)}`, 15, y);
+                    y += 7;
+                });
+            }
 
             pdf.save(`Report_${selectedClient.name}_${dateFns.format(start, 'yyyyMM')}.pdf`);
             showToast("Report downloaded successfully.");
@@ -977,15 +1125,16 @@
             };
             try {
                 const profileDocRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('profile').doc('data');
-                await profileDocRef.set(profileData, { merge: true });
+                await profileDocRef.set(profileData, { merge: true }); // Use merge: true to avoid overwriting the whole doc
                 showToast("Profile saved successfully.");
+                renderProfilePage(); // Re-render to show updated state
             } catch (error) {
                 console.error("Error saving profile:", error);
                 showToast("Could not save profile.", 'error');
             }
         }
 
-        async function updatePaymentOption(index, value) {
+        function updatePaymentOption(index, value) {
             state.userProfile.paymentOptions[index] = value;
         }
 
@@ -997,34 +1146,51 @@
 
         async function removePaymentOption(index) {
             state.userProfile.paymentOptions.splice(index, 1);
-            renderProfilePage();
-            await handleSaveProfile();
+            await handleSaveProfile(); // Save changes immediately after removal
         }
 
         async function handleDeleteAccount() {
-             // In a real app, you would need a cloud function to delete all user data.
-             // Here, we just sign out and show a message.
+            // For a real app, this would trigger a cloud function to delete all data and the user account.
+            // Here, we just delete the user's data and sign out.
             try {
+                // Delete user data first
+                const userRef = db.collection('artifacts').doc(appId).collection('users').doc(userId);
+                const collectionsToDelete = ['clients', 'projects', 'invoices'];
+                for (const collectionName of collectionsToDelete) {
+                    const snapshot = await userRef.collection(collectionName).get();
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                }
+                await userRef.collection('profile').doc('data').delete();
+
+                // Sign out
                 await auth.signOut();
-                showToast("Account deleted successfully (simulated).", 'error');
+                showToast("Account and data have been deleted. You are now signed out.", 'error');
             } catch (error) {
                 console.error("Error deleting account:", error);
-                showToast("Could not delete account.", 'error');
+                showToast("Could not delete account. Please try again.", 'error');
             }
         }
 
-        // --- END: Event Handlers and Logic ---
+        // --- END: Event Handlers and Firebase Logic ---
 
 
         // --- START: Event Listeners and Initial Setup ---
         window.onload = async () => {
+            setInitialTheme(); // Set initial theme on load
             initFirebase();
         
             // Navigation
             document.querySelectorAll('.nav-button').forEach(button => {
                 button.addEventListener('click', () => renderPage(button.dataset.page));
             });
-            document.getElementById('sign-out-btn').addEventListener('click', handleSignOut);
+            document.getElementById('sign-out-btn').addEventListener('click', () => {
+                showConfirmDialog('Sign Out', 'Are you sure you want to sign out?', handleSignOut);
+            });
+            document.getElementById('dark-mode-toggle').addEventListener('click', toggleDarkMode);
 
             // Dashboard
             document.getElementById('invoice-date').value = state.invoiceDetails.invoiceDate;
@@ -1032,7 +1198,7 @@
             document.getElementById('invoice-number').value = state.invoiceDetails.invoiceNumber;
             document.getElementById('project-select').addEventListener('change', addInvoiceItemFromProject);
             document.getElementById('tax-rate-input').addEventListener('input', (e) => {
-                state.invoiceDetails.taxRate = parseFloat(e.target.value);
+                state.invoiceDetails.taxRate = parseFloat(e.target.value) || 0;
                 updateInvoiceTotals();
                 renderInvoicePreview();
             });
@@ -1071,7 +1237,9 @@
             // Profile
             document.getElementById('save-profile-btn').addEventListener('click', handleSaveProfile);
             document.getElementById('add-payment-option-btn').addEventListener('click', addPaymentOption);
-            document.getElementById('delete-profile-btn').addEventListener('click', handleDeleteAccount);
+            document.getElementById('delete-profile-btn').addEventListener('click', () => {
+                showConfirmDialog('Delete Account', 'This will permanently delete your account and all associated data. Are you absolutely sure?', handleDeleteAccount);
+            });
         };
         // --- END: Event Listeners and Initial Setup ---
     </script>
