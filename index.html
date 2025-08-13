@@ -79,16 +79,6 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white">
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
-    <!-- PDF Generation Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.0/html-to-image.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Date Formatting -->
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.28.0/dist/date-fns.min.js"></script>
-    
     <!-- Main App Layout -->
     <div class="min-h-screen flex flex-col">
         <!-- Header -->
@@ -473,8 +463,14 @@
     </div>
 
 
-    <script>
+    <script type="module">
         // --- START: Firebase Configuration and Initialization ---
+        // Import the required Firebase services as modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -485,22 +481,19 @@
         async function initFirebase() {
             try {
                 // Initialize Firebase app with provided config
-                app = firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
                 
-                // Note: This app uses anonymous sign-in for simplicity.
-                // A production app would have a full login/signup flow.
-
-                // Sign in the user. We'll use a custom token or anonymous auth.
+                // Sign in the user. We use a custom token or anonymous auth.
                 if (initialAuthToken) {
-                    await auth.signInWithCustomToken(initialAuthToken);
+                    await signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                    await auth.signInAnonymously();
+                    await signInAnonymously(auth);
                 }
 
                 // Listen for auth state changes to get the user ID.
-                auth.onAuthStateChanged(async (user) => {
+                onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
                         isAuthReady = true;
@@ -512,7 +505,6 @@
                         userId = null;
                         isAuthReady = false;
                         document.getElementById('user-id-display').value = 'Not signed in';
-                        // Optionally, you could show a "Signed Out" message or a login screen here
                     }
                 });
             } catch (error) {
@@ -546,55 +538,55 @@
             if (!isAuthReady) return;
 
             // Profile Listener - Fetches and updates user profile in real-time
-            const profileDocRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('profile').doc('data');
-            profileDocRef.onSnapshot(doc => {
-                if (doc.exists) {
+            const profileDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
+            onSnapshot(profileDocRef, (doc) => {
+                if (doc.exists()) {
                     state.userProfile = doc.data();
                     renderProfilePage();
                     renderInvoicePreview();
                 } else {
                     // Create a default profile if one doesn't exist
-                    profileDocRef.set({
+                    setDoc(profileDocRef, {
                         brandName: 'My Brand',
                         contactInfo: { name: '', email: '', phone: '', address: '' },
                         paymentOptions: []
                     });
                 }
-            }, err => {
+            }, (err) => {
                 console.error("Error fetching profile:", err);
                 showToast("Error fetching profile data.", 'error');
             });
 
             // Clients Listener - Fetches and updates clients in real-time
-            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients')
-                .onSnapshot(snapshot => {
-                    state.clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderClientsPage();
-                    renderClientsSelect();
-                }, err => {
-                    console.error("Error fetching clients:", err);
-                    showToast("Error fetching clients data.", 'error');
-                });
+            const clientsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'clients');
+            onSnapshot(clientsCollectionRef, (snapshot) => {
+                state.clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderClientsPage();
+                renderClientsSelect();
+            }, (err) => {
+                console.error("Error fetching clients:", err);
+                showToast("Error fetching clients data.", 'error');
+            });
 
             // Projects Listener - Fetches and updates projects in real-time
-            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects')
-                .onSnapshot(snapshot => {
-                    state.projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderProjectsPage();
-                    renderProjectsSelect();
-                }, err => {
-                    console.error("Error fetching projects:", err);
-                    showToast("Error fetching projects data.", 'error');
-                });
+            const projectsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'projects');
+            onSnapshot(projectsCollectionRef, (snapshot) => {
+                state.projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProjectsPage();
+                renderProjectsSelect();
+            }, (err) => {
+                console.error("Error fetching projects:", err);
+                showToast("Error fetching projects data.", 'error');
+            });
 
             // Invoices Listener - Fetches and updates invoices in real-time for reports
-            db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('invoices')
-                .onSnapshot(snapshot => {
-                    state.invoices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                }, err => {
-                    console.error("Error fetching invoices:", err);
-                    showToast("Error fetching invoices data.", 'error');
-                });
+            const invoicesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'invoices');
+            onSnapshot(invoicesCollectionRef, (snapshot) => {
+                state.invoices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }, (err) => {
+                console.error("Error fetching invoices:", err);
+                showToast("Error fetching invoices data.", 'error');
+            });
         }
         // --- END: Data and State Management ---
 
@@ -918,7 +910,8 @@
                 return;
             }
             try {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients').add({ name, email, address });
+                const clientsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'clients');
+                await addDoc(clientsCollectionRef, { name, email, address });
                 document.getElementById('add-client-dialog').style.display = 'none';
                 showToast("Client saved successfully.");
             } catch (error) {
@@ -929,7 +922,8 @@
 
         async function deleteClient(clientId) {
             try {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('clients').doc(clientId).delete();
+                const clientDocRef = doc(db, 'artifacts', appId, 'users', userId, 'clients', clientId);
+                await deleteDoc(clientDocRef);
                 showToast("Client deleted successfully.");
             } catch (error) {
                 console.error("Error deleting client:", error);
@@ -948,7 +942,8 @@
                 return;
             }
             try {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects').add({ name, description, rate, unit });
+                const projectsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'projects');
+                await addDoc(projectsCollectionRef, { name, description, rate, unit });
                 document.getElementById('add-project-dialog').style.display = 'none';
                 showToast("Project saved successfully.");
             } catch (error) {
@@ -959,7 +954,8 @@
 
         async function deleteProject(projectId) {
             try {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('projects').doc(projectId).delete();
+                const projectDocRef = doc(db, 'artifacts', appId, 'users', userId, 'projects', projectId);
+                await deleteDoc(projectDocRef);
                 showToast("Project deleted successfully.");
             } catch (error) {
                 console.error("Error deleting project:", error);
@@ -1025,7 +1021,8 @@
             state.invoiceDetails.invoiceNumber = document.getElementById('invoice-number').value;
 
             try {
-                await db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('invoices').add({
+                const invoicesCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'invoices');
+                await addDoc(invoicesCollectionRef, {
                     ...state.invoiceDetails,
                     createdAt: new Date(),
                     invoiceDate: new Date(state.invoiceDetails.invoiceDate),
@@ -1118,8 +1115,8 @@
                 paymentOptions: state.userProfile.paymentOptions || [],
             };
             try {
-                const profileDocRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('profile').doc('data');
-                await profileDocRef.set(profileData, { merge: true }); // Use merge: true to avoid overwriting the whole doc
+                const profileDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
+                await setDoc(profileDocRef, profileData, { merge: true }); // Use merge: true to avoid overwriting the whole doc
                 showToast("Profile saved successfully.");
                 renderProfilePage(); // Re-render to show updated state
             } catch (error) {
@@ -1144,23 +1141,20 @@
         }
 
         async function handleDeleteAccount() {
-            // For a real app, this would trigger a cloud function to delete all data and the user account.
-            // Here, we just delete the user's data and sign out.
             try {
-                // Delete user data first
-                const userRef = db.collection('artifacts').doc(appId).collection('users').doc(userId);
+                const userRef = doc(db, 'artifacts', appId, 'users', userId);
                 const collectionsToDelete = ['clients', 'projects', 'invoices'];
                 for (const collectionName of collectionsToDelete) {
-                    const snapshot = await userRef.collection(collectionName).get();
-                    const batch = db.batch();
-                    snapshot.docs.forEach(doc => {
-                        batch.delete(doc.ref);
+                    const snapshot = await getDocs(collection(userRef, collectionName));
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach(d => {
+                        batch.delete(d.ref);
                     });
                     await batch.commit();
                 }
-                await userRef.collection('profile').doc('data').delete();
+                const profileDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
+                await deleteDoc(profileDocRef);
 
-                // Sign out
                 await auth.signOut();
                 showToast("Account and data have been deleted. You are now signed out.", 'error');
             } catch (error) {
@@ -1176,6 +1170,19 @@
         window.onload = async () => {
             setInitialTheme(); // Set initial theme on load
             initFirebase();
+
+            // PDF Generation Libraries
+            const script1 = document.createElement('script');
+            script1.src = "https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.0/html-to-image.min.js";
+            document.head.appendChild(script1);
+
+            const script2 = document.createElement('script');
+            script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+            document.head.appendChild(script2);
+
+            const script3 = document.createElement('script');
+            script3.src = "https://cdn.jsdelivr.net/npm/date-fns@2.28.0/dist/date-fns.min.js";
+            document.head.appendChild(script3);
         
             // Navigation
             document.querySelectorAll('.nav-button').forEach(button => {
