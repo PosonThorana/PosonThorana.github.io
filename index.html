@@ -130,30 +130,6 @@
             <button id="tab-reports" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Reports</button>
         </div>
 
-        <!-- Shared Invoice Items Section (now outside of tabs) -->
-        <h2 class="text-2xl font-semibold mb-4 text-gray-200">Invoice Items</h2>
-        <div class="flex space-x-2 items-center text-gray-400 font-medium pb-2 border-b border-gray-600">
-            <div class="flex-1">Description</div>
-            <div class="w-20 text-center">Qty</div>
-            <div class="w-24 text-right">Price</div>
-            <div class="w-24 text-right">Amount</div>
-            <div class="w-10"></div>
-        </div>
-        <div id="invoice-items" class="mt-3 space-y-3">
-            <!-- Item rows will be appended here -->
-        </div>
-        
-        <button id="addItemBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
-            Add Item
-        </button>
-        
-        <div class="mt-6 p-4 bg-gray-700 rounded-lg">
-            <div class="flex justify-between font-bold text-lg text-gray-200">
-                <span>Total:</span>
-                <span id="totalAmount">Rs. 0.00</span>
-            </div>
-        </div>
-
         <!-- Tab Content Containers -->
         <div id="content-container" class="mt-6">
             <!-- Invoice Tab Content -->
@@ -179,6 +155,29 @@
                         <input type="date" id="invoiceDate" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
                     </div>
                 </div>
+
+                <!-- Invoice Items for the current invoice -->
+                <h3 class="text-xl font-semibold mt-6 mb-4 text-gray-200">Invoice Items</h3>
+                <div class="flex space-x-2 items-center text-gray-400 font-medium pb-2 border-b border-gray-600">
+                    <div class="flex-1">Description</div>
+                    <div class="w-20 text-center">Qty</div>
+                    <div class="w-24 text-right">Price</div>
+                    <div class="w-24 text-right">Amount</div>
+                    <div class="w-10"></div>
+                </div>
+                <div id="invoice-items" class="mt-3 space-y-3">
+                    <!-- Item rows will be appended here -->
+                </div>
+                <button id="addItemBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                    Add Item
+                </button>
+                
+                <div class="mt-6 p-4 bg-gray-700 rounded-lg">
+                    <div class="flex justify-between font-bold text-lg text-gray-200">
+                        <span>Total:</span>
+                        <span id="totalAmount">Rs. 0.00</span>
+                    </div>
+                </div>
                 
                 <div class="flex space-x-4 mt-6">
                     <button id="generateInvoiceBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
@@ -193,18 +192,46 @@
             <!-- Templates Tab Content -->
             <div id="content-templates" class="tab-content hidden">
                 <h2 class="text-2xl font-semibold mb-4 text-gray-200">Manage Project Templates</h2>
-                <div id="templates-list" class="space-y-4">
-                    <!-- Saved templates will be rendered here -->
-                </div>
-                <div class="mt-6 p-4 bg-gray-700 rounded-lg space-y-4">
-                    <h3 class="text-xl font-semibold text-gray-200">Save Current as Template</h3>
+                
+                <!-- Section to create a new template -->
+                <div class="p-4 bg-gray-700 rounded-lg mb-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-200">Create New Template</h3>
                     <div>
                         <label for="templateNameInput" class="form-label block text-sm font-medium">Template Name</label>
                         <input type="text" id="templateNameInput" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
                     </div>
-                    <button id="saveTemplateBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
-                        Save as Template
+                    
+                    <h4 class="text-lg font-semibold mt-4 mb-2 text-gray-300">Template Items</h4>
+                    <div class="flex space-x-2 items-center text-gray-400 font-medium pb-2 border-b border-gray-600">
+                        <div class="flex-1">Description</div>
+                        <div class="w-20 text-center">Qty</div>
+                        <div class="w-24 text-right">Price</div>
+                        <div class="w-24 text-right">Amount</div>
+                        <div class="w-10"></div>
+                    </div>
+                    <div id="template-items" class="mt-3 space-y-3">
+                        <!-- Template item rows will be appended here -->
+                    </div>
+                    <button id="addTemplateItemBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                        Add Item to Template
                     </button>
+                    
+                    <div class="mt-6 p-4 bg-gray-600 rounded-lg">
+                        <div class="flex justify-between font-bold text-lg text-gray-200">
+                            <span>Template Total:</span>
+                            <span id="templateTotalAmount">Rs. 0.00</span>
+                        </div>
+                    </div>
+                    
+                    <button id="saveTemplateBtn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                        Save Template
+                    </button>
+                </div>
+
+                <!-- List of existing templates -->
+                <h3 class="text-xl font-semibold mb-4 text-gray-200">Existing Templates</h3>
+                <div id="templates-list" class="space-y-4">
+                    <!-- Saved templates will be rendered here -->
                 </div>
             </div>
 
@@ -309,11 +336,8 @@
         const logoutBtn = document.getElementById('logout-btn');
         const savedInvoicesSection = document.getElementById('saved-invoices-section');
         const invoicesList = document.getElementById('invoices-list');
-        const addItemBtn = document.getElementById('addItemBtn');
         const saveInvoiceBtn = document.getElementById('saveInvoiceBtn');
         const generateInvoiceBtn = document.getElementById('generateInvoiceBtn');
-        const totalAmountSpan = document.getElementById('totalAmount');
-        const invoiceItemsContainer = document.getElementById('invoice-items');
 
         // New elements for email/password login
         const emailInput = document.getElementById('email-input');
@@ -346,6 +370,16 @@
         const reportStartDate = document.getElementById('reportStartDate');
         const reportEndDate = document.getElementById('reportEndDate');
         const generateReportBtn = document.getElementById('generateReportBtn');
+        
+        // Item management for Invoice tab
+        const invoiceItemsContainer = document.getElementById('invoice-items');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const totalAmountSpan = document.getElementById('totalAmount');
+        
+        // Item management for Templates tab
+        const templateItemsContainer = document.getElementById('template-items');
+        const addTemplateItemBtn = document.getElementById('addTemplateItemBtn');
+        const templateTotalAmountSpan = document.getElementById('templateTotalAmount');
 
         const messageModal = document.getElementById('message-modal');
         const modalTitle = document.getElementById('modal-title');
@@ -468,6 +502,13 @@
             activeTab.classList.remove('border-transparent', 'text-gray-400');
             activeTab.classList.add('border-indigo-400', 'text-indigo-400');
             activeContent.classList.remove('hidden');
+            
+            // Re-initialize item lists on tab switch to clear old data
+            if (tabId === 'templates') {
+                templateItemsContainer.innerHTML = '';
+                templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
+                updateTotal(templateItemsContainer, templateTotalAmountSpan);
+            }
         }
         
         tabInvoice.addEventListener('click', () => switchTab('invoice'));
@@ -475,8 +516,9 @@
         tabClients.addEventListener('click', () => switchTab('clients'));
         tabReports.addEventListener('click', () => switchTab('reports'));
 
-        // Invoice form logic
-        function createItemRow(item = {}) {
+
+        // Item row creation function for both invoice and template lists
+        function createItemRow(container, totalSpan, item = {}) {
             const row = document.createElement('div');
             row.className = 'invoice-item-row flex space-x-2 items-center p-2 rounded-lg shadow-sm';
             row.innerHTML = `
@@ -498,35 +540,42 @@
                 const price = parseFloat(priceInput.value) || 0;
                 const amount = quantity * price;
                 amountCell.textContent = `Rs. ${amount.toFixed(2)}`;
-                updateTotal();
+                updateTotal(container, totalSpan);
             };
 
             quantityInput.addEventListener('input', updateAmount);
             priceInput.addEventListener('input', updateAmount);
             removeBtn.addEventListener('click', () => {
                 row.remove();
-                updateTotal();
+                updateTotal(container, totalSpan);
             });
 
             updateAmount(); // Initial calculation
             return row;
         }
 
-        function updateTotal() {
+        // Function to update total for a specific item list
+        function updateTotal(container, totalSpan) {
             let total = 0;
-            document.querySelectorAll('.invoice-item-row').forEach(row => {
+            container.querySelectorAll('.invoice-item-row').forEach(row => {
                 const quantity = parseFloat(row.querySelectorAll('input')[1].value) || 0;
                 const price = parseFloat(row.querySelectorAll('input')[2].value) || 0;
                 total += quantity * price;
             });
-            totalAmountSpan.textContent = `Rs. ${total.toFixed(2)}`;
+            totalSpan.textContent = `Rs. ${total.toFixed(2)}`;
         }
+        
+        // Initial item row for Invoice and Template forms
+        invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
+        templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
 
-        // Add initial item row
-        invoiceItemsContainer.appendChild(createItemRow());
 
         addItemBtn.addEventListener('click', () => {
-            invoiceItemsContainer.appendChild(createItemRow());
+            invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
+        });
+        
+        addTemplateItemBtn.addEventListener('click', () => {
+            templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
         });
 
         // Client and Template Search Dropdown Logic
@@ -589,7 +638,7 @@
             }
 
             const items = [];
-            document.querySelectorAll('.invoice-item-row').forEach(row => {
+            invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach(row => {
                 const [descriptionInput, quantityInput, priceInput] = row.querySelectorAll('input');
                 const description = descriptionInput.value.trim();
                 const quantity = parseFloat(quantityInput.value) || 0;
@@ -613,8 +662,9 @@
             clientNameInput.value = '';
             invoiceDate.value = '';
             invoiceItemsContainer.innerHTML = '';
-            invoiceItemsContainer.appendChild(createItemRow());
-            updateTotal();
+            invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
+            updateTotal(invoiceItemsContainer, totalAmountSpan);
+            templateSelect.value = '';
         }
 
         // Save invoice to Firestore
@@ -856,7 +906,7 @@
                 return;
             }
             const items = [];
-            document.querySelectorAll('.invoice-item-row').forEach(row => {
+            templateItemsContainer.querySelectorAll('.invoice-item-row').forEach(row => {
                 const [descriptionInput, quantityInput, priceInput] = row.querySelectorAll('input');
                 const description = descriptionInput.value.trim();
                 const quantity = parseFloat(quantityInput.value) || 0;
@@ -874,18 +924,23 @@
                 await addDoc(templatesCollection, { templateName, items });
                 showMessage("Success", "Template saved successfully!");
                 templateNameInput.value = '';
+                // Clear the template creation form
+                templateItemsContainer.innerHTML = '';
+                templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
+                updateTotal(templateItemsContainer, templateTotalAmountSpan);
             } catch (e) {
                 console.error("Error saving template: ", e);
                 showMessage("Error", "Failed to save template.");
             }
         });
 
-        // Load template items into the form
+        // Load template items into the invoice form
         templateSelect.addEventListener('change', async () => {
             const templateId = templateSelect.value;
             if (!templateId || !userId) {
                 invoiceItemsContainer.innerHTML = '';
-                invoiceItemsContainer.appendChild(createItemRow());
+                invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
+                updateTotal(invoiceItemsContainer, totalAmountSpan);
                 return;
             }
             try {
@@ -895,9 +950,9 @@
                     const templateData = templateSnap.data();
                     invoiceItemsContainer.innerHTML = ''; // Clear existing items
                     templateData.items.forEach(item => {
-                        invoiceItemsContainer.appendChild(createItemRow(item));
+                        invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan, item));
                     });
-                    updateTotal();
+                    updateTotal(invoiceItemsContainer, totalAmountSpan);
                 }
             } catch (e) {
                 console.error("Error loading template: ", e);
