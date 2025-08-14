@@ -125,7 +125,7 @@
         <!-- Tabs for different sections -->
         <div class="flex mb-6 space-x-2 border-b border-gray-700">
             <button id="tab-invoice" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Invoice</button>
-            <button id="tab-templates" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Templates</button>
+            <button id="tab-products" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Products</button>
             <button id="tab-clients" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Clients</button>
             <button id="tab-reports" class="px-4 py-2 text-gray-400 font-medium border-b-2 border-transparent hover:text-indigo-400 hover:border-indigo-400 focus:outline-none">Reports</button>
         </div>
@@ -143,12 +143,15 @@
                         <div id="client-suggestions" class="custom-select-options hidden"></div>
                         <input type="hidden" id="selectedClientId">
                     </div>
-                    <!-- Template Dropdown -->
+                    <!-- Product Dropdown -->
                     <div class="custom-select">
-                        <label for="templateSelect" class="form-label block text-sm font-medium">Project Template</label>
-                        <select id="templateSelect" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
-                            <option value="">Select a template</option>
-                        </select>
+                        <label for="productSelect" class="form-label block text-sm font-medium">Add Product</label>
+                        <div class="flex items-center space-x-2">
+                             <select id="productSelect" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
+                                <option value="">Select a product</option>
+                            </select>
+                             <button id="addProductToInvoiceBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 mt-1">Add</button>
+                        </div>
                     </div>
                     <div>
                         <label for="invoiceDate" class="form-label block text-sm font-medium">Invoice Date</label>
@@ -160,6 +163,7 @@
                 <h3 class="text-xl font-semibold mt-6 mb-4 text-gray-200">Invoice Items</h3>
                 <div class="flex space-x-2 items-center text-gray-400 font-medium pb-2 border-b border-gray-600">
                     <div class="flex-1">Product Name</div>
+                    <div class="w-16 text-right">Qty</div>
                     <div class="w-24 text-right">Price</div>
                     <div class="w-24 text-right">Amount</div>
                     <div class="w-10"></div>
@@ -168,7 +172,7 @@
                     <!-- Item rows will be appended here -->
                 </div>
                 <button id="addItemBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
-                    Add Item
+                    Add Custom Item
                 </button>
                 
                 <div class="mt-6 p-4 bg-gray-700 rounded-lg">
@@ -188,48 +192,32 @@
                 </div>
             </div>
 
-            <!-- Templates Tab Content -->
-            <div id="content-templates" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-200">Manage Project Templates</h2>
+            <!-- Products Tab Content -->
+            <div id="content-products" class="tab-content hidden">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-200">Manage Products</h2>
                 
-                <!-- Section to create a new template -->
+                <!-- Section to create a new product -->
                 <div class="p-4 bg-gray-700 rounded-lg mb-6">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-200">Create New Template</h3>
-                    <div>
-                        <label for="templateNameInput" class="form-label block text-sm font-medium">Template Name</label>
-                        <input type="text" id="templateNameInput" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
-                    </div>
-                    
-                    <h4 class="text-lg font-semibold mt-4 mb-2 text-gray-300">Template Items</h4>
-                    <div class="flex space-x-2 items-center text-gray-400 font-medium pb-2 border-b border-gray-600">
-                        <div class="flex-1">Product Name</div>
-                        <div class="w-24 text-right">Price</div>
-                        <div class="w-24 text-right">Amount</div>
-                        <div class="w-10"></div>
-                    </div>
-                    <div id="template-items" class="mt-3 space-y-3">
-                        <!-- Template item rows will be appended here -->
-                    </div>
-                    <button id="addTemplateItemBtn" class="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
-                        Add Item to Template
-                    </button>
-                    
-                    <div class="mt-6 p-4 bg-gray-600 rounded-lg">
-                        <div class="flex justify-between font-bold text-lg text-gray-200">
-                            <span>Template Total:</span>
-                            <span id="templateTotalAmount">Rs. 0.00</span>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-200">Add New Product</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="productNameInput" class="form-label block text-sm font-medium">Product Name</label>
+                            <input type="text" id="productNameInput" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label for="productPriceInput" class="form-label block text-sm font-medium">Price</label>
+                            <input type="number" id="productPriceInput" min="0" step="0.01" class="mt-1 block w-full rounded-md shadow-sm p-2 border">
                         </div>
                     </div>
-                    
-                    <button id="saveTemplateBtn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
-                        Save Template
+                    <button id="saveProductBtn" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl shadow-lg transition-transform transform hover:scale-105">
+                        Save Product
                     </button>
                 </div>
 
-                <!-- List of existing templates -->
-                <h3 class="text-xl font-semibold mb-4 text-gray-200">Existing Templates</h3>
-                <div id="templates-list" class="space-y-4">
-                    <!-- Saved templates will be rendered here -->
+                <!-- List of existing products -->
+                <h3 class="text-xl font-semibold mb-4 text-gray-200">Existing Products</h3>
+                <div id="products-list" class="space-y-4">
+                    <!-- Saved products will be rendered here -->
                 </div>
             </div>
 
@@ -324,6 +312,7 @@
         
         let userId = null;
         let savedClients = [];
+        let savedProducts = [];
 
         // UI elements
         const loginScreen = document.getElementById('login-screen');
@@ -343,25 +332,39 @@
         const emailSignInBtn = document.getElementById('email-signin-btn');
         const emailSignUpBtn = document.getElementById('email-signup-btn');
 
-        // New elements for enhanced features
+        // Tabs
         const tabInvoice = document.getElementById('tab-invoice');
-        const tabTemplates = document.getElementById('tab-templates');
+        const tabProducts = document.getElementById('tab-products');
         const tabClients = document.getElementById('tab-clients');
         const tabReports = document.getElementById('tab-reports');
         const contentInvoice = document.getElementById('content-invoice');
-        const contentTemplates = document.getElementById('content-templates');
+        const contentProducts = document.getElementById('content-products');
         const contentClients = document.getElementById('content-clients');
         const contentReports = document.getElementById('content-reports');
-        const templateSelect = document.getElementById('templateSelect');
-        const templatesList = document.getElementById('templates-list');
-        const saveTemplateBtn = document.getElementById('saveTemplateBtn');
-        const templateNameInput = document.getElementById('templateNameInput');
+
+        // Products Tab
+        const productsList = document.getElementById('products-list');
+        const productNameInput = document.getElementById('productNameInput');
+        const productPriceInput = document.getElementById('productPriceInput');
+        const saveProductBtn = document.getElementById('saveProductBtn');
+
+        // Clients Tab
         const clientsList = document.getElementById('clients-list');
         const saveClientBtn = document.getElementById('saveClientBtn');
         const newClientNameInput = document.getElementById('newClientNameInput');
+        
+        // Invoice Tab
+        const productSelect = document.getElementById('productSelect');
+        const addProductToInvoiceBtn = document.getElementById('addProductToInvoiceBtn');
         const clientNameInput = document.getElementById('clientNameInput');
         const clientSuggestions = document.getElementById('client-suggestions');
         const selectedClientId = document.getElementById('selectedClientId');
+        const invoiceItemsContainer = document.getElementById('invoice-items');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const totalAmountSpan = document.getElementById('totalAmount');
+        const invoiceDate = document.getElementById('invoiceDate');
+        
+        // Reports Tab
         const reportClientInput = document.getElementById('reportClientInput');
         const reportClientSuggestions = document.getElementById('report-client-suggestions');
         const selectedReportClientId = document.getElementById('selectedReportClientId');
@@ -369,16 +372,7 @@
         const reportEndDate = document.getElementById('reportEndDate');
         const generateReportBtn = document.getElementById('generateReportBtn');
         
-        // Item management for Invoice tab
-        const invoiceItemsContainer = document.getElementById('invoice-items');
-        const addItemBtn = document.getElementById('addItemBtn');
-        const totalAmountSpan = document.getElementById('totalAmount');
-        
-        // Item management for Templates tab
-        const templateItemsContainer = document.getElementById('template-items');
-        const addTemplateItemBtn = document.getElementById('addTemplateItemBtn');
-        const templateTotalAmountSpan = document.getElementById('templateTotalAmount');
-
+        // Message Modal
         const messageModal = document.getElementById('message-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
@@ -398,7 +392,7 @@
         });
         
         // Firebase Auth State Listener
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // User is signed in.
                 userId = user.uid;
@@ -410,7 +404,7 @@
                 
                 // Start listening to the user's private data
                 listenForInvoices(userId);
-                listenForTemplates(userId);
+                listenForProducts(userId);
                 listenForClients(userId);
 
                 // Set initial tab
@@ -421,9 +415,9 @@
                 loginScreen.classList.remove('hidden');
                 mainApp.classList.add('hidden');
                 invoicesList.innerHTML = '';
-                templatesList.innerHTML = '';
+                productsList.innerHTML = '';
                 clientsList.innerHTML = '';
-                templateSelect.innerHTML = '<option value="">Select a template</option>';
+                productSelect.innerHTML = '<option value="">Select a product</option>';
             }
         });
         
@@ -484,8 +478,8 @@
         });
         
         // Tab Switching Logic
-        const tabButtons = [tabInvoice, tabTemplates, tabClients, tabReports];
-        const tabContents = [contentInvoice, contentTemplates, contentClients, contentReports];
+        const tabButtons = [tabInvoice, tabProducts, tabClients, tabReports];
+        const tabContents = [contentInvoice, contentProducts, contentClients, contentReports];
         
         function switchTab(tabId) {
             tabButtons.forEach(btn => {
@@ -502,25 +496,29 @@
             activeContent.classList.remove('hidden');
             
             // Re-initialize item lists on tab switch to clear old data
-            if (tabId === 'templates') {
-                templateItemsContainer.innerHTML = '';
-                templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
-                updateTotal(templateItemsContainer, templateTotalAmountSpan);
+            if (tabId === 'products') {
+                productNameInput.value = '';
+                productPriceInput.value = '';
+            } else if (tabId === 'invoice') {
+                invoiceItemsContainer.innerHTML = '';
+                invoiceItemsContainer.appendChild(createInvoiceItemRow());
+                updateInvoiceTotal();
+                productSelect.value = '';
             }
         }
         
         tabInvoice.addEventListener('click', () => switchTab('invoice'));
-        tabTemplates.addEventListener('click', () => switchTab('templates'));
+        tabProducts.addEventListener('click', () => switchTab('products'));
         tabClients.addEventListener('click', () => switchTab('clients'));
         tabReports.addEventListener('click', () => switchTab('reports'));
 
-
-        // Item row creation function for both invoice and template lists
-        function createItemRow(container, totalSpan, item = {}) {
+        // Item row creation function for Invoice
+        function createInvoiceItemRow(item = {}) {
             const row = document.createElement('div');
             row.className = 'invoice-item-row flex space-x-2 items-center p-2 rounded-lg shadow-sm';
             row.innerHTML = `
                 <input type="text" value="${item.productName || ''}" placeholder="Product Name" class="flex-1 rounded-md border-gray-600 p-1 border">
+                <input type="number" value="${item.quantity || 1}" min="1" class="w-16 text-right rounded-md border-gray-600 p-1 border">
                 <input type="number" value="${item.price || 0}" min="0" step="0.01" class="w-24 text-right rounded-md border-gray-600 p-1 border">
                 <span class="amount-cell w-24 text-right font-medium text-gray-300">Rs. 0.00</span>
                 <button class="remove-item-btn w-10 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full h-8 w-8 flex items-center justify-center transition-transform transform hover:scale-110">
@@ -528,50 +526,49 @@
                 </button>
             `;
             
-            const [productNameInput, priceInput] = row.querySelectorAll('input');
+            const [productNameInput, quantityInput, priceInput] = row.querySelectorAll('input');
             const amountCell = row.querySelector('.amount-cell');
             const removeBtn = row.querySelector('.remove-item-btn');
 
             const updateAmount = () => {
+                const quantity = parseFloat(quantityInput.value) || 0;
                 const price = parseFloat(priceInput.value) || 0;
-                amountCell.textContent = `Rs. ${price.toFixed(2)}`;
-                updateTotal(container, totalSpan);
+                const amount = quantity * price;
+                amountCell.textContent = `Rs. ${amount.toFixed(2)}`;
+                updateInvoiceTotal();
             };
 
+            quantityInput.addEventListener('input', updateAmount);
             priceInput.addEventListener('input', updateAmount);
             removeBtn.addEventListener('click', () => {
                 row.remove();
-                updateTotal(container, totalSpan);
+                updateInvoiceTotal();
             });
 
             updateAmount(); // Initial calculation
             return row;
         }
 
-        // Function to update total for a specific item list
-        function updateTotal(container, totalSpan) {
+        // Function to update total for the invoice
+        function updateInvoiceTotal() {
             let total = 0;
-            container.querySelectorAll('.invoice-item-row').forEach(row => {
-                const price = parseFloat(row.querySelectorAll('input')[1].value) || 0;
-                total += price;
+            invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach(row => {
+                const quantity = parseFloat(row.querySelectorAll('input')[1].value) || 0;
+                const price = parseFloat(row.querySelectorAll('input')[2].value) || 0;
+                total += quantity * price;
             });
-            totalSpan.textContent = `Rs. ${total.toFixed(2)}`;
+            totalAmountSpan.textContent = `Rs. ${total.toFixed(2)}`;
         }
         
-        // Initial item row for Invoice and Template forms
-        invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
-        templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
+        // Initial item row for Invoice forms
+        invoiceItemsContainer.appendChild(createInvoiceItemRow());
 
-
+        // Add custom item to invoice
         addItemBtn.addEventListener('click', () => {
-            invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
+            invoiceItemsContainer.appendChild(createInvoiceItemRow());
         });
         
-        addTemplateItemBtn.addEventListener('click', () => {
-            templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
-        });
-
-        // Client and Template Search Dropdown Logic
+        // Client and Product Search Dropdown Logic
         function setupSearchableDropdown(inputElement, suggestionsContainer, data, onSelectCallback) {
             inputElement.addEventListener('input', () => {
                 const query = inputElement.value.toLowerCase();
@@ -623,20 +620,21 @@
         // Invoice functionality
         function getInvoiceData() {
             const clientName = clientNameInput.value.trim();
-            const invoiceDate = invoiceDate.value;
+            const invoiceDateValue = invoiceDate.value;
 
-            if (!clientName || !invoiceDate) {
+            if (!clientName || !invoiceDateValue) {
                 showMessage("Missing Information", "Please enter a client name and invoice date.");
                 return null;
             }
 
             const items = [];
             invoiceItemsContainer.querySelectorAll('.invoice-item-row').forEach(row => {
-                const [productNameInput, priceInput] = row.querySelectorAll('input');
+                const [productNameInput, quantityInput, priceInput] = row.querySelectorAll('input');
                 const productName = productNameInput.value.trim();
+                const quantity = parseFloat(quantityInput.value) || 0;
                 const price = parseFloat(priceInput.value) || 0;
-                if (productName && price >= 0) {
-                    items.push({ productName, price, amount: price });
+                if (productName && quantity > 0 && price >= 0) {
+                    items.push({ productName, quantity, price, amount: quantity * price });
                 }
             });
 
@@ -647,16 +645,16 @@
 
             const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
-            return { clientName, invoiceDate, items, totalAmount, createdAt: new Date() };
+            return { clientName, invoiceDate: invoiceDateValue, items, totalAmount, createdAt: new Date() };
         }
 
         function clearInvoiceForm() {
             clientNameInput.value = '';
             invoiceDate.value = '';
             invoiceItemsContainer.innerHTML = '';
-            invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
-            updateTotal(invoiceItemsContainer, totalAmountSpan);
-            templateSelect.value = '';
+            invoiceItemsContainer.appendChild(createInvoiceItemRow());
+            updateInvoiceTotal();
+            productSelect.value = '';
         }
 
         // Save invoice to Firestore
@@ -733,14 +731,18 @@
                             <thead>
                                 <tr>
                                     <th>Product Name</th>
+                                    <th>Qty</th>
                                     <th>Price</th>
+                                    <th>Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${invoiceData.items.map(item => `
                                     <tr>
                                         <td>${item.productName}</td>
+                                        <td>${item.quantity}</td>
                                         <td>Rs. ${item.price.toFixed(2)}</td>
+                                        <td>Rs. ${item.amount.toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -832,120 +834,101 @@
         }
 
         // =================================================================================================
-        // New Features Logic: Templates, Clients, and Reports
+        // New Features Logic: Products, Clients, and Reports
         // =================================================================================================
 
-        // Templates Logic
-        function listenForTemplates(uid) {
-            const templatesRef = collection(db, `artifacts/${appId}/users/${uid}/templates`);
-            onSnapshot(templatesRef, (querySnapshot) => {
-                templatesList.innerHTML = '';
-                templateSelect.innerHTML = '<option value="">Select a template</option>';
+        // Products Logic
+        function listenForProducts(uid) {
+            const productsRef = collection(db, `artifacts/${appId}/users/${uid}/products`);
+            onSnapshot(productsRef, (querySnapshot) => {
+                productsList.innerHTML = '';
+                productSelect.innerHTML = '<option value="">Select a product</option>';
+                savedProducts = [];
                 querySnapshot.forEach((doc) => {
-                    const templateData = doc.data();
-                    const templateId = doc.id;
-                    // Populate the Templates tab
-                    const templateElement = createTemplateDisplay(templateData, templateId);
-                    templatesList.appendChild(templateElement);
+                    const productData = doc.data();
+                    const productId = doc.id;
+                    savedProducts.push({ id: productId, name: productData.productName, price: productData.price });
+                    // Populate the Products tab
+                    const productElement = createProductDisplay(productData, productId);
+                    productsList.appendChild(productElement);
                     // Populate the dropdown in the invoice form
                     const option = document.createElement('option');
-                    option.value = templateId;
-                    option.textContent = templateData.templateName;
-                    templateSelect.appendChild(option);
+                    option.value = productId;
+                    option.textContent = `${productData.productName} (Rs. ${productData.price.toFixed(2)})`;
+                    productSelect.appendChild(option);
                 });
             });
         }
         
-        function createTemplateDisplay(templateData, templateId) {
+        function createProductDisplay(productData, productId) {
             const element = document.createElement('div');
             element.className = 'bg-gray-700 p-4 rounded-lg shadow-sm border border-gray-600 flex justify-between items-center hover:shadow-md transition-shadow';
             element.innerHTML = `
-                <h4 class="font-bold text-lg text-gray-200">${templateData.templateName}</h4>
-                <div class="space-x-2">
-                    <button class="delete-template-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-full transition-transform transform hover:scale-105">Delete</button>
+                <h4 class="font-bold text-lg text-gray-200">${productData.productName}</h4>
+                <div class="flex items-center space-x-4">
+                    <span class="font-semibold text-indigo-400">Rs. ${productData.price.toFixed(2)}</span>
+                    <button class="delete-product-btn bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-3 rounded-full transition-transform transform hover:scale-105">Delete</button>
                 </div>
             `;
-            element.querySelector('.delete-template-btn').addEventListener('click', () => {
-                deleteTemplate(templateId);
+            element.querySelector('.delete-product-btn').addEventListener('click', () => {
+                deleteProduct(productId);
             });
             return element;
         }
 
-        async function deleteTemplate(templateId) {
+        async function deleteProduct(productId) {
             if (!userId) return;
             try {
-                const templateRef = doc(db, `artifacts/${appId}/users/${userId}/templates`, templateId);
-                await deleteDoc(templateRef);
-                showMessage("Deleted", "Template deleted successfully.");
+                const productRef = doc(db, `artifacts/${appId}/users/${userId}/products`, productId);
+                await deleteDoc(productRef);
+                showMessage("Deleted", "Product deleted successfully.");
             } catch (e) {
-                console.error("Error deleting template: ", e);
-                showMessage("Error", "Failed to delete template.");
+                console.error("Error deleting product: ", e);
+                showMessage("Error", "Failed to delete product.");
             }
         }
 
-        saveTemplateBtn.addEventListener('click', async () => {
+        saveProductBtn.addEventListener('click', async () => {
             if (!userId) {
-                showMessage("Login Required", "Please log in to save templates.");
+                showMessage("Login Required", "Please log in to save products.");
                 return;
             }
-            const templateName = templateNameInput.value.trim();
-            if (!templateName) {
-                showMessage("Missing Information", "Please enter a template name.");
-                return;
-            }
-            const items = [];
-            templateItemsContainer.querySelectorAll('.invoice-item-row').forEach(row => {
-                const [productNameInput, priceInput] = row.querySelectorAll('input');
-                const productName = productNameInput.value.trim();
-                const price = parseFloat(priceInput.value) || 0;
-                if (productName && price >= 0) {
-                    items.push({ productName, price });
-                }
-            });
-            if (items.length === 0) {
-                showMessage("No Items", "Please add at least one item to save as a template.");
+            const productName = productNameInput.value.trim();
+            const productPrice = parseFloat(productPriceInput.value) || 0;
+            if (!productName || productPrice < 0) {
+                showMessage("Missing Information", "Please enter a product name and a valid price.");
                 return;
             }
             try {
-                const templatesCollection = collection(db, `artifacts/${appId}/users/${userId}/templates`);
-                await addDoc(templatesCollection, { templateName, items });
-                showMessage("Success", "Template saved successfully!");
-                templateNameInput.value = '';
-                // Clear the template creation form
-                templateItemsContainer.innerHTML = '';
-                templateItemsContainer.appendChild(createItemRow(templateItemsContainer, templateTotalAmountSpan));
-                updateTotal(templateItemsContainer, templateTotalAmountSpan);
+                const productsCollection = collection(db, `artifacts/${appId}/users/${userId}/products`);
+                await addDoc(productsCollection, { productName, price: productPrice });
+                showMessage("Success", "Product saved successfully!");
+                productNameInput.value = '';
+                productPriceInput.value = '';
             } catch (e) {
-                console.error("Error saving template: ", e);
-                showMessage("Error", "Failed to save template.");
+                console.error("Error saving product: ", e);
+                showMessage("Error", "Failed to save product.");
             }
         });
 
-        // Load template items into the invoice form
-        templateSelect.addEventListener('change', async () => {
-            const templateId = templateSelect.value;
-            if (!templateId || !userId) {
-                invoiceItemsContainer.innerHTML = '';
-                invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan));
-                updateTotal(invoiceItemsContainer, totalAmountSpan);
+        // Add a product from the dropdown to the invoice form
+        addProductToInvoiceBtn.addEventListener('click', () => {
+            const productId = productSelect.value;
+            if (!productId) {
+                showMessage("Selection Required", "Please select a product from the list.");
                 return;
             }
-            try {
-                const templateRef = doc(db, `artifacts/${appId}/users/${userId}/templates`, templateId);
-                const templateSnap = await getDoc(templateRef);
-                if (templateSnap.exists()) {
-                    const templateData = templateSnap.data();
-                    invoiceItemsContainer.innerHTML = ''; // Clear existing items
-                    templateData.items.forEach(item => {
-                        invoiceItemsContainer.appendChild(createItemRow(invoiceItemsContainer, totalAmountSpan, item));
-                    });
-                    updateTotal(invoiceItemsContainer, totalAmountSpan);
-                }
-            } catch (e) {
-                console.error("Error loading template: ", e);
-                showMessage("Error", "Failed to load template.");
+            const selectedProduct = savedProducts.find(p => p.id === productId);
+            if (selectedProduct) {
+                invoiceItemsContainer.appendChild(createInvoiceItemRow({
+                    productName: selectedProduct.name,
+                    quantity: 1, 
+                    price: selectedProduct.price
+                }));
+                updateInvoiceTotal();
             }
         });
+
 
         // Clients Logic
         function listenForClients(uid) {
@@ -1094,14 +1077,18 @@
                                     <thead>
                                         <tr>
                                             <th>Product Name</th>
+                                            <th>Qty</th>
                                             <th>Price</th>
+                                            <th>Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         ${invoice.items.map(item => `
                                             <tr>
                                                 <td>${item.productName}</td>
+                                                <td>${item.quantity}</td>
                                                 <td>Rs. ${item.price.toFixed(2)}</td>
+                                                <td>Rs. ${item.amount.toFixed(2)}</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
